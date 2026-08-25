@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <!-- 顶部操作行 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="4dp">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:textSize="13sp"
+            android:text="返回" />
+
+        <TextView
+            android:id="@+id/tvHeaderStats"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="资源库共 0 张"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333" />
+
+        <Button
+            android:id="@+id/btnToggleSelectMode"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:textSize="13sp"
+            android:text="多选" />
+    </LinearLayout>
+
+    <!-- 横向滚动分类条 -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:paddingVertical="4dp">
+
+        <LinearLayout
+            android:id="@+id/llCategoryContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical" />
+    </HorizontalScrollView>
+
+    <!-- 搜索输入框 -->
+    <EditText
+        android:id="@+id/etSearchBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="搜索关键词或文件名..."
+        android:imeOptions="actionSearch"
+        android:inputType="text"
+        android:maxLines="1"
+        android:textSize="14sp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp"
+        android:layout_marginHorizontal="4dp"
+        android:layout_marginBottom="4dp" />
+
+    <!-- 网格内容区 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvLibraryGrid"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/tvEmptyHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="资源库为空，请先导入"
+            android:textSize="16sp"
+            android:textColor="#999999"
+            android:visibility="gone" />
+
+        <!-- 调整位置模式底部半透明提示条 -->
+        <TextView
+            android:id="@+id/tvSortingModeHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="#CC000000"
+            android:gravity="center"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="10dp"
+            android:text="已进入调整位置模式，按住图片或分类夹 1 秒后可拖动排序"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+    <!-- 底部批量操作栏 (仅多选模式可见) -->
+    <LinearLayout
+        android:id="@+id/llBatchActionBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="6dp"
+        android:background="#EAEAEA"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvSelectedCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="已选 0 张"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#0078D4"
+            android:paddingEnd="8dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/btnBatchSelectAll"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="4dp"
+            android:textSize="13sp"
+            android:text="全选" />
+
+        <Button
+            android:id="@+id/btnBatchOperation"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="4dp"
+            android:textSize="13sp"
+            android:text="操作 ▾" />
+
+        <Button
+            android:id="@+id/btnBatchDelete"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="4dp"
+            android:textSize="13sp"
+            android:textColor="#D32F2F"
+            android:text="删除" />
+    </LinearLayout>
+
+</LinearLayout>

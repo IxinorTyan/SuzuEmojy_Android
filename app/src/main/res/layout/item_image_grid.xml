@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.suzu.test.ime.ui.SquareFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/flItemRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="2dp"
+    android:background="@drawable/bg_image_item"
+    android:padding="2dp">
+
+    <!-- 图片缩略图 -->
+    <ImageView
+        android:id="@+id/ivThumbnail"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop" />
+
+    <!-- 动图格式标识 (右下角半透明黑底白字) -->
+    <TextView
+        android:id="@+id/tvFormatBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:background="#99000000"
+        android:textColor="#FFFFFF"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="1dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:visibility="gone"
+        android:text="GIF" />
+
+</com.suzu.test.ime.ui.SquareFrameLayout>

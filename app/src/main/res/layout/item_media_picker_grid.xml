@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.suzu.test.ime.ui.SquareFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="1.5dp">
+
+    <ImageView
+        android:id="@+id/ivThumbnail"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="媒体缩略图" />
+
+    <View
+        android:id="@+id/viewMask"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#4D000000"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tvImportedBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:background="@drawable/bg_picker_badge_imported"
+        android:text="可能已导入"
+        android:textColor="#FFFFFF"
+        android:textSize="10sp"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/flCheckbox"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="top|end"
+        android:padding="4dp">
+
+        <TextView
+            android:id="@+id/tvSelectOrder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:background="@drawable/bg_picker_unselect_indicator" />
+    </FrameLayout>
+
+</com.suzu.test.ime.ui.SquareFrameLayout>

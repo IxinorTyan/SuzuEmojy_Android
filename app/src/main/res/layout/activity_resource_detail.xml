@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#121212">
+
+    <!-- 顶部导航条 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp"
+        android:background="#1E1E1E">
+
+        <Button
+            android:id="@+id/btnDetailBack"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:textSize="13sp"
+            android:text="返回" />
+
+        <TextView
+            android:id="@+id/tvPositionIndicator"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:text="1 / 1" />
+
+        <View
+            android:layout_width="60dp"
+            android:layout_height="36dp" />
+    </LinearLayout>
+
+    <!-- ViewPager2 图片轮播区 -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/vpDetailPager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#000000" />
+
+    <!-- 底部信息与操作滚动卡片 -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1E1E1E"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 关键词区 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="关键词 (点击编辑)"
+                android:textColor="#AAAAAA"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvDetailKeywords"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="#2C2C2C"
+                android:padding="8dp"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:text="暂无关键词" />
+
+            <!-- 分类区 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="所属分类 (点击编辑)"
+                android:textColor="#AAAAAA"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvDetailCategories"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="#2C2C2C"
+                android:padding="8dp"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:text="未分类" />
+
+            <!-- 元数据区 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="元数据"
+                android:textColor="#AAAAAA"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="4dp"
+                android:background="#2C2C2C"
+                android:padding="8dp">
+
+                <TextView
+                    android:id="@+id/tvMetaResolution"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#DDDDDD"
+                    android:textSize="13sp"
+                    android:text="尺寸: 0 × 0" />
+
+                <TextView
+                    android:id="@+id/tvMetaSize"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="#DDDDDD"
+                    android:textSize="13sp"
+                    android:text="大小: 0 KB" />
+
+                <TextView
+                    android:id="@+id/tvMetaFormat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="#DDDDDD"
+                    android:textSize="13sp"
+                    android:text="格式: PNG" />
+
+                <TextView
+                    android:id="@+id/tvMetaImportTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="#DDDDDD"
+                    android:textSize="13sp"
+                    android:text="导入时间: -" />
+            </LinearLayout>
+
+            <!-- 操作区 -->
+            <Button
+                android:id="@+id/btnDetailDelete"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="#D32F2F"
+                android:textColor="#FFFFFF"
+                android:text="删除此表情" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

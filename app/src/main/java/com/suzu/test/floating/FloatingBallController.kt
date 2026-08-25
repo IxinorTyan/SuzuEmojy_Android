@@ -1,0 +1,435 @@
+package com.suzu.test.floating
+
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import android.graphics.PixelFormat
+import android.graphics.Point
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.WindowManager
+import com.bumptech.glide.Glide
+import com.suzu.test.R
+import com.suzu.test.accessibility.TestAccessibilityService
+import com.suzu.test.databinding.LayoutFloatingBallBinding
+import com.suzu.test.db.DatabaseProvider
+import com.suzu.test.log.TestLog
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import kotlin.math.abs
+
+class FloatingBallController(private val context: Context) {
+
+    companion object {
+        private const val MODULE = "FloatingBallController"
+    }
+
+    private var windowManager: WindowManager? = null
+    private var lastForegroundPackage: String? = null
+    private var floatingView: View? = null
+    private var layoutParams: WindowManager.LayoutParams? = null
+    private var spListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+    private var isBallVisible: Boolean = true
+    private var ballBinding: LayoutFloatingBallBinding? = null
+    private var controllerScope: CoroutineScope? = null
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var imeVisible: Boolean = true
+    private var imeSwitchGuardUntil: Long = 0L
+    private var isAttached: Boolean = false
+
+    private val hideRunnable = Runnable {
+        imeVisible = false
+        evaluateVisibility()
+    }
+
+    fun attach() {
+        if (isAttached) return
+        if (!Settings.canDrawOverlays(context)) {
+            TestLog.w(MODULE, "无悬浮窗权限，无法挂载悬浮球")
+            return
+        }
+
+        TestLog.i(MODULE, "attach: 开始挂载悬浮球")
+        controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        isAttached = true
+        initFloatingBall()
+        observeConfigChanges()
+
+        lastForegroundPackage = TestAccessibilityService.instance?.foregroundAppPackage
+        imeVisible = TestAccessibilityService.instance?.isImeVisibleNow() ?: true
+        cleanLegacyFilterConfigOnce()
+        applyBallImage()
+        evaluateVisibility()
+    }
+
+    fun detach() {
+        if (!isAttached) return
+        TestLog.i(MODULE, "detach: 移除悬浮球并清理资源")
+        isAttached = false
+        controllerScope?.cancel()
+        controllerScope = null
+        mainHandler.removeCallbacksAndMessages(null)
+
+        spListener?.let {
+            val sp = context.getSharedPreferences(FloatingBallConfig.SP_NAME, Context.MODE_PRIVATE)
+            sp.unregisterOnSharedPreferenceChangeListener(it)
+        }
+        spListener = null
+
+        floatingView?.let { view ->
+            try {
+                windowManager?.removeView(view)
+            } catch (e: Exception) {
+                TestLog.w(MODULE, "removeView 异常: ${e.message}")
+            }
+        }
+        floatingView = null
+        ballBinding = null
+        layoutParams = null
+        windowManager = null
+    }
+
+    private fun cleanLegacyFilterConfigOnce() {
+        val sp = context.getSharedPreferences(FloatingBallConfig.SP_NAME, Context.MODE_PRIVATE)
+        if (!sp.getBoolean("sp_cleanup_v2", false)) {
+            sp.edit()
+                .remove("floating_ball_app_filter_enabled")
+                .remove("floating_ball_allowed_packages")
+                .putBoolean("sp_cleanup_v2", true)
+                .apply()
+        }
+    }
+
+    private fun observeConfigChanges() {
+        val sp = context.getSharedPreferences(FloatingBallConfig.SP_NAME, Context.MODE_PRIVATE)
+        spListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                FloatingBallConfig.KEY_BALL_SIZE_DP, FloatingBallConfig.KEY_BALL_ALPHA -> {
+                    applyConfigToView()
+                }
+                FloatingBallConfig.KEY_IMAGE_RESOURCE_ID -> {
+                    applyBallImage()
+                }
+                FloatingBallConfig.KEY_SHOW_ONLY_WITH_IME -> {
+                    evaluateVisibility()
+                }
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(spListener)
+    }
+
+    fun onForegroundAppChanged(packageName: String?) {
+        mainHandler.post {
+            lastForegroundPackage = packageName
+            evaluateVisibility()
+        }
+    }
+
+    fun onImeVisibilityChanged(visible: Boolean) {
+        mainHandler.post {
+            if (visible) {
+                mainHandler.removeCallbacks(hideRunnable)
+                imeVisible = true
+                evaluateVisibility()
+            } else {
+                mainHandler.removeCallbacks(hideRunnable)
+                mainHandler.postDelayed(hideRunnable, 400L)
+            }
+        }
+    }
+
+    private fun getRealScreenSize(): Point {
+        val wm = windowManager ?: context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val point = Point()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val windowMetrics = wm.currentWindowMetrics
+            val bounds = windowMetrics.bounds
+            point.x = bounds.width()
+            point.y = bounds.height()
+        } else {
+            @Suppress("DEPRECATION")
+            wm.defaultDisplay.getRealSize(point)
+        }
+        return point
+    }
+
+    private fun clampPosition(params: WindowManager.LayoutParams) {
+        val density = context.resources.displayMetrics.density
+        val sizeDp = FloatingBallConfig.getSizeDp(context)
+        val sizePx = (sizeDp * density).toInt()
+
+        val screenSize = getRealScreenSize()
+        val maxX = (screenSize.x - sizePx).coerceAtLeast(0)
+        val maxY = (screenSize.y - sizePx).coerceAtLeast(0)
+
+        params.x = params.x.coerceIn(0, maxX)
+        params.y = params.y.coerceIn(0, maxY)
+    }
+
+    private fun applyVisibility(shouldShow: Boolean) {
+        if (!shouldShow && System.currentTimeMillis() < imeSwitchGuardUntil) {
+            TestLog.i(MODULE, "IME 切换保护锁生效中，忽略隐藏操作")
+            return
+        }
+
+        if (shouldShow == isBallVisible) return
+        isBallVisible = shouldShow
+
+        val fView = floatingView ?: return
+        val params = layoutParams ?: return
+        val wm = windowManager ?: return
+
+        try {
+            fView.animate().cancel()
+            val targetAlpha = if (shouldShow) {
+                FloatingBallConfig.getAlphaPercent(context) / 100f
+            } else {
+                0f
+            }
+
+            fView.animate()
+                .alpha(targetAlpha)
+                .setDuration(200)
+                .withEndAction {
+                    fView.alpha = targetAlpha
+                }
+                .start()
+
+            if (shouldShow) {
+                params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+            } else {
+                params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            }
+
+            try {
+                wm.updateViewLayout(fView, params)
+            } catch (e: Exception) {
+                TestLog.e(MODULE, "updateViewLayout 异常: ${e.message}", e)
+            }
+
+            TestLog.i(MODULE, "悬浮球可见性跃迁: ${if (shouldShow) "显示" else "隐藏"} (pkg=$lastForegroundPackage, imeVisible=$imeVisible, alpha=$targetAlpha)")
+        } catch (e: Exception) {
+            TestLog.e(MODULE, "applyVisibility 异常: ${e.message}", e)
+        }
+    }
+
+    private fun evaluateVisibility() {
+        val shouldShow = determineShouldShow()
+        applyVisibility(shouldShow)
+    }
+
+    private fun determineShouldShow(): Boolean {
+        // 本 App 内始终显示
+        if (lastForegroundPackage == context.packageName) return true
+
+        if (!FloatingBallConfig.isShowOnlyWithImeEnabled(context)) return true
+
+        val accOk = TestAccessibilityService.instance?.imeDetectionAvailable ?: false
+        return if (!accOk) true else imeVisible // fail-open：检测不可用则显示
+    }
+
+    private fun applyConfigToView() {
+        val fView = floatingView ?: return
+        val params = layoutParams ?: return
+        val density = context.resources.displayMetrics.density
+
+        val sizeDp = FloatingBallConfig.getSizeDp(context)
+        val targetSizePx = (sizeDp * density).toInt()
+
+        val alphaPct = FloatingBallConfig.getAlphaPercent(context)
+        if (isBallVisible) {
+            fView.alpha = alphaPct / 100f
+        }
+
+        if (params.width != targetSizePx || params.height != targetSizePx) {
+            params.width = targetSizePx
+            params.height = targetSizePx
+            clampPosition(params)
+            try {
+                windowManager?.updateViewLayout(fView, params)
+                TestLog.i(MODULE, "已更新悬浮球尺寸与透明度: size=${sizeDp}dp, alpha=$alphaPct%")
+            } catch (e: Exception) {
+                TestLog.e(MODULE, "updateViewLayout 异常: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun applyBallImage() {
+        val binding = ballBinding ?: return
+        val resourceId = FloatingBallConfig.getImageResourceId(context)
+
+        if (resourceId == null) {
+            binding.ivSkinIcon.visibility = View.GONE
+            binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball)
+            return
+        }
+
+        controllerScope?.launch {
+            val resource = withContext(Dispatchers.IO) {
+                try {
+                    val db = DatabaseProvider.getDatabase(context)
+                    db.resourceDao().getById(resourceId)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
+            val file = if (resource != null) File(context.filesDir, "resources/${resource.filename}") else null
+            if (file != null && file.exists()) {
+                binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball)
+                binding.ivSkinIcon.visibility = View.VISIBLE
+                Glide.with(context)
+                    .load(file)
+                    .centerCrop()
+                    .circleCrop()
+                    .into(binding.ivSkinIcon)
+                TestLog.i(MODULE, "已加载悬浮球自定义贴图: ID=$resourceId, file=${file.name}")
+            } else {
+                TestLog.w(MODULE, "贴图资源不存在或已被删除，自动回退默认纯色球: ID=$resourceId")
+                FloatingBallConfig.setImageResourceId(context, null)
+                binding.ivSkinIcon.visibility = View.GONE
+                binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball)
+            }
+        }
+    }
+
+    private fun initFloatingBall() {
+        windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val binding = LayoutFloatingBallBinding.inflate(LayoutInflater.from(context))
+        ballBinding = binding
+        floatingView = binding.root
+
+        val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        } else {
+            @Suppress("DEPRECATION")
+            WindowManager.LayoutParams.TYPE_PHONE
+        }
+
+        val flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+
+        val density = context.resources.displayMetrics.density
+        val sizeDp = FloatingBallConfig.getSizeDp(context)
+        val sizePx = (sizeDp * density).toInt()
+
+        val params = WindowManager.LayoutParams(
+            sizePx,
+            sizePx,
+            layoutType,
+            flags,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = 100
+            y = 300
+        }
+        layoutParams = params
+
+        val alphaPct = FloatingBallConfig.getAlphaPercent(context)
+        binding.root.alpha = alphaPct / 100f
+
+        setupTouchListener(binding.root)
+
+        try {
+            clampPosition(params)
+            windowManager?.addView(floatingView, params)
+            isBallVisible = true
+            TestLog.i(MODULE, "悬浮球常驻挂载到 WindowManager 成功 (x=${params.x}, y=${params.y})")
+        } catch (e: Exception) {
+            TestLog.e(MODULE, "挂载悬浮球到 WindowManager 失败: ${e.message}", e)
+        }
+    }
+
+    private fun setupTouchListener(view: View) {
+        val clickThreshold = 10 * context.resources.displayMetrics.density
+        var initialX = 0
+        var initialY = 0
+        var initialTouchX = 0f
+        var initialTouchY = 0f
+        var isClick = true
+
+        view.setOnTouchListener { _, event ->
+            val params = layoutParams ?: return@setOnTouchListener false
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    initialX = params.x
+                    initialY = params.y
+                    initialTouchX = event.rawX
+                    initialTouchY = event.rawY
+                    isClick = true
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = event.rawX - initialTouchX
+                    val dy = event.rawY - initialTouchY
+                    if (abs(dx) > clickThreshold || abs(dy) > clickThreshold) {
+                        isClick = false
+                    }
+                    params.x = initialX + dx.toInt()
+                    params.y = initialY + dy.toInt()
+                    clampPosition(params)
+                    windowManager?.updateViewLayout(floatingView, params)
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (isClick) {
+                        onFloatingBallClicked()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+
+        view.setOnLongClickListener {
+            TestLog.i(MODULE, "长按悬浮球，隐藏悬浮球并关闭配置开关")
+            FloatingBallConfig.setBallEnabled(context, false)
+            true
+        }
+    }
+
+    /**
+     * 单击悬浮球 (纯静默切换):
+     */
+    private fun onFloatingBallClicked() {
+        TestLog.i(MODULE, "========== 悬浮球被单击 (静默切换) ==========")
+
+        val accessibility = TestAccessibilityService.instance
+        if (accessibility == null || !TestAccessibilityService.isAlive()) {
+            TestLog.w(MODULE, "无障碍辅助服务未连接，打开设置")
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            return
+        }
+
+        imeSwitchGuardUntil = System.currentTimeMillis() + 2000L
+
+        val currentIme = Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+        val testImeId = accessibility.findTestImeId()
+
+        TestLog.i(MODULE, "当前默认 IME = $currentIme, 目标 IME = $testImeId")
+
+        if (testImeId != null && currentIme == testImeId) {
+            TestLog.i(MODULE, "当前已处于 SuzuEmojy，静默执行 restorePreviousIme()...")
+            accessibility.restorePreviousIme()
+        } else {
+            TestLog.i(MODULE, "当前非 SuzuEmojy，静默执行 switchToTestIme()...")
+            accessibility.switchToTestIme()
+        }
+    }
+}

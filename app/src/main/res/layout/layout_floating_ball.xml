@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/floatingRoot"
+    android:layout_width="56dp"
+    android:layout_height="56dp"
+    android:background="@drawable/bg_floating_ball">
+
+    <!-- 悬浮球贴图 ImageView，默认隐藏，由 Glide 的 circleCrop 完全接管缩放与裁切 -->
+    <ImageView
+        android:id="@+id/ivSkinIcon"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:scaleType="fitXY"
+        android:visibility="gone"
+        android:contentDescription="悬浮球图标" />
+
+</FrameLayout>

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 权限声明 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- 目标应用查询声明 (包含 package 与 intent 两种形式) -->
+    <queries>
+        <package android:name="com.tencent.mobileqq" />
+        <package android:name="com.tencent.tim" />
+        <package android:name="com.tencent.qqlite" />
+        <package android:name="com.tencent.mm" />
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="image/*" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Test">
+
+        <!-- 主引导界面 (无任何 EditText，避免干扰输入法焦点) -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 对照组测试界面 (唯一具有标准 RichContentEditText 的页面) -->
+        <activity
+            android:name=".control.ControlTestActivity"
+            android:exported="false"
+            android:label="标准对照组测试"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- 导入表情包界面 -->
+        <activity
+            android:name=".ui.import.ImportActivity"
+            android:exported="false"
+            android:label="导入表情包" />
+
+        <!-- 自建媒体选择器界面 -->
+        <activity
+            android:name=".ui.picker.MediaPickerActivity"
+            android:exported="false"
+            android:label="选择图片" />
+
+        <!-- 资源库浏览界面 -->
+        <activity
+            android:name=".ui.library.LibraryActivity"
+            android:exported="false"
+            android:label="资源库" />
+
+        <!-- 资源详情查看界面 -->
+        <activity
+            android:name=".ui.library.ResourceDetailActivity"
+            android:exported="false"
+            android:label="表情详情" />
+
+        <!-- 设置界面 -->
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false"
+            android:label="设置" />
+
+        <activity
+            android:name=".ui.settings.SettingsAppearanceActivity"
+            android:exported="false"
+            android:label="键盘外观与主题" />
+
+        <activity
+            android:name=".ui.settings.SettingsKeyboardTestActivity"
+            android:exported="false"
+            android:label="键盘唤出测试"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.settings.SettingsFloatingActivity"
+            android:exported="false"
+            android:label="悬浮球设置" />
+
+        <activity
+            android:name=".ui.settings.FloatingBallPickerActivity"
+            android:exported="false"
+            android:label="选择悬浮球贴图" />
+
+        <activity
+            android:name=".ui.settings.SettingsOtherActivity"
+            android:exported="false"
+            android:label="其他设置" />
+
+        <!-- 组件1: 无障碍切换服务 -->
+        <service
+            android:name=".accessibility.TestAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:label="@string/accessibility_service_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- 组件2: 图片输入法服务 -->
+        <service
+            android:name=".ime.TestImageIME"
+            android:permission="android.permission.BIND_INPUT_METHOD"
+            android:label="@string/ime_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/method" />
+        </service>
+
+        <!-- DiagnosticFileProvider: 固化静态 authority 字符串 com.tencent.qqpinyin.suzu.provider -->
+        <provider
+            android:name=".provider.DiagnosticFileProvider"
+            android:authorities="com.tencent.qqpinyin.suzu.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+    </application>
+
+</manifest>

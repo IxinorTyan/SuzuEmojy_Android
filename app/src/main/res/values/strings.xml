@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SuzuEmojy</string>
+    <string name="ime_name">SuzuEmojy</string>
+    <string name="accessibility_service_name">SuzuEmojy 表情辅助服务</string>
+    <string name="accessibility_service_description">SuzuEmojy 用于辅助表情图片智能发送与输入法无缝体验。</string>
+    <string name="floating_service_notification_channel">SuzuEmojy 悬浮服务</string>
+    <string name="floating_service_notification_title">SuzuEmojy</string>
+    <string name="floating_service_notification_text">SuzuEmojy 服务运行中，提供便捷表情发送支持</string>
+</resources>
