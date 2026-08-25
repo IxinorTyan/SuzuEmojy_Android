@@ -146,6 +146,38 @@
                     android:layout_height="wrap_content"
                     android:max="70"
                     android:layout_marginTop="6dp" />
+
+                <!-- 悬浮球动画时长调节 (0 - 200 ms, 步进 20 ms, max 10) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="渐显/渐隐动画时长 (0 - 200 ms)"
+                        android:textSize="14sp"
+                        android:textColor="#555555" />
+
+                    <TextView
+                        android:id="@+id/tvAnimDurationValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="100 ms"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#007AFF" />
+                </LinearLayout>
+
+                <SeekBar
+                    android:id="@+id/sbBallAnimDuration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="10"
+                    android:layout_marginTop="6dp" />
             </LinearLayout>
 
             <!-- 触发显示条件设置 -->

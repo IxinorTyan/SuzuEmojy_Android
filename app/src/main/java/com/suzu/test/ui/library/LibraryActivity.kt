@@ -14,9 +14,14 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import com.suzu.test.resource.export.ResourceExportHelper
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.withTransaction
@@ -33,8 +38,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -52,14 +55,20 @@ class LibraryActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLibraryBinding
     private lateinit var database: SuzuDatabase
+    private val viewModel: LibraryViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return LibraryViewModel(database) as T
+            }
+        }
+    }
     private lateinit var adapter: LibraryAdapter
     private lateinit var gridLayoutManager: GridLayoutManager
     private lateinit var categoryController: CategoryBarController
     private lateinit var dragHelper: LibraryDragHelper
     private lateinit var resourcesDir: File
-    private var resourceObserveJob: Job? = null
     private var searchDebounceJob: Job? = null
-    private var currentSearchQuery: String = ""
 
     private var isSelectionMode: Boolean = false
     private var isSortingMode: Boolean = false
@@ -141,7 +150,7 @@ class LibraryActivity : AppCompatActivity() {
         dragHelper = LibraryDragHelper(
             scope = lifecycleScope,
             adapter = adapter,
-            isDragAllowed = { isSortingMode && currentSearchQuery.isBlank() },
+            isDragAllowed = { isSortingMode && viewModel.searchQuery.value.isBlank() && !viewModel.filterState.value.isActive },
             isAllSelected = { categoryController.currentSelection == "ALL" },
             getSelectedCategoryId = { categoryController.currentSelection.toLongOrNull() }
         )
@@ -149,7 +158,7 @@ class LibraryActivity : AppCompatActivity() {
 
         dragTouchListener = LibraryDragTouchListener(
             context = this,
-            isSortingMode = { isSortingMode && currentSearchQuery.isBlank() }
+            isSortingMode = { isSortingMode && viewModel.searchQuery.value.isBlank() && !viewModel.filterState.value.isActive }
         ) { viewHolder ->
             dragHelper.startDrag(viewHolder)
         }
@@ -158,15 +167,30 @@ class LibraryActivity : AppCompatActivity() {
         setupSlideSelection()
         setupScaleGesture()
         setupTopBar()
+        setupFilterButton()
         setupBatchActionBar()
         setupSearchBox()
         setupBackPressedHandler()
         observeCategories()
+        observeViewModel()
         switchCategoryView("ALL")
     }
 
+    private fun setupFilterButton() {
+        binding.btnFilter.setOnClickListener {
+            if (isSortingMode) return@setOnClickListener
+            val bottomSheet = LibraryFilterBottomSheet(
+                context = this,
+                initialState = viewModel.filterState.value
+            ) { newState ->
+                viewModel.updateFilterState(newState)
+            }
+            bottomSheet.show()
+        }
+    }
+
     private fun handleAllChipLongClick() {
-        if (currentSearchQuery.isNotBlank()) {
+        if (viewModel.searchQuery.value.isNotBlank() || viewModel.filterState.value.isActive) {
             Toast.makeText(this, "请清除搜索或筛选后再调整位置", Toast.LENGTH_SHORT).show()
             return
         }
@@ -202,10 +226,13 @@ class LibraryActivity : AppCompatActivity() {
             if (isSelectionMode) {
                 setSelectionMode(false)
             }
+            viewModel.clearFilterState()
+            binding.flFilterContainer.visibility = View.GONE
             binding.btnToggleSelectMode.text = "退出"
             binding.tvSortingModeHint.visibility = View.VISIBLE
         } else {
             dragTouchListener.cancelTimer()
+            binding.flFilterContainer.visibility = View.VISIBLE
             binding.btnToggleSelectMode.text = "多选"
             binding.tvSortingModeHint.visibility = View.GONE
         }
@@ -635,8 +662,8 @@ class LibraryActivity : AppCompatActivity() {
                 searchDebounceJob?.cancel()
                 searchDebounceJob = lifecycleScope.launch {
                     delay(250)
-                    currentSearchQuery = s?.toString()?.trim() ?: ""
-                    switchCategoryView(categoryController.currentSelection)
+                    val query = s?.toString()?.trim() ?: ""
+                    viewModel.updateSearchQuery(query)
                 }
             }
             override fun afterTextChanged(s: Editable?) {}
@@ -651,46 +678,51 @@ class LibraryActivity : AppCompatActivity() {
         }
     }
 
-    private fun switchCategoryView(selection: String) {
-        resourceObserveJob?.cancel()
-        val query = currentSearchQuery
-        resourceObserveJob = lifecycleScope.launch {
-            val flow = if (selection == "ALL") {
-                if (query.isBlank()) {
-                    database.resourceDao().getAllResourcesOrdered()
-                } else {
-                    database.resourceDao().searchResources(query)
+    private fun observeViewModel() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.filterState.collectLatest { filter ->
+                        val count = filter.activeFilterCount
+                        if (count > 0) {
+                            binding.tvFilterBadge.text = count.toString()
+                            binding.tvFilterBadge.visibility = View.VISIBLE
+                        } else {
+                            binding.tvFilterBadge.visibility = View.GONE
+                        }
+                    }
                 }
-            } else {
-                val catId = selection.toLongOrNull() ?: 0L
-                database.resourceCategoryDao().getResourcesForCategory(catId)
-            }
 
-            flow.map { list ->
-                if (query.isBlank()) {
-                    list
-                } else {
-                    KeywordUtils.filterAndSort(list, query)
-                }
-            }
-            .flowOn(Dispatchers.Default)
-            .collectLatest { list ->
-                currentDisplayedItems = list
-                adapter.submitList(list)
-                dragHelper.updateItems(list)
-                binding.tvHeaderStats.text = if (selection == "ALL") "资源库共 ${list.size} 张" else "分类下共 ${list.size} 张"
-                binding.tvEmptyHint.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
-                binding.tvEmptyHint.text = when {
-                    list.isNotEmpty() -> ""
-                    query.isNotBlank() -> "没有找到匹配「$query」的表情"
-                    selection == "ALL" -> "资源库为空，请先导入"
-                    else -> "该分类暂无图片"
-                }
-                if (isSelectionMode) {
-                    updateBatchActionBar()
+                launch {
+                    viewModel.displayedItems.collectLatest { list ->
+                        currentDisplayedItems = list
+                        adapter.submitList(list)
+                        dragHelper.updateItems(list)
+
+                        val selection = viewModel.categorySelection.value
+                        val query = viewModel.searchQuery.value
+                        val filter = viewModel.filterState.value
+
+                        binding.tvHeaderStats.text = if (selection == "ALL") "资源库共 ${list.size} 张" else "分类下共 ${list.size} 张"
+                        binding.tvEmptyHint.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+                        binding.tvEmptyHint.text = when {
+                            list.isNotEmpty() -> ""
+                            filter.isActive -> "没有符合筛选条件的表情"
+                            query.isNotBlank() -> "没有找到匹配「$query」的表情"
+                            selection == "ALL" -> "资源库为空，请先导入"
+                            else -> "该分类暂无图片"
+                        }
+                        if (isSelectionMode) {
+                            updateBatchActionBar()
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private fun switchCategoryView(selection: String) {
+        viewModel.selectCategory(selection)
     }
 
     private fun showResourceActionDialog(resource: ResourceEntity) {

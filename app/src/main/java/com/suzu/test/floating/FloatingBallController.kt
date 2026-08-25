@@ -192,34 +192,53 @@ class FloatingBallController(private val context: Context) {
         val wm = windowManager ?: return
 
         try {
-            fView.animate().cancel()
             val targetAlpha = if (shouldShow) {
                 FloatingBallConfig.getAlphaPercent(context) / 100f
             } else {
                 0f
             }
 
-            fView.animate()
-                .alpha(targetAlpha)
-                .setDuration(200)
-                .withEndAction {
-                    fView.alpha = targetAlpha
+            val finalizeState: (Float) -> Unit = { alpha ->
+                fView.alpha = alpha
+                if (shouldShow) {
+                    params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+                } else {
+                    params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                 }
-                .start()
+                try {
+                    wm.updateViewLayout(fView, params)
+                } catch (e: Exception) {
+                    TestLog.e(MODULE, "updateViewLayout 异常: ${e.message}", e)
+                }
+            }
 
-            if (shouldShow) {
-                params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+            val animDuration = FloatingBallConfig.getAnimDurationMs(context)
+            if (animDuration <= 0) {
+                fView.animate().cancel()
+                finalizeState(targetAlpha)
             } else {
-                params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                fView.animate().cancel()
+                fView.animate()
+                    .alpha(targetAlpha)
+                    .setDuration(animDuration.toLong())
+                    .withEndAction {
+                        finalizeState(targetAlpha)
+                    }
+                    .start()
+
+                if (shouldShow) {
+                    params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+                } else {
+                    params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                }
+                try {
+                    wm.updateViewLayout(fView, params)
+                } catch (e: Exception) {
+                    TestLog.e(MODULE, "updateViewLayout 异常: ${e.message}", e)
+                }
             }
 
-            try {
-                wm.updateViewLayout(fView, params)
-            } catch (e: Exception) {
-                TestLog.e(MODULE, "updateViewLayout 异常: ${e.message}", e)
-            }
-
-            TestLog.i(MODULE, "悬浮球可见性跃迁: ${if (shouldShow) "显示" else "隐藏"} (pkg=$lastForegroundPackage, imeVisible=$imeVisible, alpha=$targetAlpha)")
+            TestLog.i(MODULE, "悬浮球可见性跃迁: ${if (shouldShow) "显示" else "隐藏"} (pkg=$lastForegroundPackage, imeVisible=$imeVisible, alpha=$targetAlpha, duration=${animDuration}ms)")
         } catch (e: Exception) {
             TestLog.e(MODULE, "applyVisibility 异常: ${e.message}", e)
         }

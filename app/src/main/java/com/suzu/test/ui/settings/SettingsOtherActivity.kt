@@ -32,6 +32,8 @@ class SettingsOtherActivity : AppCompatActivity() {
         val currentLimit = sp.getInt(KEY_RECENT_LIMIT, DEFAULT_LIMIT)
         binding.etRecentLimit.setText(currentLimit.toString())
 
+        setupCacheCleaner()
+
         binding.btnSaveSettings.setOnClickListener {
             val inputStr = binding.etRecentLimit.text.toString().trim()
             val parsed = inputStr.toIntOrNull()
@@ -53,6 +55,43 @@ class SettingsOtherActivity : AppCompatActivity() {
                 Toast.makeText(this@SettingsOtherActivity, "设置已保存并生效", Toast.LENGTH_SHORT).show()
                 finish()
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshCacheSizeDisplay()
+    }
+
+    private fun setupCacheCleaner() {
+        binding.btnCleanCache.setOnClickListener {
+            lifecycleScope.launch {
+                binding.btnCleanCache.isEnabled = false
+                binding.tvCacheSizeDisplay.text = "当前缓存占用: 正在清理..."
+
+                val result = withContext(Dispatchers.IO) {
+                    com.suzu.test.storage.CacheCleanManager.cleanAll(applicationContext)
+                }
+
+                Toast.makeText(
+                    this@SettingsOtherActivity,
+                    "清理完成，已释放 ${com.suzu.test.storage.CacheCleanManager.formatSize(result.freedBytes)}",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                refreshCacheSizeDisplay()
+                binding.btnCleanCache.isEnabled = true
+            }
+        }
+    }
+
+    private fun refreshCacheSizeDisplay() {
+        lifecycleScope.launch {
+            binding.tvCacheSizeDisplay.text = "当前缓存占用: 正在计算..."
+            val bytes = withContext(Dispatchers.IO) {
+                com.suzu.test.storage.CacheCleanManager.getCacheSizeBytes(applicationContext)
+            }
+            binding.tvCacheSizeDisplay.text = "当前缓存占用: ${com.suzu.test.storage.CacheCleanManager.formatSize(bytes)}"
         }
     }
 }

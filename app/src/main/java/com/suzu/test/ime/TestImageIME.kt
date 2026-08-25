@@ -53,6 +53,14 @@ class TestImageIME : InputMethodService() {
         dataSource = KeyboardDataSource(this)
         imageSender = ImageSender(this)
         TestLog.i(MODULE, "onCreate: SuzuEmojy 启动 (AppId: ${BuildConfig.APPLICATION_ID}, authority: ${BuildConfig.FILE_PROVIDER_AUTHORITY}, androidx.core: $ANDROIDX_CORE_VERSION)")
+        triggerAutoCacheClean()
+    }
+
+    private fun triggerAutoCacheClean() {
+        serviceScope.launch(Dispatchers.IO) {
+            val result = com.suzu.test.storage.CacheCleanManager.cleanExpired(applicationContext)
+            TestLog.i(MODULE, "IME 自动清理完成: 删除了 ${result.deletedCount} 个过期暂存文件, 释放 ${com.suzu.test.storage.CacheCleanManager.formatSize(result.freedBytes)}")
+        }
     }
 
     override fun onCreateInputView(): View {

@@ -15,6 +15,11 @@ object FloatingBallConfig {
     const val MIN_BALL_ALPHA = 30
     const val MAX_BALL_ALPHA = 100
 
+    const val KEY_ANIM_DURATION_MS = "floating_ball_anim_duration_ms"
+    const val DEFAULT_ANIM_DURATION_MS = 100
+    const val MIN_ANIM_DURATION_MS = 0
+    const val MAX_ANIM_DURATION_MS = 200
+
     const val KEY_BALL_ENABLED = "floating_ball_enabled"
     const val KEY_SHOW_ONLY_WITH_IME = "floating_ball_show_only_with_ime"
     const val KEY_IMAGE_RESOURCE_ID = "floating_ball_image_resource_id"
@@ -96,6 +101,20 @@ object FloatingBallConfig {
         context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
             .edit()
             .putInt(KEY_BALL_ALPHA, clamped)
+            .apply()
+    }
+
+    fun getAnimDurationMs(context: Context): Int {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getInt(KEY_ANIM_DURATION_MS, DEFAULT_ANIM_DURATION_MS)
+            .coerceIn(MIN_ANIM_DURATION_MS, MAX_ANIM_DURATION_MS)
+    }
+
+    fun setAnimDurationMs(context: Context, durationMs: Int) {
+        val clamped = durationMs.coerceIn(MIN_ANIM_DURATION_MS, MAX_ANIM_DURATION_MS)
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_ANIM_DURATION_MS, clamped)
             .apply()
     }
 }

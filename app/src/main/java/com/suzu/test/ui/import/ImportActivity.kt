@@ -55,6 +55,16 @@ class ImportActivity : AppCompatActivity() {
         }
     }
 
+    private val systemDocumentPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        if (!uris.isNullOrEmpty()) {
+            startImportProcess(uris)
+        } else {
+            binding.tvProgress.text = "未选择任何图片"
+        }
+    }
+
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -72,6 +82,22 @@ class ImportActivity : AppCompatActivity() {
         binding.btnPickImages.setOnClickListener {
             checkAndLaunchPicker()
         }
+
+        binding.btnPickFromFiles.setOnClickListener {
+            launchSystemFilePicker()
+        }
+    }
+
+    private fun launchSystemFilePicker() {
+        systemDocumentPickerLauncher.launch(
+            arrayOf(
+                "image/*",
+                "image/png",
+                "image/jpeg",
+                "image/webp",
+                "image/gif"
+            )
+        )
     }
 
     private fun checkAndLaunchPicker() {
@@ -138,6 +164,7 @@ class ImportActivity : AppCompatActivity() {
 
     private fun startImportProcess(uris: List<Uri>) {
         binding.btnPickImages.isEnabled = false
+        binding.btnPickFromFiles.isEnabled = false
         binding.tvSummary.text = ""
 
         lifecycleScope.launch {
@@ -176,6 +203,7 @@ class ImportActivity : AppCompatActivity() {
             binding.tvProgress.text = "导入流程已完成"
             binding.tvSummary.text = "成功导入 $successCount 张，重复跳过 $duplicateCount 张，失败 $failCount 张"
             binding.btnPickImages.isEnabled = true
+            binding.btnPickFromFiles.isEnabled = true
         }
     }
 }

@@ -58,4 +58,47 @@
             android:layout_marginTop="16dp" />
     </LinearLayout>
 
+    <!-- 暂存与缓存清理卡片 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#FFFFFF"
+        android:padding="16dp"
+        android:elevation="1dp"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="暂存与缓存清理"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#333333" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="清理 10 分钟前残留的发送临时文件,并清空图片磁盘缓存。\n清理后首次浏览图片会重新加载。"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvCacheSizeDisplay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="当前缓存占用: 正在计算..."
+            android:textSize="14sp"
+            android:textColor="#555555" />
+
+        <Button
+            android:id="@+id/btnCleanCache"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="一键清理"
+            android:layout_marginTop="16dp" />
+    </LinearLayout>
+
 </LinearLayout>

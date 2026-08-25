@@ -19,17 +19,17 @@ class LibraryDragHelper(
     private val getSelectedCategoryId: () -> Long?
 ) {
 
-    private var inMemoryItems: MutableList<ResourceEntity> = mutableListOf()
+    private var pendingOrderedIds: List<Long>? = null
     lateinit var itemTouchHelper: ItemTouchHelper
         private set
 
     fun updateItems(items: List<ResourceEntity>) {
-        inMemoryItems = items.toMutableList()
+        // 由 ListAdapter 数据流驱动
     }
 
     fun attachToRecyclerView(recyclerView: RecyclerView) {
         val callback = object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT,
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.START or ItemTouchHelper.END or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT,
             0
         ) {
             override fun isLongPressDragEnabled(): Boolean {
@@ -43,12 +43,16 @@ class LibraryDragHelper(
             ): Boolean {
                 val fromPos = viewHolder.bindingAdapterPosition
                 val toPos = target.bindingAdapterPosition
-                if (fromPos < 0 || toPos < 0 || fromPos >= inMemoryItems.size || toPos >= inMemoryItems.size) {
+                val currentList = adapter.currentList
+                if (fromPos < 0 || toPos < 0 || fromPos >= currentList.size || toPos >= currentList.size) {
                     return false
                 }
 
-                Collections.swap(inMemoryItems, fromPos, toPos)
-                adapter.notifyItemMoved(fromPos, toPos)
+                val newList = currentList.toMutableList().apply {
+                    add(toPos, removeAt(fromPos))
+                }
+                pendingOrderedIds = newList.map { it.id }
+                adapter.submitList(newList)
                 return true
             }
 
@@ -57,24 +61,28 @@ class LibraryDragHelper(
             override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
                 super.onSelectedChanged(viewHolder, actionState)
                 if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+                    pendingOrderedIds = null
                     viewHolder?.itemView?.apply {
                         elevation = 16f
                         scaleX = 1.05f
                         scaleY = 1.05f
                     }
                 } else if (actionState == ItemTouchHelper.ACTION_STATE_IDLE) {
-                    val orderedIds = inMemoryItems.map { it.id }
-                    val context = recyclerView.context
-                    val inAll = isAllSelected()
-                    val categoryId = getSelectedCategoryId()
+                    val orderedIds = pendingOrderedIds
+                    pendingOrderedIds = null
+                    if (orderedIds != null && orderedIds.isNotEmpty()) {
+                        val context = recyclerView.context
+                        val inAll = isAllSelected()
+                        val categoryId = getSelectedCategoryId()
 
-                    scope.launch {
-                        withContext(Dispatchers.IO) {
-                            val db = DatabaseProvider.getDatabase(context)
-                            if (inAll) {
-                                db.resourceDao().reorderAll(orderedIds)
-                            } else if (categoryId != null && categoryId > 0) {
-                                db.resourceCategoryDao().reorderResourcesInCategory(categoryId, orderedIds)
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                val db = DatabaseProvider.getDatabase(context)
+                                if (inAll) {
+                                    db.resourceDao().reorderAll(orderedIds)
+                                } else if (categoryId != null && categoryId > 0) {
+                                    db.resourceCategoryDao().reorderResourcesInCategory(categoryId, orderedIds)
+                                }
                             }
                         }
                     }

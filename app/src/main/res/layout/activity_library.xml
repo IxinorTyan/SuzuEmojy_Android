@@ -55,20 +55,55 @@
             android:gravity="center_vertical" />
     </HorizontalScrollView>
 
-    <!-- 搜索输入框 -->
-    <EditText
-        android:id="@+id/etSearchBox"
+    <!-- 搜索与筛选操作行 -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="搜索关键词或文件名..."
-        android:imeOptions="actionSearch"
-        android:inputType="text"
-        android:maxLines="1"
-        android:textSize="14sp"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:layout_marginHorizontal="4dp"
-        android:layout_marginBottom="4dp" />
+        android:layout_marginBottom="4dp">
+
+        <EditText
+            android:id="@+id/etSearchBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="搜索关键词或文件名..."
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLines="1"
+            android:textSize="14sp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp" />
+
+        <FrameLayout
+            android:id="@+id/flFilterContainer"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="4dp">
+
+            <ImageButton
+                android:id="@+id/btnFilter"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_filter"
+                android:contentDescription="筛选" />
+
+            <TextView
+                android:id="@+id/tvFilterBadge"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="top|end"
+                android:background="@drawable/bg_filter_badge"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
 
     <!-- 网格内容区 -->
     <FrameLayout

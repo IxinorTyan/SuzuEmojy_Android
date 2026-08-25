@@ -81,6 +81,7 @@ class TestAccessibilityService : AccessibilityService() {
         refreshDefaultImePackage()
         observeBallConfig()
         syncBallState()
+        syncImeStateFromWindows()
         TestLog.i(MODULE, "onServiceConnected: SuzuEmojy 辅助切换服务已就绪 (输入法快速切换 + IME/前台双信号分发)")
     }
 
@@ -106,6 +107,41 @@ class TestAccessibilityService : AccessibilityService() {
         } else {
             ballController?.detach()
             ballController = null
+        }
+    }
+
+    private fun syncImeStateFromWindows() {
+        val winList = try { windows } catch (e: Exception) { null }
+        if (winList.isNullOrEmpty()) {
+            imeDetectionAvailable = false
+        } else {
+            imeDetectionAvailable = true
+            val visible = winList.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+            if (visible != lastImeVisible) {
+                lastImeVisible = visible
+                TestLog.i(MODULE, "IME 窗口可见性信号: visible=$visible")
+                mainHandler.post {
+                    ballController?.onImeVisibilityChanged(visible)
+                }
+            }
+
+            if (foregroundAppPackage == null) {
+                val focusedWin = winList.firstOrNull { it.isFocused || it.isActive }
+                val rootNode = try { focusedWin?.root } catch (e: Exception) { null }
+                try {
+                    val pkg = rootNode?.packageName?.toString()
+                    if (!pkg.isNullOrEmpty() && pkg != "com.android.systemui" && pkg != cachedDefaultImePackage) {
+                        foregroundAppPackage = pkg
+                        TestLog.i(MODULE, "初始化补齐前台应用包名: $pkg")
+                        mainHandler.post {
+                            ballController?.onForegroundAppChanged(pkg)
+                        }
+                    }
+                } finally {
+                    @Suppress("DEPRECATION")
+                    rootNode?.recycle()
+                }
+            }
         }
     }
 
@@ -153,20 +189,7 @@ class TestAccessibilityService : AccessibilityService() {
 
         // 信号二：IME 可见性（自家表情 IME 同样计入）
         if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED || event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            val winList = try { windows } catch (e: Exception) { null }
-            if (winList.isNullOrEmpty()) {
-                imeDetectionAvailable = false
-            } else {
-                imeDetectionAvailable = true
-                val visible = winList.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
-                if (visible != lastImeVisible) {
-                    lastImeVisible = visible
-                    TestLog.i(MODULE, "IME 窗口可见性信号: visible=$visible")
-                    mainHandler.post {
-                        ballController?.onImeVisibilityChanged(visible)
-                    }
-                }
-            }
+            syncImeStateFromWindows()
         }
 
         logImeDiag(event)

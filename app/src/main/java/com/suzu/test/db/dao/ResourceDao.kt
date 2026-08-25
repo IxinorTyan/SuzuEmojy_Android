@@ -168,4 +168,17 @@ interface ResourceDao {
 
     @Query("SELECT * FROM resources ORDER BY created_at DESC, id DESC LIMIT :limit")
     fun getRecentAddedResourcesFlow(limit: Int): Flow<List<ResourceEntity>>
+
+    @Query("""
+        SELECT * FROM resources
+        WHERE (:noKw = 0 OR keywords IS NULL OR TRIM(keywords) = '')
+          AND (:noCat = 0 OR NOT EXISTS(
+              SELECT 1 FROM resource_categories rc WHERE rc.resource_id = resources.id))
+          AND (:anim = 0 OR (:anim = 1 AND filename LIKE '%.gif')
+                         OR (:anim = 2 AND filename NOT LIKE '%.gif'))
+          AND (:catId = 0 OR EXISTS(
+              SELECT 1 FROM resource_categories rc2 WHERE rc2.resource_id = resources.id AND rc2.category_id = :catId))
+        ORDER BY sort_order ASC, id ASC
+    """)
+    fun getFilteredResourcesFlow(noKw: Int, noCat: Int, anim: Int, catId: Long): Flow<List<ResourceEntity>>
 }

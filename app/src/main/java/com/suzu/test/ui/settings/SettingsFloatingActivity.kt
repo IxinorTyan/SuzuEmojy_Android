@@ -161,6 +161,10 @@ class SettingsFloatingActivity : AppCompatActivity() {
         binding.sbBallAlpha.progress = currentAlpha - FloatingBallConfig.MIN_BALL_ALPHA
         binding.tvAlphaValue.text = "$currentAlpha %"
 
+        val currentDuration = FloatingBallConfig.getAnimDurationMs(this)
+        binding.sbBallAnimDuration.progress = (currentDuration / 20).coerceIn(0, 10)
+        binding.tvAnimDurationValue.text = if (currentDuration == 0) "0 ms (关闭动画)" else "$currentDuration ms"
+
         updatePreview(currentSize, currentAlpha)
 
         binding.sbBallSize.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -182,6 +186,17 @@ class SettingsFloatingActivity : AppCompatActivity() {
                 FloatingBallConfig.setAlphaPercent(this@SettingsFloatingActivity, alphaPct)
                 updatePreview(null, alphaPct)
                 TestLog.i(MODULE, "修改悬浮球透明度: $alphaPct %")
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        binding.sbBallAnimDuration.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val durationMs = (progress * 20).coerceIn(0, 200)
+                binding.tvAnimDurationValue.text = if (durationMs == 0) "0 ms (关闭动画)" else "$durationMs ms"
+                FloatingBallConfig.setAnimDurationMs(this@SettingsFloatingActivity, durationMs)
+                TestLog.i(MODULE, "修改悬浮球动画时长: $durationMs ms")
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}

@@ -45,6 +45,14 @@ class MainActivity : AppCompatActivity() {
 
         setupUI()
         observeData()
+        triggerAutoCacheClean()
+    }
+
+    private fun triggerAutoCacheClean() {
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val result = com.suzu.test.storage.CacheCleanManager.cleanExpired(applicationContext)
+            TestLog.i(MODULE, "MainActivity 自动清理完成: 删除了 ${result.deletedCount} 个过期暂存文件, 释放 ${com.suzu.test.storage.CacheCleanManager.formatSize(result.freedBytes)}")
+        }
     }
 
     override fun onResume() {
