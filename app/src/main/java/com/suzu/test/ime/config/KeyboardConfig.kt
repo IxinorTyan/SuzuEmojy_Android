@@ -15,6 +15,9 @@ object KeyboardConfig {
     const val MIN_SPAN_COUNT = 3
     const val MAX_SPAN_COUNT = 8
 
+    const val KEY_SHOW_RECENT_TAB = "keyboard_show_recent_tab"
+    const val DEFAULT_SHOW_RECENT_TAB = true
+
     fun getGridHeightDp(context: Context): Int {
         val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
         return sp.getInt(KEY_GRID_HEIGHT_DP, DEFAULT_GRID_HEIGHT_DP)
@@ -40,6 +43,18 @@ object KeyboardConfig {
         context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
             .edit()
             .putInt(KEY_SPAN_COUNT, clamped)
+            .apply()
+    }
+
+    fun isRecentTabEnabled(context: Context): Boolean {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getBoolean(KEY_SHOW_RECENT_TAB, DEFAULT_SHOW_RECENT_TAB)
+    }
+
+    fun setRecentTabEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_SHOW_RECENT_TAB, enabled)
             .apply()
     }
 }

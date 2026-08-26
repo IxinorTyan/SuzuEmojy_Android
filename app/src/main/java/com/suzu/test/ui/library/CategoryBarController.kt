@@ -25,7 +25,8 @@ class CategoryBarController(
     private val isSortingMode: () -> Boolean,
     private val onAllLongClick: () -> Unit,
     private val onCategoryReorderClick: () -> Unit,
-    private val onCategorySelected: (selection: String) -> Unit
+    private val onCategorySelected: (selection: String) -> Unit,
+    private val onEnterSortingMode: () -> Unit
 ) {
 
     var currentSelection: String = "ALL"
@@ -33,7 +34,7 @@ class CategoryBarController(
 
     private var currentCategories: List<CategoryEntity> = emptyList()
     private val resourcesDir = File(context.filesDir, "resources")
-    private val dialogHelper = CategoryDialogHelper(context, scope)
+    private val dialogHelper = CategoryDialogHelper(context, scope, onEnterSortingMode)
 
     fun render(categories: List<CategoryEntity>) {
         currentCategories = categories

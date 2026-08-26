@@ -30,7 +30,16 @@ class SettingsAppearanceActivity : AppCompatActivity() {
 
         setupThemeSelector()
         setupKeyboardAdjusters()
+        setupRecentTabSwitch()
         setupPreview()
+    }
+
+    private fun setupRecentTabSwitch() {
+        binding.swShowRecentTab.isChecked = KeyboardConfig.isRecentTabEnabled(this)
+        binding.swShowRecentTab.setOnCheckedChangeListener { _, isChecked ->
+            KeyboardConfig.setRecentTabEnabled(this, isChecked)
+            TestLog.i(MODULE, "切换显示「常用」开关: $isChecked")
+        }
     }
 
     private fun setupThemeSelector() {

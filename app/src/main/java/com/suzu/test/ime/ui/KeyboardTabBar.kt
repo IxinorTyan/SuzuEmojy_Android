@@ -10,6 +10,7 @@ import android.content.res.ColorStateList
 import android.widget.TextView
 import com.bumptech.glide.Glide
 import com.suzu.test.R
+import com.suzu.test.ime.config.KeyboardConfig
 import com.suzu.test.ime.theme.KeyboardTheme
 import com.suzu.test.ime.theme.ThemeApplier
 import com.suzu.test.db.CategoryIconResolver
@@ -50,21 +51,8 @@ class KeyboardTabBar(
             db.categoryDao().getAllCategoriesFlow().collectLatest { categories ->
                 withContext(Dispatchers.Main) {
                     cachedCategories = categories
-                    validateCurrentTab()
                     render()
                 }
-            }
-        }
-    }
-
-    private fun validateCurrentTab() {
-        if (currentTab == "RECENT" || currentTab == "ALL") return
-        if (currentTab.startsWith("cat:")) {
-            val catId = currentTab.removePrefix("cat:").toLongOrNull()
-            val exists = cachedCategories.any { it.id == catId }
-            if (!exists) {
-                currentTab = "RECENT"
-                prefs.edit().putString(KEY_LAST_TAB, "RECENT").apply()
             }
         }
     }
@@ -73,24 +61,46 @@ class KeyboardTabBar(
         render()
     }
 
+    fun getEffectiveTab(): String {
+        val showRecent = KeyboardConfig.isRecentTabEnabled(context)
+        val availableTabs = mutableListOf<String>()
+        if (showRecent) {
+            availableTabs.add("RECENT")
+        }
+        availableTabs.add("ALL")
+        for (cat in cachedCategories) {
+            availableTabs.add("cat:${cat.id}")
+        }
+
+        return if (currentTab in availableTabs) {
+            currentTab
+        } else {
+            "ALL"
+        }
+    }
+
     private fun render() {
         container.removeAllViews()
         val theme = KeyboardTheme.current(context)
+        val showRecent = KeyboardConfig.isRecentTabEnabled(context)
+        val effectiveTab = getEffectiveTab()
 
         // 1. [常用]
-        container.addView(createSpecialTabView(R.drawable.ic_tab_recent, currentTab == "RECENT", theme) {
-            selectTab("RECENT")
-        })
+        if (showRecent) {
+            container.addView(createSpecialTabView(R.drawable.ic_tab_recent, effectiveTab == "RECENT", theme) {
+                selectTab("RECENT")
+            })
+        }
 
         // 2. [全部]
-        container.addView(createSpecialTabView(R.drawable.ic_tab_all, currentTab == "ALL", theme) {
+        container.addView(createSpecialTabView(R.drawable.ic_tab_all, effectiveTab == "ALL", theme) {
             selectTab("ALL")
         })
 
         // 3. 真实分类
         for (cat in cachedCategories) {
             val tabKey = "cat:${cat.id}"
-            val isSelected = currentTab == tabKey
+            val isSelected = effectiveTab == tabKey
             container.addView(createCategoryTabView(cat, isSelected, theme) {
                 selectTab(tabKey)
             })

@@ -137,13 +137,16 @@ class LibraryActivity : AppCompatActivity() {
             scope = lifecycleScope,
             isSortingMode = { isSortingMode },
             onAllLongClick = {
-                handleAllChipLongClick()
+                enterSortingMode()
             },
             onCategoryReorderClick = {
                 showCategoryReorderBottomSheet()
             },
             onCategorySelected = { selection ->
                 switchCategoryView(selection)
+            },
+            onEnterSortingMode = {
+                enterSortingMode()
             }
         )
 
@@ -167,6 +170,7 @@ class LibraryActivity : AppCompatActivity() {
         setupSlideSelection()
         setupScaleGesture()
         setupTopBar()
+        setupImportButton()
         setupFilterButton()
         setupBatchActionBar()
         setupSearchBox()
@@ -174,6 +178,22 @@ class LibraryActivity : AppCompatActivity() {
         observeCategories()
         observeViewModel()
         switchCategoryView("ALL")
+    }
+
+    private fun setupImportButton() {
+        binding.btnImport.setOnClickListener {
+            if (isSelectionMode || isSortingMode) return@setOnClickListener
+            val currentSelection = categoryController.currentSelection
+            val intent = Intent(this, com.suzu.test.ui.import.ImportActivity::class.java).apply {
+                if (currentSelection != "ALL") {
+                    val catId = currentSelection.toLongOrNull()
+                    if (catId != null) {
+                        putExtra(com.suzu.test.ui.import.ImportActivity.EXTRA_TARGET_CATEGORY_ID, catId)
+                    }
+                }
+            }
+            startActivity(intent)
+        }
     }
 
     private fun setupFilterButton() {
@@ -189,7 +209,7 @@ class LibraryActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleAllChipLongClick() {
+    private fun enterSortingMode() {
         if (viewModel.searchQuery.value.isNotBlank() || viewModel.filterState.value.isActive) {
             Toast.makeText(this, "请清除搜索或筛选后再调整位置", Toast.LENGTH_SHORT).show()
             return
@@ -199,7 +219,7 @@ class LibraryActivity : AppCompatActivity() {
         if (isSelectionMode) {
             setSelectionMode(false)
         }
-        setSortingMode(!isSortingMode)
+        setSortingMode(true)
     }
 
     private fun showCategoryReorderBottomSheet() {
@@ -228,11 +248,13 @@ class LibraryActivity : AppCompatActivity() {
             }
             viewModel.clearFilterState()
             binding.flFilterContainer.visibility = View.GONE
+            binding.btnImport.visibility = View.GONE
             binding.btnToggleSelectMode.text = "退出"
             binding.tvSortingModeHint.visibility = View.VISIBLE
         } else {
             dragTouchListener.cancelTimer()
             binding.flFilterContainer.visibility = View.VISIBLE
+            binding.btnImport.visibility = if (!isSelectionMode) View.VISIBLE else View.GONE
             binding.btnToggleSelectMode.text = "多选"
             binding.tvSortingModeHint.visibility = View.GONE
         }
@@ -396,6 +418,7 @@ class LibraryActivity : AppCompatActivity() {
         }
 
         binding.btnToggleSelectMode.text = if (enabled) "退出" else "多选"
+        binding.btnImport.visibility = if (!enabled && !isSortingMode) View.VISIBLE else View.GONE
         binding.llBatchActionBar.visibility = if (enabled) View.VISIBLE else View.GONE
 
         adapter.setSelectionState(isSelectionMode, selectedIds)
@@ -735,6 +758,7 @@ class LibraryActivity : AppCompatActivity() {
             val actions = mutableListOf<String>()
             actions.add("编辑关键词")
             actions.add("移动到最前")
+            actions.add("调整位置")
             actions.add("分类")
             actions.add("导出")
             if (catName != null) {
@@ -748,6 +772,7 @@ class LibraryActivity : AppCompatActivity() {
                     when (actions[which]) {
                         "编辑关键词" -> showEditKeywordsDialog(resource)
                         "移动到最前" -> moveSingleResourceToFront(resource, selection)
+                        "调整位置" -> enterSortingMode()
                         "分类" -> showCategoryAssignmentDialog(resource)
                         "导出" -> ResourceExportHelper.exportResources(
                             context = this@LibraryActivity,

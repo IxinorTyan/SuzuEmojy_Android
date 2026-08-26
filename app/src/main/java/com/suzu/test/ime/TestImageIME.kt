@@ -103,7 +103,7 @@ class TestImageIME : InputMethodService() {
             onTabSelected = { tabKey -> loadImagesForTab(tabKey) }
         ).apply { start() }
 
-        loadImagesForTab(tabBar?.currentTab ?: "RECENT")
+        loadImagesForTab(tabBar?.getEffectiveTab() ?: "ALL")
         return viewBinding.root
     }
 
@@ -140,7 +140,7 @@ class TestImageIME : InputMethodService() {
         }
 
         EditorInfoDumper.dump(this, info)
-        loadImagesForTab(tabBar?.currentTab ?: "RECENT")
+        loadImagesForTab(tabBar?.getEffectiveTab() ?: "ALL")
     }
 
     private fun applyKeyboardConfigLayout() {
