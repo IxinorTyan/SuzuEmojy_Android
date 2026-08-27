@@ -15,6 +15,11 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import com.suzu.test.control.ControlTestActivity
 import com.suzu.test.databinding.ActivitySettingsBinding
 import com.suzu.test.databinding.DialogLogViewerBinding
@@ -40,10 +45,22 @@ class SettingsActivity : AppCompatActivity() {
         setupNavigation()
         setupPermissionActions()
         setupA11ySwitch()
+        observeA11yState()
+    }
+
+    private fun observeA11yState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.collectLatest {
+                    updatePermissionStates()
+                }
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
+        com.suzu.test.accessibility.AccessibilityStateMonitor.refresh()
         updatePermissionStates()
     }
 
@@ -108,7 +125,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnPermImeAction.visibility = if (isImeEnabled) View.GONE else View.VISIBLE
 
         // 2. 无障碍
-        val isA11yRunning = PermissionChecker.isAccessibilityServiceRunning()
+        val isA11yRunning = com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.value
         binding.tvPermA11yStatus.text = "无障碍服务: " + if (isA11yRunning) "已开启 ✓" else "已关闭"
         binding.btnPermA11yAction.visibility = if (isA11yRunning) View.GONE else View.VISIBLE
 

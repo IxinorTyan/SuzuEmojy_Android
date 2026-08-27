@@ -25,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
@@ -46,6 +47,8 @@ class TestImageIME : InputMethodService() {
     private lateinit var imageAdapter: ImageAdapter
     private var gridLayoutManager: GridLayoutManager? = null
     private var previewPopup: ImagePreviewPopup? = null
+    private var loadImagesJob: kotlinx.coroutines.Job? = null
+    private var lastLoadedTabKey: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -96,14 +99,17 @@ class TestImageIME : InputMethodService() {
         viewBinding.btnExit.setOnClickListener { exitAndRestoreIme() }
 
         tabBar?.destroy()
-        tabBar = KeyboardTabBar(
+        val tb = KeyboardTabBar(
             context = this,
             container = viewBinding.llTabBarContainer,
             scope = serviceScope,
             onTabSelected = { tabKey -> loadImagesForTab(tabKey) }
-        ).apply { start() }
+        )
+        tabBar = tb
+        val initialEffectiveTab = tb.getEffectiveTab()
+        tb.start()
 
-        loadImagesForTab(tabBar?.getEffectiveTab() ?: "ALL")
+        loadImagesForTab(initialEffectiveTab)
         return viewBinding.root
     }
 
@@ -132,6 +138,9 @@ class TestImageIME : InputMethodService() {
         super.onStartInputView(info, restarting)
         TestLog.i(MODULE, "==================== onStartInputView (restarting=$restarting) ====================")
 
+        // 进程内直连信号：0ms 秒级通知悬浮球 IME 已可见
+        com.suzu.test.floating.ImeVisibilityBus.notifyImeVisibilityChanged(true)
+
         applyKeyboardConfigLayout()
         applyTheme()
 
@@ -140,7 +149,11 @@ class TestImageIME : InputMethodService() {
         }
 
         EditorInfoDumper.dump(this, info)
-        loadImagesForTab(tabBar?.getEffectiveTab() ?: "ALL")
+
+        val targetTab = tabBar?.getEffectiveTab() ?: "ALL"
+        if (targetTab != lastLoadedTabKey) {
+            loadImagesForTab(targetTab)
+        }
     }
 
     private fun applyKeyboardConfigLayout() {
@@ -151,7 +164,11 @@ class TestImageIME : InputMethodService() {
         }
 
         val heightDp = KeyboardConfig.getGridHeightDp(this)
-        val heightPx = (heightDp * resources.displayMetrics.density).toInt()
+        val heightPx = android.util.TypedValue.applyDimension(
+            android.util.TypedValue.COMPLEX_UNIT_DIP,
+            heightDp.toFloat(),
+            resources.displayMetrics
+        ).toInt()
         binding?.flGridContainer?.let { container ->
             val lp = container.layoutParams
             if (lp != null && lp.height != heightPx) {
@@ -159,6 +176,32 @@ class TestImageIME : InputMethodService() {
                 container.layoutParams = lp
                 container.requestLayout()
                 TestLog.i(MODULE, "应用键盘网格高度配置: heightDp=$heightDp, heightPx=$heightPx")
+            }
+        }
+
+        val tabSizeDp = KeyboardConfig.getTabIconSizeDp(this)
+        val tabSizePx = android.util.TypedValue.applyDimension(
+            android.util.TypedValue.COMPLEX_UNIT_DIP,
+            tabSizeDp.toFloat(),
+            resources.displayMetrics
+        ).toInt()
+
+        binding?.btnExit?.let { exitBtn ->
+            val lp = exitBtn.layoutParams
+            if (lp != null && (lp.width != tabSizePx || lp.height != tabSizePx)) {
+                lp.width = tabSizePx
+                lp.height = tabSizePx
+                exitBtn.layoutParams = lp
+                exitBtn.requestLayout()
+            }
+        }
+
+        binding?.llTabHeaderBar?.let { headerBar ->
+            val lp = headerBar.layoutParams
+            if (lp != null && lp.height != tabSizePx) {
+                lp.height = tabSizePx
+                headerBar.layoutParams = lp
+                headerBar.requestLayout()
             }
         }
     }
@@ -175,6 +218,9 @@ class TestImageIME : InputMethodService() {
 
     override fun onFinishInputView(finishingInput: Boolean) {
         previewPopup?.dismiss()
+        lastLoadedTabKey = null
+        // 进程内直连信号：通知悬浮球 IME 已隐藏
+        com.suzu.test.floating.ImeVisibilityBus.notifyImeVisibilityChanged(false)
         super.onFinishInputView(finishingInput)
         TestLog.i(MODULE, "onFinishInputView: 键盘收起，自动执行静默切回原输入法...")
         autoRestorePreviousIme()
@@ -182,6 +228,8 @@ class TestImageIME : InputMethodService() {
 
     override fun onFinishInput() {
         previewPopup?.dismiss()
+        lastLoadedTabKey = null
+        com.suzu.test.floating.ImeVisibilityBus.notifyImeVisibilityChanged(false)
         super.onFinishInput()
         TestLog.i(MODULE, "onFinishInput: 会话结束，自动执行静默切回原输入法...")
         autoRestorePreviousIme()
@@ -202,8 +250,11 @@ class TestImageIME : InputMethodService() {
     }
 
     private fun loadImagesForTab(tabKey: String) {
-        serviceScope.launch {
+        lastLoadedTabKey = tabKey
+        loadImagesJob?.cancel()
+        loadImagesJob = serviceScope.launch {
             val list = dataSource.loadResources(tabKey)
+            if (!isActive) return@launch
             imageAdapter.submitList(list)
             val hintView = binding?.tvEmptyLibraryHint
             if (list.isEmpty()) {

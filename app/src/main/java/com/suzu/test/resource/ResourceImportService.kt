@@ -15,7 +15,10 @@ import java.io.FileOutputStream
 data class ImportResult(
     val resourceId: Long,
     val filename: String,
-    val isDuplicate: Boolean
+    val isDuplicate: Boolean,
+    val syncKey: String = "",
+    val existingResourceId: Long? = null,
+    val existingFilename: String? = null
 )
 
 class ResourceImportService(
@@ -84,7 +87,14 @@ class ResourceImportService(
             val now = System.currentTimeMillis()
             resourceDao.update(existing.copy(sortOrder = newSortOrder, lastUsedAt = now, useCount = existing.useCount + 1))
             TestLog.i(MODULE, "import 去重命中: syncKey=$syncKey, 已提升现有资源 ID=${existing.id}")
-            return ImportResult(existing.id, existing.filename, isDuplicate = true)
+            return ImportResult(
+                resourceId = existing.id,
+                filename = existing.filename,
+                isDuplicate = true,
+                syncKey = syncKey,
+                existingResourceId = existing.id,
+                existingFilename = existing.filename
+            )
         }
 
         // d. 不存在 → 生成文件名并写入私有目录
@@ -131,7 +141,8 @@ class ResourceImportService(
         return ImportResult(
             resourceId = insertedId,
             filename = filename,
-            isDuplicate = false
+            isDuplicate = false,
+            syncKey = syncKey
         )
     }
 

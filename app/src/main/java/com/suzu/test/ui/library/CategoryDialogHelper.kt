@@ -4,10 +4,13 @@ import android.content.Context
 import android.content.DialogInterface
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.room.withTransaction
 import com.suzu.test.R
 import com.suzu.test.db.CategoryIconResolver
 import com.suzu.test.db.CategoryIconResult
@@ -18,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 import com.suzu.test.resource.export.ResourceExportHelper
 
@@ -244,14 +248,61 @@ class CategoryDialogHelper(
     }
 
     private fun showDeleteCategoryDialog(category: CategoryEntity, onDeleteSuccess: () -> Unit) {
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(60, 20, 60, 10)
+        }
+        val tvMessage = TextView(context).apply {
+            text = "确定删除分类「${category.name}」吗？"
+            textSize = 15f
+            setTextColor(0xFF333333.toInt())
+        }
+        val cbDeleteImages = CheckBox(context).apply {
+            text = "同时彻底删除该分类下的所有图片（资源库内文件，不可恢复）"
+            textSize = 14f
+            isChecked = false
+            setPadding(8, 20, 8, 10)
+        }
+        container.addView(tvMessage)
+        container.addView(cbDeleteImages)
+
         AlertDialog.Builder(context)
             .setTitle("删除分类")
-            .setMessage("确定删除分类「${category.name}」吗？\n(分类下的图片仍将保留在全部资源中)")
+            .setView(container)
             .setPositiveButton("删除") { _, _ ->
+                val shouldDeleteImages = cbDeleteImages.isChecked
                 scope.launch {
                     withContext(Dispatchers.IO) {
                         val db = DatabaseProvider.getDatabase(context)
-                        db.categoryDao().deleteCategory(category)
+                        try {
+                            if (shouldDeleteImages) {
+                                val resources = db.resourceCategoryDao().getResourcesForCategoryList(category.id)
+                                val resIds = resources.map { it.id }
+
+                                db.withTransaction {
+                                    if (resIds.isNotEmpty()) {
+                                        db.resourceDao().deleteByIds(resIds)
+                                    }
+                                    db.categoryDao().deleteCategory(category)
+                                }
+
+                                val resourcesDir = File(context.filesDir, "resources")
+                                resources.forEach { res ->
+                                    try {
+                                        val file = File(resourcesDir, res.filename)
+                                        if (file.exists()) file.delete()
+                                    } catch (e: Exception) {
+                                        TestLog.e("CategoryDialogHelper", "删除物理文件失败 (${res.filename}): ${e.message}", e)
+                                    }
+                                }
+                                TestLog.i("CategoryDialogHelper", "已连同分类「${category.name}」删除 ${resIds.size} 张图片")
+                            } else {
+                                db.categoryDao().deleteCategory(category)
+                                TestLog.i("CategoryDialogHelper", "已删除分类「${category.name}」(保留原图)")
+                            }
+                        } catch (e: Exception) {
+                            TestLog.e("CategoryDialogHelper", "删除分类异常: ${e.message}", e)
+                        }
                     }
                     onDeleteSuccess()
                 }

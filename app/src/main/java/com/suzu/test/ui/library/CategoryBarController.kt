@@ -33,6 +33,10 @@ class CategoryBarController(
         private set
 
     private var currentCategories: List<CategoryEntity> = emptyList()
+
+    fun getCategoryName(id: Long): String? {
+        return currentCategories.firstOrNull { it.id == id }?.name
+    }
     private val resourcesDir = File(context.filesDir, "resources")
     private val dialogHelper = CategoryDialogHelper(context, scope, onEnterSortingMode)
 

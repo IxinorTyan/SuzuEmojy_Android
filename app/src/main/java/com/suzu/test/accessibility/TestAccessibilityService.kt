@@ -218,6 +218,12 @@ class TestAccessibilityService : AccessibilityService() {
         super.onDestroy()
     }
 
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        TestLog.i(MODULE, "onConfigurationChanged: 屏幕配置/方向改变，重新校准悬浮球位置")
+        ballController?.onScreenConfigurationChanged()
+    }
+
     /**
      * 准确解析本 App 对应的真实 IME Component ID (如 com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME)
      */

@@ -15,6 +15,11 @@ object KeyboardConfig {
     const val MIN_SPAN_COUNT = 3
     const val MAX_SPAN_COUNT = 8
 
+    const val KEY_TAB_ICON_SIZE_DP = "keyboard_tab_icon_size_dp"
+    const val DEFAULT_TAB_ICON_SIZE_DP = 56
+    const val MIN_TAB_ICON_SIZE_DP = 36
+    const val MAX_TAB_ICON_SIZE_DP = 64
+
     const val KEY_SHOW_RECENT_TAB = "keyboard_show_recent_tab"
     const val DEFAULT_SHOW_RECENT_TAB = true
 
@@ -43,6 +48,20 @@ object KeyboardConfig {
         context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
             .edit()
             .putInt(KEY_SPAN_COUNT, clamped)
+            .apply()
+    }
+
+    fun getTabIconSizeDp(context: Context): Int {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getInt(KEY_TAB_ICON_SIZE_DP, DEFAULT_TAB_ICON_SIZE_DP)
+            .coerceIn(MIN_TAB_ICON_SIZE_DP, MAX_TAB_ICON_SIZE_DP)
+    }
+
+    fun setTabIconSizeDp(context: Context, sizeDp: Int) {
+        val clamped = sizeDp.coerceIn(MIN_TAB_ICON_SIZE_DP, MAX_TAB_ICON_SIZE_DP)
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_TAB_ICON_SIZE_DP, clamped)
             .apply()
     }
 

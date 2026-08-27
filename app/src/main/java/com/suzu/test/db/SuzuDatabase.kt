@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ResourceCategoryEntity::class,
         RecentHistoryEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class SuzuDatabase : RoomDatabase() {
@@ -50,6 +50,21 @@ abstract class SuzuDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 方案 A: 存量 resource_categories 按原显示顺序 (resources.sort_order ASC, resources.id ASC) 回填连续递增的 sort_order
+                db.execSQL("""
+                    UPDATE resource_categories SET sort_order = (
+                        SELECT COUNT(*) FROM resource_categories rc2
+                        INNER JOIN resources r2 ON rc2.resource_id = r2.id
+                        INNER JOIN resources r1 ON resource_categories.resource_id = r1.id
+                        WHERE rc2.category_id = resource_categories.category_id
+                          AND (r2.sort_order < r1.sort_order OR (r2.sort_order = r1.sort_order AND r2.id < r1.id))
+                    )
+                """.trimIndent())
+            }
+        }
+
         @Volatile
         private var INSTANCE: SuzuDatabase? = null
 
@@ -60,7 +75,7 @@ abstract class SuzuDatabase : RoomDatabase() {
                     SuzuDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                 INSTANCE = instance
                 instance

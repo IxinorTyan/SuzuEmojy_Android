@@ -69,7 +69,7 @@
                         android:text="去设置" />
                 </LinearLayout>
 
-                <!-- 权限 2: 无障碍服务 -->
+                <!-- 权限 2: 相册读取 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -78,21 +78,37 @@
                     android:paddingVertical="6dp">
 
                     <TextView
-                        android:id="@+id/tvPermA11yStatus"
+                        android:id="@+id/tvPermStorageStatus"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="无障碍服务: 已关闭"
+                        android:text="相册读取: 未授权"
                         android:textSize="14sp"
                         android:textColor="#333333" />
 
                     <Button
-                        android:id="@+id/btnPermA11yAction"
+                        android:id="@+id/btnPermStorageAction"
                         android:layout_width="wrap_content"
                         android:layout_height="36dp"
                         android:textSize="12sp"
-                        android:text="去开启" />
+                        android:text="去授权" />
                 </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#F0F0F0"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="悬浮球扩展功能（按需开启）"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#666666"
+                    android:layout_marginBottom="2dp" />
 
                 <!-- 权限 3: 悬浮窗 -->
                 <LinearLayout
@@ -119,7 +135,7 @@
                         android:text="去授权" />
                 </LinearLayout>
 
-                <!-- 权限 4: 相册读取 -->
+                <!-- 权限 4: 无障碍服务 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -128,21 +144,31 @@
                     android:paddingVertical="6dp">
 
                     <TextView
-                        android:id="@+id/tvPermStorageStatus"
+                        android:id="@+id/tvPermA11yStatus"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="相册读取: 未授权"
+                        android:text="无障碍服务: 已关闭"
                         android:textSize="14sp"
                         android:textColor="#333333" />
 
                     <Button
-                        android:id="@+id/btnPermStorageAction"
+                        android:id="@+id/btnPermA11yAction"
                         android:layout_width="wrap_content"
                         android:layout_height="36dp"
                         android:textSize="12sp"
-                        android:text="去授权" />
+                        android:text="去开启" />
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="* 无障碍服务仅用于悬浮球功能。除非需要使用悬浮球，否则不建议开启。"
+                    android:textSize="11sp"
+                    android:textColor="#888888"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="4dp"
+                    android:lineSpacingExtra="2dp" />
 
                 <View
                     android:layout_width="match_parent"

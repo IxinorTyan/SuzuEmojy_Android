@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -35,17 +36,33 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var recentAdapter: RecentThumbAdapter
 
+    private val storagePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ ->
+        checkAndUpdateState()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        TestLog.init(applicationContext)
         TestLog.i(MODULE, "onCreate: MainActivity 启动")
 
         setupUI()
         observeData()
+        observeA11yState()
         triggerAutoCacheClean()
+    }
+
+    private fun observeA11yState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.collectLatest {
+                    checkAndUpdateState()
+                }
+            }
+        }
     }
 
     private fun triggerAutoCacheClean() {
@@ -57,6 +74,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        com.suzu.test.accessibility.AccessibilityStateMonitor.refresh()
         checkAndUpdateState()
     }
 
@@ -86,8 +104,23 @@ class MainActivity : AppCompatActivity() {
         binding.btnGuideIme.setOnClickListener {
             startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
         }
-        binding.btnGuideA11y.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        binding.btnGuideStorage.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                storagePermissionLauncher.launch(
+                    arrayOf(
+                        android.Manifest.permission.READ_MEDIA_IMAGES,
+                        android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+                    )
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                storagePermissionLauncher.launch(
+                    arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES)
+                )
+            } else {
+                storagePermissionLauncher.launch(
+                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                )
+            }
         }
         binding.btnGuideOverlay.setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -98,6 +131,9 @@ class MainActivity : AppCompatActivity() {
                     )
                 )
             }
+        }
+        binding.btnGuideA11y.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
         binding.btnGuideDismiss.setOnClickListener {
             val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
@@ -133,7 +169,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkAndUpdateState() {
         val isImeEnabled = PermissionChecker.isImeEnabled(this)
-        val isA11yRunning = PermissionChecker.isAccessibilityServiceRunning()
+        val hasStorage = PermissionChecker.hasStoragePermission(this)
+        val isA11yRunning = com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.value
         val hasOverlay = PermissionChecker.hasOverlayPermission(this)
 
         val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
@@ -146,7 +183,7 @@ class MainActivity : AppCompatActivity() {
             binding.layoutMainHomeContainer.visibility = View.GONE
             binding.layoutPermissionWarning.visibility = View.GONE
 
-            updateGuideStatus(isImeEnabled, isA11yRunning, hasOverlay)
+            updateGuideStatus(isImeEnabled, hasStorage, hasOverlay, isA11yRunning)
         } else {
             binding.layoutGuideContainer.visibility = View.GONE
             binding.layoutMainHomeContainer.visibility = View.VISIBLE
@@ -155,7 +192,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateGuideStatus(ime: Boolean, a11y: Boolean, overlay: Boolean) {
+    private fun updateGuideStatus(ime: Boolean, storage: Boolean, overlay: Boolean, a11y: Boolean) {
         if (ime) {
             binding.tvGuideImeDot.text = "✓"
             binding.tvGuideImeDot.setTextColor(0xFF4CAF50.toInt())
@@ -168,16 +205,16 @@ class MainActivity : AppCompatActivity() {
             binding.btnGuideIme.text = "去开启"
         }
 
-        if (a11y) {
-            binding.tvGuideA11yDot.text = "✓"
-            binding.tvGuideA11yDot.setTextColor(0xFF4CAF50.toInt())
-            binding.btnGuideA11y.isEnabled = false
-            binding.btnGuideA11y.text = "已开启"
+        if (storage) {
+            binding.tvGuideStorageDot.text = "✓"
+            binding.tvGuideStorageDot.setTextColor(0xFF4CAF50.toInt())
+            binding.btnGuideStorage.isEnabled = false
+            binding.btnGuideStorage.text = "已授权"
         } else {
-            binding.tvGuideA11yDot.text = "○"
-            binding.tvGuideA11yDot.setTextColor(0xFF888888.toInt())
-            binding.btnGuideA11y.isEnabled = true
-            binding.btnGuideA11y.text = "去开启"
+            binding.tvGuideStorageDot.text = "○"
+            binding.tvGuideStorageDot.setTextColor(0xFF888888.toInt())
+            binding.btnGuideStorage.isEnabled = true
+            binding.btnGuideStorage.text = "去授权"
         }
 
         if (overlay) {
@@ -190,6 +227,18 @@ class MainActivity : AppCompatActivity() {
             binding.tvGuideOverlayDot.setTextColor(0xFF888888.toInt())
             binding.btnGuideOverlay.isEnabled = true
             binding.btnGuideOverlay.text = "去授权"
+        }
+
+        if (a11y) {
+            binding.tvGuideA11yDot.text = "✓"
+            binding.tvGuideA11yDot.setTextColor(0xFF4CAF50.toInt())
+            binding.btnGuideA11y.isEnabled = false
+            binding.btnGuideA11y.text = "已开启"
+        } else {
+            binding.tvGuideA11yDot.text = "○"
+            binding.tvGuideA11yDot.setTextColor(0xFF888888.toInt())
+            binding.btnGuideA11y.isEnabled = true
+            binding.btnGuideA11y.text = "去开启"
         }
     }
 
@@ -208,7 +257,7 @@ class MainActivity : AppCompatActivity() {
         } else if (!a11y && notifyA11y) {
             // 优先级 2: 无障碍已关闭 且 开启了提示开关
             binding.layoutPermissionWarning.visibility = View.VISIBLE
-            binding.tvWarningText.text = "无障碍服务已关闭，悬浮球不可用"
+            binding.tvWarningText.text = "无障碍服务已关闭，悬浮球功能不可用"
             binding.btnWarningAction.text = "去开启"
             binding.btnWarningAction.setOnClickListener {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))

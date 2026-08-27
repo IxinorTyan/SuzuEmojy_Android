@@ -65,21 +65,25 @@ interface ResourceCategoryDao {
     suspend fun addResourcesToCategoryBatch(resourceIds: List<Long>, categoryId: Long): Int {
         if (resourceIds.isEmpty()) return 0
         val existing = getExistingResourceIdsInCategory(categoryId, resourceIds).toSet()
-        val toAdd = resourceIds.filter { it !in existing }
-        if (toAdd.isEmpty()) return 0
-
         var minSort = getMinSortOrderForCategory(categoryId) ?: 0
         val now = System.currentTimeMillis()
-        for (resId in toAdd) {
+
+        for (resId in resourceIds) {
             minSort--
-            addResourceToCategory(ResourceCategoryEntity(
-                resourceId = resId,
-                categoryId = categoryId,
-                sortOrder = minSort,
-                addedAt = now
-            ))
+            if (resId in existing) {
+                // 已存在于该分类中的图片（重复导入命中），更新其分类内排序到最前
+                updateSortOrder(resId, categoryId, minSort)
+            } else {
+                // 新加入该分类的图片，以最前排序插入
+                addResourceToCategory(ResourceCategoryEntity(
+                    resourceId = resId,
+                    categoryId = categoryId,
+                    sortOrder = minSort,
+                    addedAt = now
+                ))
+            }
         }
-        return toAdd.size
+        return resourceIds.size
     }
 
     @Transaction

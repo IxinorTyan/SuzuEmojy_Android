@@ -57,4 +57,16 @@
         android:textAlignment="center"
         android:layout_marginTop="16dp" />
 
+    <TextView
+        android:id="@+id/tvViewDetailAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="查看重复与失败详情 >"
+        android:textSize="14sp"
+        android:textColor="#0078D4"
+        android:textStyle="bold"
+        android:padding="8dp"
+        android:layout_marginTop="6dp"
+        android:visibility="gone" />
+
 </LinearLayout>

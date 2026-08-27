@@ -24,6 +24,10 @@ object FloatingBallConfig {
     const val KEY_SHOW_ONLY_WITH_IME = "floating_ball_show_only_with_ime"
     const val KEY_IMAGE_RESOURCE_ID = "floating_ball_image_resource_id"
     const val KEY_NOTIFY_WHEN_A11Y_DISABLED = "notify_when_a11y_disabled"
+    const val KEY_BALL_POS_X = "floating_ball_pos_x"
+    const val KEY_BALL_POS_Y = "floating_ball_pos_y"
+    const val DEFAULT_BALL_POS_X = 100
+    const val DEFAULT_BALL_POS_Y = 300
 
     fun isBallEnabled(context: Context): Boolean {
         val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
@@ -115,6 +119,21 @@ object FloatingBallConfig {
         context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
             .edit()
             .putInt(KEY_ANIM_DURATION_MS, clamped)
+            .apply()
+    }
+
+    fun getBallPosition(context: Context): Pair<Int, Int> {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        val x = sp.getInt(KEY_BALL_POS_X, DEFAULT_BALL_POS_X)
+        val y = sp.getInt(KEY_BALL_POS_Y, DEFAULT_BALL_POS_Y)
+        return Pair(x, y)
+    }
+
+    fun saveBallPosition(context: Context, x: Int, y: Int) {
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_BALL_POS_X, x)
+            .putInt(KEY_BALL_POS_Y, y)
             .apply()
     }
 }

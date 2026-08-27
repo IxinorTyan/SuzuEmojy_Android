@@ -11,6 +11,8 @@ import android.view.View
 import android.widget.EditText
 import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.core.widget.ImageViewCompat
 import androidx.activity.OnBackPressedCallback
 import com.suzu.test.resource.export.ResourceExportHelper
 import androidx.activity.result.contract.ActivityResultContracts
@@ -249,13 +251,13 @@ class LibraryActivity : AppCompatActivity() {
             viewModel.clearFilterState()
             binding.flFilterContainer.visibility = View.GONE
             binding.btnImport.visibility = View.GONE
-            binding.btnToggleSelectMode.text = "退出"
+            binding.btnToggleSelectMode.visibility = View.GONE
             binding.tvSortingModeHint.visibility = View.VISIBLE
         } else {
             dragTouchListener.cancelTimer()
             binding.flFilterContainer.visibility = View.VISIBLE
             binding.btnImport.visibility = if (!isSelectionMode) View.VISIBLE else View.GONE
-            binding.btnToggleSelectMode.text = "多选"
+            binding.btnToggleSelectMode.visibility = View.VISIBLE
             binding.tvSortingModeHint.visibility = View.GONE
         }
     }
@@ -417,7 +419,8 @@ class LibraryActivity : AppCompatActivity() {
             selectedIds.clear()
         }
 
-        binding.btnToggleSelectMode.text = if (enabled) "退出" else "多选"
+        binding.btnToggleSelectMode.isSelected = enabled
+
         binding.btnImport.visibility = if (!enabled && !isSortingMode) View.VISIBLE else View.GONE
         binding.llBatchActionBar.visibility = if (enabled) View.VISIBLE else View.GONE
 
@@ -726,7 +729,19 @@ class LibraryActivity : AppCompatActivity() {
                         val query = viewModel.searchQuery.value
                         val filter = viewModel.filterState.value
 
-                        binding.tvHeaderStats.text = if (selection == "ALL") "资源库共 ${list.size} 张" else "分类下共 ${list.size} 张"
+                        val title = if (selection == "ALL") {
+                            "资源库"
+                        } else {
+                            val catId = selection.toLongOrNull()
+                            if (catId != null) {
+                                categoryController.getCategoryName(catId) ?: "分类"
+                            } else {
+                                "分类"
+                            }
+                        }
+                        binding.tvTitle.text = title
+                        binding.tvCount.text = "共 ${list.size} 张"
+
                         binding.tvEmptyHint.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
                         binding.tvEmptyHint.text = when {
                             list.isNotEmpty() -> ""

@@ -7,7 +7,10 @@ import android.view.View
 import android.widget.SeekBar
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.collectLatest
 import com.bumptech.glide.Glide
 import com.suzu.test.R
 import com.suzu.test.databinding.ActivitySettingsFloatingBinding
@@ -49,10 +52,22 @@ class SettingsFloatingActivity : AppCompatActivity() {
         setupFloatingAdjusters()
         setupAppFilter()
         setupCustomImageActions()
+        observeA11yState()
+    }
+
+    private fun observeA11yState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.collectLatest {
+                    checkA11yStatus()
+                }
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
+        com.suzu.test.accessibility.AccessibilityStateMonitor.refresh()
         binding.swBallMasterSwitch.isChecked = FloatingBallConfig.isBallEnabled(this)
         binding.swShowOnlyWithIme.isChecked = FloatingBallConfig.isShowOnlyWithImeEnabled(this)
         checkA11yStatus()
@@ -76,7 +91,7 @@ class SettingsFloatingActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
-                if (!com.suzu.test.accessibility.TestAccessibilityService.isAlive()) {
+                if (!com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.value) {
                     binding.swBallMasterSwitch.isChecked = false
                     android.widget.Toast.makeText(this, "悬浮球需要开启无障碍服务", android.widget.Toast.LENGTH_SHORT).show()
                     val intent = Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
@@ -140,8 +155,8 @@ class SettingsFloatingActivity : AppCompatActivity() {
     }
 
     private fun checkA11yStatus() {
-        val isA11yAlive = com.suzu.test.accessibility.TestAccessibilityService.isAlive()
-        binding.tvA11yWarning.visibility = if (isA11yAlive) View.GONE else View.VISIBLE
+        val isA11yEnabled = com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.value
+        binding.tvA11yWarning.visibility = if (isA11yEnabled) View.GONE else View.VISIBLE
     }
 
     private fun setupAppFilter() {

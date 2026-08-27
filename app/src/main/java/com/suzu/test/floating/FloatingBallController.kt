@@ -71,7 +71,16 @@ class FloatingBallController(private val context: Context) {
         imeVisible = TestAccessibilityService.instance?.isImeVisibleNow() ?: true
         cleanLegacyFilterConfigOnce()
         applyBallImage()
+        observeImeVisibilityBus()
         evaluateVisibility()
+    }
+
+    private fun observeImeVisibilityBus() {
+        controllerScope?.launch {
+            ImeVisibilityBus.isImeVisible.collect { isVisible ->
+                onImeVisibilityChanged(isVisible)
+            }
+        }
     }
 
     fun detach() {
@@ -145,8 +154,23 @@ class FloatingBallController(private val context: Context) {
                 evaluateVisibility()
             } else {
                 mainHandler.removeCallbacks(hideRunnable)
-                mainHandler.postDelayed(hideRunnable, 400L)
+                // 收起防抖从 400ms 缩短为 150ms，显著提升灵敏度且防止焦点切换闪烁
+                mainHandler.postDelayed(hideRunnable, 150L)
             }
+        }
+    }
+
+    fun onScreenConfigurationChanged() {
+        val fView = floatingView ?: return
+        val params = layoutParams ?: return
+        val wm = windowManager ?: return
+        clampPosition(params)
+        FloatingBallConfig.saveBallPosition(context, params.x, params.y)
+        try {
+            wm.updateViewLayout(fView, params)
+            TestLog.i(MODULE, "屏幕旋转后已重新限制悬浮球坐标: (${params.x}, ${params.y})")
+        } catch (e: Exception) {
+            TestLog.e(MODULE, "onScreenConfigurationChanged updateViewLayout 异常: ${e.message}", e)
         }
     }
 
@@ -344,6 +368,7 @@ class FloatingBallController(private val context: Context) {
         val sizeDp = FloatingBallConfig.getSizeDp(context)
         val sizePx = (sizeDp * density).toInt()
 
+        val (savedX, savedY) = FloatingBallConfig.getBallPosition(context)
         val params = WindowManager.LayoutParams(
             sizePx,
             sizePx,
@@ -352,8 +377,8 @@ class FloatingBallController(private val context: Context) {
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = 100
-            y = 300
+            x = savedX
+            y = savedY
         }
         layoutParams = params
 
@@ -364,6 +389,9 @@ class FloatingBallController(private val context: Context) {
 
         try {
             clampPosition(params)
+            if (params.x != savedX || params.y != savedY) {
+                FloatingBallConfig.saveBallPosition(context, params.x, params.y)
+            }
             windowManager?.addView(floatingView, params)
             isBallVisible = true
             TestLog.i(MODULE, "悬浮球常驻挂载到 WindowManager 成功 (x=${params.x}, y=${params.y})")
@@ -406,6 +434,10 @@ class FloatingBallController(private val context: Context) {
                 MotionEvent.ACTION_UP -> {
                     if (isClick) {
                         onFloatingBallClicked()
+                    } else {
+                        // 拖拽结束时持久化保存坐标 (禁止在 ACTION_MOVE 中频繁写盘)
+                        FloatingBallConfig.saveBallPosition(context, params.x, params.y)
+                        TestLog.i(MODULE, "拖拽结束已持久化坐标: (${params.x}, ${params.y})")
                     }
                     true
                 }

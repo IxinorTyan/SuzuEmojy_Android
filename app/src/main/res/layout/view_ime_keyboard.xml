@@ -5,10 +5,11 @@
     android:orientation="vertical"
     android:background="#2B2B2B">
 
-    <!-- 顶部横向滚动分类条 + 右侧固定退出按钮 (等高 56dp) -->
+    <!-- 顶部横向滚动分类条 + 右侧固定退出按钮 (高度由 sizeDp 驱动) -->
     <LinearLayout
+        android:id="@+id/llTabHeaderBar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="#252525"

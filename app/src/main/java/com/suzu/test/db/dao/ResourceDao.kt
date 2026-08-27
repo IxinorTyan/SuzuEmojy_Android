@@ -170,15 +170,25 @@ interface ResourceDao {
     fun getRecentAddedResourcesFlow(limit: Int): Flow<List<ResourceEntity>>
 
     @Query("""
-        SELECT * FROM resources
-        WHERE (:noKw = 0 OR keywords IS NULL OR TRIM(keywords) = '')
+        SELECT r.* FROM resources r
+        WHERE (:noKw = 0 OR r.keywords IS NULL OR TRIM(r.keywords) = '')
           AND (:noCat = 0 OR NOT EXISTS(
-              SELECT 1 FROM resource_categories rc WHERE rc.resource_id = resources.id))
-          AND (:anim = 0 OR (:anim = 1 AND filename LIKE '%.gif')
-                         OR (:anim = 2 AND filename NOT LIKE '%.gif'))
+              SELECT 1 FROM resource_categories rc WHERE rc.resource_id = r.id))
+          AND (:anim = 0 OR (:anim = 1 AND r.filename LIKE '%.gif')
+                         OR (:anim = 2 AND r.filename NOT LIKE '%.gif'))
           AND (:catId = 0 OR EXISTS(
-              SELECT 1 FROM resource_categories rc2 WHERE rc2.resource_id = resources.id AND rc2.category_id = :catId))
-        ORDER BY sort_order ASC, id ASC
+              SELECT 1 FROM resource_categories rc2 WHERE rc2.resource_id = r.id AND rc2.category_id = :catId))
+        ORDER BY
+          CASE WHEN :catId > 0 THEN (SELECT rc.sort_order FROM resource_categories rc
+                WHERE rc.resource_id = r.id AND rc.category_id = :catId)
+               ELSE r.sort_order END IS NULL ASC,
+          CASE WHEN :catId > 0 THEN (SELECT rc.sort_order FROM resource_categories rc
+                WHERE rc.resource_id = r.id AND rc.category_id = :catId)
+               ELSE r.sort_order END ASC,
+          CASE WHEN :catId > 0 THEN (SELECT rc.added_at FROM resource_categories rc
+                WHERE rc.resource_id = r.id AND rc.category_id = :catId)
+               ELSE r.id END DESC,
+          r.id ASC
     """)
     fun getFilteredResourcesFlow(noKw: Int, noCat: Int, anim: Int, catId: Long): Flow<List<ResourceEntity>>
 }

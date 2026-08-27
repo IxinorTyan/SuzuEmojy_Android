@@ -77,6 +77,10 @@ class SettingsAppearanceActivity : AppCompatActivity() {
         binding.sbKeyboardSpan.progress = currentSpan - KeyboardConfig.MIN_SPAN_COUNT
         binding.tvSpanValue.text = "$currentSpan 列"
 
+        val currentTabSize = KeyboardConfig.getTabIconSizeDp(this)
+        binding.sbKeyboardTabSize.progress = currentTabSize - KeyboardConfig.MIN_TAB_ICON_SIZE_DP
+        binding.tvTabSizeValue.text = "$currentTabSize dp"
+
         binding.sbKeyboardHeight.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val heightDp = progress + KeyboardConfig.MIN_GRID_HEIGHT_DP
@@ -97,6 +101,19 @@ class SettingsAppearanceActivity : AppCompatActivity() {
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        binding.sbKeyboardTabSize.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val tabSize = progress + KeyboardConfig.MIN_TAB_ICON_SIZE_DP
+                binding.tvTabSizeValue.text = "$tabSize dp"
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                val tabSize = (seekBar?.progress ?: 0) + KeyboardConfig.MIN_TAB_ICON_SIZE_DP
+                KeyboardConfig.setTabIconSizeDp(this@SettingsAppearanceActivity, tabSize)
+                TestLog.i(MODULE, "已保存分类栏图标大小: $tabSize dp")
+            }
         })
     }
 

@@ -55,4 +55,31 @@ class DatabaseMigrationTest {
         assertEquals(listOf(6L, 5L, 4L, 3L, 2L, 1L), ids)
         assertEquals(listOf(0, 1, 2, 3, 4, 5), sortOrders)
     }
+
+    @Test
+    fun testMigration2To3() {
+        var db = helper.createDatabase(TEST_DB, 2).apply {
+            execSQL("INSERT INTO categories (id, name, sort_order, created_at) VALUES (1, 'cat1', 0, 1000)")
+            execSQL("INSERT INTO resources (id, filename, format, is_animated, sync_key, file_md5, width, height, byte_size, quality_score, use_count, created_at, keywords, sort_order) VALUES (10, 'img1.png', 'PNG', 0, 'k1', 'm1', 100, 100, 1000, 0.0, 0, 1000, '', 5)")
+            execSQL("INSERT INTO resources (id, filename, format, is_animated, sync_key, file_md5, width, height, byte_size, quality_score, use_count, created_at, keywords, sort_order) VALUES (20, 'img2.png', 'PNG', 0, 'k2', 'm2', 100, 100, 1000, 0.0, 0, 2000, '', 2)")
+            execSQL("INSERT INTO resources (id, filename, format, is_animated, sync_key, file_md5, width, height, byte_size, quality_score, use_count, created_at, keywords, sort_order) VALUES (30, 'img3.png', 'PNG', 0, 'k3', 'm3', 100, 100, 1000, 0.0, 0, 3000, '', 8)")
+            // 存量关联数据 (原来 sort_order 可能全部为 0)
+            execSQL("INSERT INTO resource_categories (resource_id, category_id, sort_order, added_at) VALUES (10, 1, 0, 1000)")
+            execSQL("INSERT INTO resource_categories (resource_id, category_id, sort_order, added_at) VALUES (20, 1, 0, 2000)")
+            execSQL("INSERT INTO resource_categories (resource_id, category_id, sort_order, added_at) VALUES (30, 1, 0, 3000)")
+            close()
+        }
+
+        db = helper.runMigrationsAndValidate(TEST_DB, 3, true, SuzuDatabase.MIGRATION_2_3)
+
+        val cursor = db.query("SELECT resource_id, sort_order FROM resource_categories WHERE category_id = 1 ORDER BY sort_order ASC")
+        val pairs = mutableListOf<Pair<Long, Int>>()
+        while (cursor.moveToNext()) {
+            pairs.add(cursor.getLong(0) to cursor.getInt(1))
+        }
+        cursor.close()
+
+        // 原 resources.sort_order 顺序：id=20 (sort_order 2), id=10 (sort_order 5), id=30 (sort_order 8)
+        assertEquals(listOf(20L to 0, 10L to 1, 30L to 2), pairs)
+    }
 }

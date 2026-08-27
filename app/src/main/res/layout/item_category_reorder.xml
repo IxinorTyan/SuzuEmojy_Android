@@ -38,8 +38,8 @@
         android:id="@+id/ivDragHandle"
         android:layout_width="28dp"
         android:layout_height="28dp"
-        android:src="@drawable/ic_keyboard_collapse"
-        android:tint="#888888"
+        android:src="@drawable/ic_reorder_24"
+        android:tint="?attr/colorControlNormal"
         android:contentDescription="拖拽排序" />
 
 </LinearLayout>
