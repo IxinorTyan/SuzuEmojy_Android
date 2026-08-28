@@ -2,22 +2,30 @@ package com.suzu.test.ui.settings
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import android.widget.SeekBar
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.flow.collectLatest
 import com.bumptech.glide.Glide
+import com.google.android.material.shape.RelativeCornerSize
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.suzu.test.R
 import com.suzu.test.databinding.ActivitySettingsFloatingBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.floating.FloatingBallConfig
 import com.suzu.test.log.TestLog
+import com.suzu.test.ui.view.CheckerboardDrawable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -50,6 +58,7 @@ class SettingsFloatingActivity : AppCompatActivity() {
 
         setupMasterSwitch()
         setupFloatingAdjusters()
+        setupShapeSelector()
         setupAppFilter()
         setupCustomImageActions()
         observeA11yState()
@@ -70,8 +79,34 @@ class SettingsFloatingActivity : AppCompatActivity() {
         com.suzu.test.accessibility.AccessibilityStateMonitor.refresh()
         binding.swBallMasterSwitch.isChecked = FloatingBallConfig.isBallEnabled(this)
         binding.swShowOnlyWithIme.isChecked = FloatingBallConfig.isShowOnlyWithImeEnabled(this)
+        updateShapeRadioUI()
         checkA11yStatus()
         updateCustomImageUI()
+    }
+
+    private fun setupShapeSelector() {
+        updateShapeRadioUI()
+        binding.rgBallShape.setOnCheckedChangeListener { _, checkedId ->
+            val targetShape = when (checkedId) {
+                R.id.rbShapeRoundedRect -> FloatingBallConfig.SHAPE_ROUNDED_RECT
+                R.id.rbShapeBorderless -> FloatingBallConfig.SHAPE_BORDERLESS
+                else -> FloatingBallConfig.SHAPE_CIRCLE
+            }
+            FloatingBallConfig.setBallShape(this, targetShape)
+            TestLog.i(MODULE, "修改悬浮球形态: $targetShape")
+            binding.tvBorderlessHint.visibility = if (targetShape == FloatingBallConfig.SHAPE_BORDERLESS) View.VISIBLE else View.GONE
+            updateCustomImageUI()
+        }
+    }
+
+    private fun updateShapeRadioUI() {
+        val currentShape = FloatingBallConfig.getBallShape(this)
+        when (currentShape) {
+            FloatingBallConfig.SHAPE_ROUNDED_RECT -> binding.rbShapeRoundedRect.isChecked = true
+            FloatingBallConfig.SHAPE_BORDERLESS -> binding.rbShapeBorderless.isChecked = true
+            else -> binding.rbShapeCircle.isChecked = true
+        }
+        binding.tvBorderlessHint.visibility = if (currentShape == FloatingBallConfig.SHAPE_BORDERLESS) View.VISIBLE else View.GONE
     }
 
     private fun setupMasterSwitch() {
@@ -120,37 +155,145 @@ class SettingsFloatingActivity : AppCompatActivity() {
 
     private fun updateCustomImageUI() {
         val resourceId = FloatingBallConfig.getImageResourceId(this)
+        val ballShape = FloatingBallConfig.getBallShape(this)
+        val density = resources.displayMetrics.density
+
+        // 1. 设置预览背景（无边框模式使用棋盘格背景以凸显透明度）
+        if (ballShape == FloatingBallConfig.SHAPE_BORDERLESS) {
+            val cellPx = (10 * density).toInt()
+            binding.flPreviewBackground.background = CheckerboardDrawable(cellPx)
+        } else {
+            binding.flPreviewBackground.background = ColorDrawable(Color.parseColor("#F0F0F0"))
+        }
+
+        // 2. 设置 ShapeableImageView 的裁切与 ScaleType
+        when (ballShape) {
+            FloatingBallConfig.SHAPE_ROUNDED_RECT -> {
+                val radiusPx = 12f * density
+                binding.ivPreviewSkin.shapeAppearanceModel = ShapeAppearanceModel.builder()
+                    .setAllCornerSizes(radiusPx)
+                    .build()
+                binding.ivPreviewSkin.scaleType = ImageView.ScaleType.CENTER_CROP
+            }
+            FloatingBallConfig.SHAPE_BORDERLESS -> {
+                binding.ivPreviewSkin.shapeAppearanceModel = ShapeAppearanceModel.builder()
+                    .setAllCornerSizes(0f)
+                    .build()
+                binding.ivPreviewSkin.scaleType = ImageView.ScaleType.FIT_CENTER
+            }
+            else -> { // SHAPE_CIRCLE
+                binding.ivPreviewSkin.shapeAppearanceModel = ShapeAppearanceModel.builder()
+                    .setAllCornerSizes(RelativeCornerSize(0.5f))
+                    .build()
+                binding.ivPreviewSkin.scaleType = ImageView.ScaleType.CENTER_CROP
+            }
+        }
+
+        // 3. 无贴图时的处理
         if (resourceId == null) {
             binding.tvCustomImageStatus.text = "当前外观: 默认纯色球"
             binding.ivPreviewSkin.visibility = View.GONE
-            binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball)
-        } else {
-            binding.tvCustomImageStatus.text = "当前外观: 自定义贴图 (ID=$resourceId)"
-            lifecycleScope.launch {
-                val resource = withContext(Dispatchers.IO) {
-                    try {
-                        val db = DatabaseProvider.getDatabase(this@SettingsFloatingActivity)
-                        db.resourceDao().getById(resourceId)
-                    } catch (e: Exception) {
-                        null
-                    }
-                }
+            binding.ivHitRegionOverlay.visibility = View.GONE
+            when (ballShape) {
+                FloatingBallConfig.SHAPE_ROUNDED_RECT -> binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball_rounded)
+                FloatingBallConfig.SHAPE_BORDERLESS -> binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball_square)
+                else -> binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball)
+            }
+            return
+        }
 
-                val file = if (resource != null) File(filesDir, "resources/${resource.filename}") else null
-                if (file != null && file.exists()) {
-                    binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball)
-                    binding.ivPreviewSkin.visibility = View.VISIBLE
-                    Glide.with(this@SettingsFloatingActivity)
-                        .load(file)
-                        .centerCrop()
-                        .circleCrop()
-                        .into(binding.ivPreviewSkin)
-                } else {
-                    binding.tvCustomImageStatus.text = "当前外观: 默认纯色球"
-                    binding.ivPreviewSkin.visibility = View.GONE
-                    binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball)
+        // 4. 有贴图时的异步加载
+        binding.tvCustomImageStatus.text = "当前外观: 自定义贴图 (ID=$resourceId)"
+        lifecycleScope.launch {
+            val resource = withContext(Dispatchers.IO) {
+                try {
+                    val db = DatabaseProvider.getDatabase(this@SettingsFloatingActivity)
+                    db.resourceDao().getById(resourceId)
+                } catch (e: Exception) {
+                    null
                 }
             }
+
+            val file = if (resource != null) File(filesDir, "resources/${resource.filename}") else null
+            if (file != null && file.exists()) {
+                when (ballShape) {
+                    FloatingBallConfig.SHAPE_BORDERLESS -> binding.flPreviewContainer.background = null
+                    FloatingBallConfig.SHAPE_ROUNDED_RECT -> binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball_rounded)
+                    else -> binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball)
+                }
+
+                binding.ivPreviewSkin.visibility = View.VISIBLE
+                Glide.with(this@SettingsFloatingActivity)
+                    .load(file)
+                    .into(binding.ivPreviewSkin)
+
+                // 无边框模式：生成命中区可视化遮罩（死区半透明压暗，数据源复用首帧 alpha 位图）
+                if (ballShape == FloatingBallConfig.SHAPE_BORDERLESS) {
+                    val overlayBmp = withContext(Dispatchers.IO) {
+                        createHitRegionMask(file.absolutePath)
+                    }
+                    if (overlayBmp != null) {
+                        binding.ivHitRegionOverlay.visibility = View.VISIBLE
+                        binding.ivHitRegionOverlay.setImageBitmap(overlayBmp)
+                    } else {
+                        binding.ivHitRegionOverlay.visibility = View.GONE
+                    }
+                } else {
+                    binding.ivHitRegionOverlay.visibility = View.GONE
+                }
+            } else {
+                binding.tvCustomImageStatus.text = "当前外观: 默认纯色球"
+                binding.ivPreviewSkin.visibility = View.GONE
+                binding.ivHitRegionOverlay.visibility = View.GONE
+                when (ballShape) {
+                    FloatingBallConfig.SHAPE_ROUNDED_RECT -> binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball_rounded)
+                    FloatingBallConfig.SHAPE_BORDERLESS -> binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball_square)
+                    else -> binding.flPreviewContainer.setBackgroundResource(R.drawable.bg_floating_ball)
+                }
+            }
+        }
+    }
+
+    /**
+     * 生成命中区可视化遮罩位图（透明死区半透明压暗，有效命中区完全透明）
+     */
+    private fun createHitRegionMask(filePath: String): Bitmap? {
+        return try {
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeFile(filePath, options)
+            val maxEdge = maxOf(options.outWidth, options.outHeight)
+            var inSampleSize = 1
+            if (maxEdge > 256) {
+                while ((maxEdge / (inSampleSize * 2)) >= 256) {
+                    inSampleSize *= 2
+                }
+            }
+            val decodeOptions = BitmapFactory.Options().apply {
+                this.inSampleSize = inSampleSize
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            }
+            val srcBmp = BitmapFactory.decodeFile(filePath, decodeOptions) ?: return null
+            val maskBmp = Bitmap.createBitmap(srcBmp.width, srcBmp.height, Bitmap.Config.ARGB_8888)
+            val pixels = IntArray(srcBmp.width * srcBmp.height)
+            srcBmp.getPixels(pixels, 0, srcBmp.width, 0, 0, srcBmp.width, srcBmp.height)
+
+            for (i in pixels.indices) {
+                val alpha = Color.alpha(pixels[i])
+                if (alpha < 24) {
+                    // 死区：用半透明黑色 (40% alpha) 压暗展示
+                    pixels[i] = Color.argb(100, 0, 0, 0)
+                } else {
+                    // 有效触发区：完全透明
+                    pixels[i] = Color.TRANSPARENT
+                }
+            }
+            maskBmp.setPixels(pixels, 0, srcBmp.width, 0, 0, srcBmp.width, srcBmp.height)
+            srcBmp.recycle()
+            maskBmp
+        } catch (e: Exception) {
+            null
         }
     }
 

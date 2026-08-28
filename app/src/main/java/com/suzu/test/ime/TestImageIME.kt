@@ -7,6 +7,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.suzu.test.BuildConfig
 import com.suzu.test.accessibility.TestAccessibilityService
 import com.suzu.test.databinding.ViewImeKeyboardBinding
@@ -49,6 +50,7 @@ class TestImageIME : InputMethodService() {
     private var previewPopup: ImagePreviewPopup? = null
     private var loadImagesJob: kotlinx.coroutines.Job? = null
     private var lastLoadedTabKey: String? = null
+    private var isGridClearedOnHidden: Boolean = false
 
     override fun onCreate() {
         super.onCreate()
@@ -151,8 +153,44 @@ class TestImageIME : InputMethodService() {
         EditorInfoDumper.dump(this, info)
 
         val targetTab = tabBar?.getEffectiveTab() ?: "ALL"
+        if (isGridClearedOnHidden) {
+            isGridClearedOnHidden = false
+            imageAdapter.notifyDataSetChanged()
+        }
         if (targetTab != lastLoadedTabKey) {
             loadImagesForTab(targetTab)
+        }
+    }
+
+    override fun onWindowShown() {
+        super.onWindowShown()
+        if (isGridClearedOnHidden) {
+            isGridClearedOnHidden = false
+            imageAdapter.notifyDataSetChanged()
+        }
+    }
+
+    override fun onWindowHidden() {
+        super.onWindowHidden()
+        clearVisibleGridViews()
+    }
+
+    private fun clearVisibleGridViews() {
+        val rv = binding?.rvImageGrid ?: return
+        val glm = gridLayoutManager ?: return
+        val firstPos = glm.findFirstVisibleItemPosition()
+        val lastPos = glm.findLastVisibleItemPosition()
+        if (firstPos != RecyclerView.NO_POSITION && lastPos != RecyclerView.NO_POSITION && firstPos <= lastPos) {
+            for (pos in firstPos..lastPos) {
+                val holder = rv.findViewHolderForAdapterPosition(pos)
+                if (holder is ImageAdapter.ImageViewHolder) {
+                    val iv = holder.itemView.findViewById<android.widget.ImageView>(com.suzu.test.R.id.ivThumbnail)
+                    if (iv != null) {
+                        Glide.with(this).clear(iv)
+                    }
+                }
+            }
+            isGridClearedOnHidden = true
         }
     }
 

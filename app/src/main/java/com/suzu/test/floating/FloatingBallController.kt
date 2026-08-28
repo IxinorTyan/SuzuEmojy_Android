@@ -3,8 +3,13 @@ package com.suzu.test.floating
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.PixelFormat
 import android.graphics.Point
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -14,7 +19,10 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.widget.ImageView
 import com.bumptech.glide.Glide
+import com.google.android.material.shape.RelativeCornerSize
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.suzu.test.R
 import com.suzu.test.accessibility.TestAccessibilityService
 import com.suzu.test.databinding.LayoutFloatingBallBinding
@@ -33,6 +41,8 @@ class FloatingBallController(private val context: Context) {
 
     companion object {
         private const val MODULE = "FloatingBallController"
+        private const val MAX_HIT_BITMAP_EDGE = 256
+        private const val ALPHA_THRESHOLD = 24
     }
 
     private var windowManager: WindowManager? = null
@@ -48,6 +58,11 @@ class FloatingBallController(private val context: Context) {
     private var imeVisible: Boolean = true
     private var imeSwitchGuardUntil: Long = 0L
     private var isAttached: Boolean = false
+
+    // 命中检测位图（仅无边框模式且有贴图时启用，GIF取首帧，内存控制在数百KB内）
+    // 说明：由于跨窗口点击穿透受 Android 窗口分发机制限制，此位图用于「防止透明区域误触发悬浮球」
+    @Volatile
+    private var hitTestBitmap: Bitmap? = null
 
     private val hideRunnable = Runnable {
         imeVisible = false
@@ -91,6 +106,8 @@ class FloatingBallController(private val context: Context) {
         controllerScope = null
         mainHandler.removeCallbacksAndMessages(null)
 
+        releaseHitTestBitmap()
+
         spListener?.let {
             val sp = context.getSharedPreferences(FloatingBallConfig.SP_NAME, Context.MODE_PRIVATE)
             sp.unregisterOnSharedPreferenceChangeListener(it)
@@ -110,6 +127,11 @@ class FloatingBallController(private val context: Context) {
         windowManager = null
     }
 
+    private fun releaseHitTestBitmap() {
+        hitTestBitmap?.recycle()
+        hitTestBitmap = null
+    }
+
     private fun cleanLegacyFilterConfigOnce() {
         val sp = context.getSharedPreferences(FloatingBallConfig.SP_NAME, Context.MODE_PRIVATE)
         if (!sp.getBoolean("sp_cleanup_v2", false)) {
@@ -127,6 +149,10 @@ class FloatingBallController(private val context: Context) {
             when (key) {
                 FloatingBallConfig.KEY_BALL_SIZE_DP, FloatingBallConfig.KEY_BALL_ALPHA -> {
                     applyConfigToView()
+                }
+                FloatingBallConfig.KEY_BALL_SHAPE -> {
+                    // 形状变更触发完整样式与贴图刷新
+                    applyBallImage()
                 }
                 FloatingBallConfig.KEY_IMAGE_RESOURCE_ID -> {
                     applyBallImage()
@@ -154,7 +180,6 @@ class FloatingBallController(private val context: Context) {
                 evaluateVisibility()
             } else {
                 mainHandler.removeCallbacks(hideRunnable)
-                // 收起防抖从 400ms 缩短为 150ms，显著提升灵敏度且防止焦点切换闪烁
                 mainHandler.postDelayed(hideRunnable, 150L)
             }
         }
@@ -274,13 +299,10 @@ class FloatingBallController(private val context: Context) {
     }
 
     private fun determineShouldShow(): Boolean {
-        // 本 App 内始终显示
         if (lastForegroundPackage == context.packageName) return true
-
         if (!FloatingBallConfig.isShowOnlyWithImeEnabled(context)) return true
-
         val accOk = TestAccessibilityService.instance?.imeDetectionAvailable ?: false
-        return if (!accOk) true else imeVisible // fail-open：检测不可用则显示
+        return if (!accOk) true else imeVisible
     }
 
     private fun applyConfigToView() {
@@ -309,16 +331,51 @@ class FloatingBallController(private val context: Context) {
         }
     }
 
+    /**
+     * 根据形状配置与资源 ID 应用悬浮球样式与贴图
+     */
     private fun applyBallImage() {
         val binding = ballBinding ?: return
         val resourceId = FloatingBallConfig.getImageResourceId(context)
+        val ballShape = FloatingBallConfig.getBallShape(context)
+        val density = context.resources.displayMetrics.density
 
+        // 1. 配置 ShapeableImageView 的 ShapeAppearance 与 ScaleType
+        when (ballShape) {
+            FloatingBallConfig.SHAPE_ROUNDED_RECT -> {
+                val radiusPx = 12f * density
+                binding.ivSkinIcon.shapeAppearanceModel = ShapeAppearanceModel.builder()
+                    .setAllCornerSizes(radiusPx)
+                    .build()
+                binding.ivSkinIcon.scaleType = ImageView.ScaleType.CENTER_CROP
+            }
+            FloatingBallConfig.SHAPE_BORDERLESS -> {
+                binding.ivSkinIcon.shapeAppearanceModel = ShapeAppearanceModel.builder()
+                    .setAllCornerSizes(0f)
+                    .build()
+                binding.ivSkinIcon.scaleType = ImageView.ScaleType.FIT_CENTER
+            }
+            else -> { // SHAPE_CIRCLE
+                binding.ivSkinIcon.shapeAppearanceModel = ShapeAppearanceModel.builder()
+                    .setAllCornerSizes(RelativeCornerSize(0.5f))
+                    .build()
+                binding.ivSkinIcon.scaleType = ImageView.ScaleType.CENTER_CROP
+            }
+        }
+
+        // 2. 无贴图时的处理
         if (resourceId == null) {
+            releaseHitTestBitmap()
             binding.ivSkinIcon.visibility = View.GONE
-            binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball)
+            when (ballShape) {
+                FloatingBallConfig.SHAPE_ROUNDED_RECT -> binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball_rounded)
+                FloatingBallConfig.SHAPE_BORDERLESS -> binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball_square)
+                else -> binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball)
+            }
             return
         }
 
+        // 3. 有贴图时的异步加载
         controllerScope?.launch {
             val resource = withContext(Dispatchers.IO) {
                 try {
@@ -331,20 +388,71 @@ class FloatingBallController(private val context: Context) {
 
             val file = if (resource != null) File(context.filesDir, "resources/${resource.filename}") else null
             if (file != null && file.exists()) {
-                binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball)
+                // 设置根布局背景
+                when (ballShape) {
+                    FloatingBallConfig.SHAPE_BORDERLESS -> binding.floatingRoot.background = null
+                    FloatingBallConfig.SHAPE_ROUNDED_RECT -> binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball_rounded)
+                    else -> binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball)
+                }
+
                 binding.ivSkinIcon.visibility = View.VISIBLE
+
+                // Glide 统一只负责加载，由 ShapeableImageView 接管裁切
                 Glide.with(context)
                     .load(file)
-                    .centerCrop()
-                    .circleCrop()
                     .into(binding.ivSkinIcon)
-                TestLog.i(MODULE, "已加载悬浮球自定义贴图: ID=$resourceId, file=${file.name}")
+
+                // 无边框模式下异步解码低分辨率位图供防误触判定
+                if (ballShape == FloatingBallConfig.SHAPE_BORDERLESS) {
+                    val decodedBmp = withContext(Dispatchers.IO) {
+                        decodeSampledHitBitmap(file.absolutePath)
+                    }
+                    releaseHitTestBitmap()
+                    hitTestBitmap = decodedBmp
+                    TestLog.i(MODULE, "已就绪无边框防误触位图: size=${decodedBmp?.width}x${decodedBmp?.height}")
+                } else {
+                    releaseHitTestBitmap()
+                }
+
+                TestLog.i(MODULE, "已加载悬浮球贴图: ID=$resourceId, shape=$ballShape, file=${file.name}")
             } else {
                 TestLog.w(MODULE, "贴图资源不存在或已被删除，自动回退默认纯色球: ID=$resourceId")
                 FloatingBallConfig.setImageResourceId(context, null)
+                releaseHitTestBitmap()
                 binding.ivSkinIcon.visibility = View.GONE
-                binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball)
+                when (ballShape) {
+                    FloatingBallConfig.SHAPE_ROUNDED_RECT -> binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball_rounded)
+                    FloatingBallConfig.SHAPE_BORDERLESS -> binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball_square)
+                    else -> binding.floatingRoot.setBackgroundResource(R.drawable.bg_floating_ball)
+                }
             }
+        }
+    }
+
+    /**
+     * 降采样解码用于防误触判定的 ARGB_8888 首帧位图 (最大边 ≤ 256px，常驻内存仅数十KB)
+     */
+    private fun decodeSampledHitBitmap(filePath: String): Bitmap? {
+        return try {
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeFile(filePath, options)
+            val maxEdge = maxOf(options.outWidth, options.outHeight)
+            var inSampleSize = 1
+            if (maxEdge > MAX_HIT_BITMAP_EDGE) {
+                while ((maxEdge / (inSampleSize * 2)) >= MAX_HIT_BITMAP_EDGE) {
+                    inSampleSize *= 2
+                }
+            }
+            val decodeOptions = BitmapFactory.Options().apply {
+                this.inSampleSize = inSampleSize
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            }
+            BitmapFactory.decodeFile(filePath, decodeOptions)
+        } catch (e: Exception) {
+            TestLog.w(MODULE, "decodeSampledHitBitmap 异常: ${e.message}")
+            null
         }
     }
 
@@ -400,6 +508,45 @@ class FloatingBallController(private val context: Context) {
         }
     }
 
+    /**
+     * 判断当前触摸点在 ImageView 内部是否落在有效不透明区域
+     */
+    private fun isHitOpaqueRegion(touchX: Float, touchY: Float): Boolean {
+        val binding = ballBinding ?: return true
+        val bmp = hitTestBitmap ?: return true // 无贴图或解码未就绪，安全守卫返回 true
+        val drawable = binding.ivSkinIcon.drawable ?: return true
+
+        val drawableWidth = drawable.intrinsicWidth
+        val drawableHeight = drawable.intrinsicHeight
+        if (drawableWidth <= 0 || drawableHeight <= 0) return true
+
+        // 利用 ImageView 的逆矩阵将 View 坐标映射为 Drawable 原始坐标
+        val inverseMatrix = Matrix()
+        if (!binding.ivSkinIcon.imageMatrix.invert(inverseMatrix)) {
+            return true
+        }
+
+        val pts = floatArrayOf(touchX, touchY)
+        inverseMatrix.mapPoints(pts)
+        val rawX = pts[0]
+        val rawY = pts[1]
+
+        // 检查是否在 Drawable 图像有效边界内
+        if (rawX < 0 || rawX >= drawableWidth || rawY < 0 || rawY >= drawableHeight) {
+            return false
+        }
+
+        // 映射到降采样判定位图的像素坐标
+        val bmpX = ((rawX / drawableWidth) * bmp.width).toInt().coerceIn(0, bmp.width - 1)
+        val bmpY = ((rawY / drawableHeight) * bmp.height).toInt().coerceIn(0, bmp.height - 1)
+
+        val pixel = bmp.getPixel(bmpX, bmpY)
+        val alpha = Color.alpha(pixel)
+
+        // alpha < 24 判定为透明死区，返回 false 拦截触发
+        return alpha >= ALPHA_THRESHOLD
+    }
+
     private fun setupTouchListener(view: View) {
         val clickThreshold = 10 * context.resources.displayMetrics.density
         var initialX = 0
@@ -407,11 +554,22 @@ class FloatingBallController(private val context: Context) {
         var initialTouchX = 0f
         var initialTouchY = 0f
         var isClick = true
+        var isDownConsumed = false
 
         view.setOnTouchListener { _, event ->
             val params = layoutParams ?: return@setOnTouchListener false
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    val ballShape = FloatingBallConfig.getBallShape(context)
+                    if (ballShape == FloatingBallConfig.SHAPE_BORDERLESS && FloatingBallConfig.getImageResourceId(context) != null) {
+                        if (!isHitOpaqueRegion(event.x, event.y)) {
+                            // 透明区域防误触拦截：ACTION_DOWN 直接返回 false，不武装拖拽与点击状态机
+                            isDownConsumed = false
+                            return@setOnTouchListener false
+                        }
+                    }
+
+                    isDownConsumed = true
                     initialX = params.x
                     initialY = params.y
                     initialTouchX = event.rawX
@@ -420,6 +578,7 @@ class FloatingBallController(private val context: Context) {
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
+                    if (!isDownConsumed) return@setOnTouchListener false
                     val dx = event.rawX - initialTouchX
                     val dy = event.rawY - initialTouchY
                     if (abs(dx) > clickThreshold || abs(dy) > clickThreshold) {
@@ -432,20 +591,26 @@ class FloatingBallController(private val context: Context) {
                     true
                 }
                 MotionEvent.ACTION_UP -> {
+                    if (!isDownConsumed) return@setOnTouchListener false
+                    isDownConsumed = false
                     if (isClick) {
                         onFloatingBallClicked()
                     } else {
-                        // 拖拽结束时持久化保存坐标 (禁止在 ACTION_MOVE 中频繁写盘)
                         FloatingBallConfig.saveBallPosition(context, params.x, params.y)
                         TestLog.i(MODULE, "拖拽结束已持久化坐标: (${params.x}, ${params.y})")
                     }
                     true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    isDownConsumed = false
+                    false
                 }
                 else -> false
             }
         }
 
         view.setOnLongClickListener {
+            if (!isDownConsumed) return@setOnLongClickListener false
             TestLog.i(MODULE, "长按悬浮球，隐藏悬浮球并关闭配置开关")
             FloatingBallConfig.setBallEnabled(context, false)
             true

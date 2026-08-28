@@ -109,6 +109,31 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnPermStorageAction.setOnClickListener {
             requestPermissionLauncher.launch(PermissionChecker.getStoragePermissions())
         }
+
+        binding.btnPermBatteryAction.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                try {
+                    val intent = Intent(
+                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:$packageName")
+                    )
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    try {
+                        startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                    } catch (ignored: Exception) {}
+                }
+            }
+        }
+
+        binding.btnPermAutoStartAction.setOnClickListener {
+            val opened = com.suzu.test.util.AutoStartHelper.openAutoStartSettings(this)
+            if (opened) {
+                binding.tvPermAutoStartSub.text = "开启后返回即可"
+            } else {
+                binding.tvPermAutoStartSub.text = "请前往系统「设置 - 应用管理」中开启自启动权限"
+            }
+        }
     }
 
     private fun setupA11ySwitch() {
@@ -138,6 +163,18 @@ class SettingsActivity : AppCompatActivity() {
         val hasStorage = PermissionChecker.hasStoragePermission(this)
         binding.tvPermStorageStatus.text = "相册读取: " + if (hasStorage) "已授权 ✓" else "未授权"
         binding.btnPermStorageAction.visibility = if (hasStorage) View.GONE else View.VISIBLE
+
+        // 5. 忽略电池优化
+        val isBatteryIgnored = PermissionChecker.isIgnoringBatteryOptimizations(this)
+        binding.tvPermBatteryStatus.text = "忽略电池优化: " + if (isBatteryIgnored) "已开启 ✓" else "未开启"
+        binding.btnPermBatteryAction.visibility = if (isBatteryIgnored) View.GONE else View.VISIBLE
+
+        // 6. 自启动 (机型判断，未识别或不支持则整行隐藏)
+        if (com.suzu.test.util.AutoStartHelper.isAutoStartSupported()) {
+            binding.layoutPermAutoStart.visibility = View.VISIBLE
+        } else {
+            binding.layoutPermAutoStart.visibility = View.GONE
+        }
     }
 
     private fun showLogViewerDialog() {

@@ -29,6 +29,26 @@ object FloatingBallConfig {
     const val DEFAULT_BALL_POS_X = 100
     const val DEFAULT_BALL_POS_Y = 300
 
+    const val KEY_BALL_SHAPE = "floating_ball_shape"
+    const val SHAPE_CIRCLE = 0
+    const val SHAPE_ROUNDED_RECT = 1
+    const val SHAPE_BORDERLESS = 2
+    const val DEFAULT_BALL_SHAPE = SHAPE_CIRCLE
+
+    fun getBallShape(context: Context): Int {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getInt(KEY_BALL_SHAPE, DEFAULT_BALL_SHAPE)
+            .coerceIn(SHAPE_CIRCLE, SHAPE_BORDERLESS)
+    }
+
+    fun setBallShape(context: Context, shape: Int) {
+        val clamped = shape.coerceIn(SHAPE_CIRCLE, SHAPE_BORDERLESS)
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_BALL_SHAPE, clamped)
+            .apply()
+    }
+
     fun isBallEnabled(context: Context): Boolean {
         val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
         return sp.getBoolean(KEY_BALL_ENABLED, false)

@@ -76,7 +76,6 @@ class MediaPickerAdapter(
         fun bind(item: PickerMediaItem) {
             Glide.with(binding.ivThumbnail)
                 .load(item.uri)
-                .thumbnail(0.25f)
                 .override(300, 300)
                 .centerCrop()
                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)

@@ -5,13 +5,12 @@
     android:layout_height="56dp"
     android:background="@drawable/bg_floating_ball">
 
-    <!-- 悬浮球贴图 ImageView，默认隐藏，由 Glide 的 circleCrop 完全接管缩放与裁切 -->
-    <ImageView
+    <!-- 悬浮球贴图 ShapeableImageView，统一接管圆形、圆角矩形与无边框形态裁切 -->
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/ivSkinIcon"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:scaleType="fitXY"
         android:visibility="gone"
         android:contentDescription="悬浮球图标" />
 

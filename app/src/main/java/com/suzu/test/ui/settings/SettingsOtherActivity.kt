@@ -19,6 +19,7 @@ class SettingsOtherActivity : AppCompatActivity() {
         private const val SP_NAME = "app_settings"
         private const val KEY_RECENT_LIMIT = "recent_history_limit"
         private const val DEFAULT_LIMIT = 40
+        private const val KEY_CONVERT_PNG_TO_GIF = "convert_png_to_gif_on_send"
     }
 
     private lateinit var binding: ActivitySettingsOtherBinding
@@ -31,6 +32,13 @@ class SettingsOtherActivity : AppCompatActivity() {
         val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
         val currentLimit = sp.getInt(KEY_RECENT_LIMIT, DEFAULT_LIMIT)
         binding.etRecentLimit.setText(currentLimit.toString())
+
+        val isConvertPngToGif = sp.getBoolean(KEY_CONVERT_PNG_TO_GIF, false)
+        binding.switchConvertPngToGif.isChecked = isConvertPngToGif
+        binding.switchConvertPngToGif.setOnCheckedChangeListener { _, isChecked ->
+            sp.edit().putBoolean(KEY_CONVERT_PNG_TO_GIF, isChecked).apply()
+            TestLog.i(MODULE, "已更新静态 PNG 转 GIF 开关: $isChecked")
+        }
 
         setupCacheCleaner()
 

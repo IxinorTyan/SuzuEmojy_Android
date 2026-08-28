@@ -55,6 +55,7 @@ class RecentThumbAdapter(
             val file = File(context.filesDir, "resources/${resource.filename}")
 
             Glide.with(binding.ivRecentThumb)
+                .asBitmap()
                 .load(file)
                 .override(200, 200)
                 .centerCrop()
