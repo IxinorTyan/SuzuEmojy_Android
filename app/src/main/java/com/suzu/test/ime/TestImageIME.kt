@@ -36,7 +36,12 @@ class TestImageIME : InputMethodService() {
     companion object {
         private const val MODULE = "SuzuEmojy"
         private const val ANDROIDX_CORE_VERSION = "1.12.0"
-        private val QQ_FAMILY = setOf("com.tencent.mobileqq", "com.tencent.tim", "com.tencent.qqlite")
+        private val H1B_DIRECT_FAMILY = setOf(
+            "com.tencent.mobileqq",
+            "com.tencent.tim",
+            "com.tencent.qqlite",
+            "com.tencent.mm"
+        )
     }
 
     private var binding: ViewImeKeyboardBinding? = null
@@ -127,11 +132,11 @@ class TestImageIME : InputMethodService() {
 
         val onSuccessCallback: () -> Unit = { updateUsageStatsInBackground(item) }
 
-        if (targetPkg in QQ_FAMILY) {
-            TestLog.i(MODULE, "智能路由 -> 命中 QQ 家族 ($targetPkg)，走 H1β 私有协议直发")
+        if (targetPkg in H1B_DIRECT_FAMILY) {
+            TestLog.i(MODULE, "智能路由 -> 命中 H1β 直发家族 ($targetPkg)，走 H1β 私有协议直发")
             imageSender.executeH1b(item, targetPkg, { currentInputConnection }, onSuccessCallback)
         } else {
-            TestLog.i(MODULE, "智能路由 -> 命中 微信及其他社交应用 ($targetPkg)，走剪贴板注入与标准粘贴")
+            TestLog.i(MODULE, "智能路由 -> 非 H1β 直发目标 ($targetPkg)，走剪贴板注入与标准粘贴")
             imageSender.executeE(item, targetPkg, { currentInputConnection }, onSuccessCallback)
         }
     }
