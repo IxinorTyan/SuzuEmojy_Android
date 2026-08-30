@@ -77,6 +77,14 @@
         android:textColor="#666666"
         android:layout_marginTop="24dp" />
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_marginTop="16dp"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/tvSummary"
         android:layout_width="match_parent"

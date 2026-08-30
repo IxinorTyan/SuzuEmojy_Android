@@ -29,6 +29,7 @@ import com.suzu.test.db.SuzuDatabase
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.ResourceImportService
+import com.suzu.test.resource.importpkg.PackageImportStage
 import com.suzu.test.resource.importpkg.ResourcePackageImportService
 import com.suzu.test.ui.picker.MediaPickerActivity
 import com.suzu.test.ui.picker.PickerResultStore
@@ -429,11 +430,41 @@ class ImportActivity : AppCompatActivity() {
 
     private fun handlePackageZipSelected(uri: Uri) {
         setButtonsEnabled(false)
-        binding.tvProgress.text = "正在导入 zip 资源包..."
+        binding.progressBar.visibility = android.view.View.VISIBLE
+        binding.progressBar.isIndeterminate = true
+        binding.tvProgress.text = "准备导入 zip 资源包..."
         binding.tvSummary.text = ""
         lifecycleScope.launch {
             try {
-                val result = packageImportService.importFromZip(uri)
+                val result = packageImportService.importFromZip(uri) { stage, progress, total ->
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        binding.progressBar.visibility = android.view.View.VISIBLE
+                        when (stage) {
+                            PackageImportStage.COPYING -> {
+                                if (total > 0) {
+                                    binding.progressBar.isIndeterminate = false
+                                    binding.progressBar.max = 100
+                                    binding.progressBar.progress = (progress * 100 / total).toInt()
+                                    binding.tvProgress.text = "正在读取资源包: ${progress * 100 / total}%"
+                                } else {
+                                    binding.progressBar.isIndeterminate = true
+                                    binding.tvProgress.text = "正在读取资源包..."
+                                }
+                            }
+                            PackageImportStage.PARSING -> {
+                                binding.progressBar.isIndeterminate = true
+                                binding.tvProgress.text = "正在解析配置..."
+                            }
+                            PackageImportStage.IMPORTING -> {
+                                binding.progressBar.isIndeterminate = false
+                                binding.progressBar.max = total.toInt()
+                                binding.progressBar.progress = progress.toInt()
+                                binding.tvProgress.text = "正在导入: $progress / $total"
+                            }
+                        }
+                    }
+                }
                 val aggregateCards = buildAggregateCards(result.records)
                 ImportResultHolder.records = result.records
                 ImportResultHolder.aggregateCards = aggregateCards
@@ -445,6 +476,7 @@ class ImportActivity : AppCompatActivity() {
                 binding.tvProgress.text = "zip 资源包导入失败"
                 Toast.makeText(this@ImportActivity, e.message ?: "资源包导入失败", Toast.LENGTH_LONG).show()
             } finally {
+                binding.progressBar.visibility = android.view.View.GONE
                 setButtonsEnabled(true)
             }
         }
@@ -465,17 +497,80 @@ class ImportActivity : AppCompatActivity() {
             val eligibleUris = mutableListOf<Uri>()
             val itemRecords = mutableListOf<ImportItemRecord>()
 
-            val (attachedCategoryNames, presetDeleted) = withContext(Dispatchers.IO) {
-                distinctSourceUris.forEachIndexed { index, uri ->
-                    withContext(Dispatchers.Main) {
-                        binding.tvProgress.text = "正在导入 ${index + 1}/$total"
-                    }
+            binding.progressBar.visibility = android.view.View.VISIBLE
+            binding.progressBar.isIndeterminate = false
+            binding.progressBar.max = total
+            binding.progressBar.progress = 0
 
-                    try {
-                        val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                        if (bytes == null || bytes.isEmpty()) {
-                            TestLog.e(MODULE, "读取 URI 失败或文件为空: $uri")
+            try {
+                val (attachedCategoryNames, presetDeleted) = withContext(Dispatchers.IO) {
+                    distinctSourceUris.forEachIndexed { index, uri ->
+                        withContext(Dispatchers.Main) {
+                            binding.progressBar.progress = index
+                            binding.tvProgress.text = "正在导入 ${index + 1}/$total"
+                        }
+
+                        try {
+                            val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                            if (bytes == null || bytes.isEmpty()) {
+                                TestLog.e(MODULE, "读取 URI 失败或文件为空: $uri")
+                                failCount++
+                                itemRecords.add(
+                                    ImportItemRecord(
+                                        sourceUri = uri,
+                                        type = ImportItemType.FAILED,
+                                        syncKey = null,
+                                        resourceId = null,
+                                        filename = null,
+                                        existingResourceId = null,
+                                        existingFilename = null,
+                                        failReason = ImportFailReason.READ_FAILED
+                                    )
+                                )
+                                return@forEachIndexed
+                            }
+
+                            val result = importService.import(bytes)
+                            processedResourceIds.add(result.resourceId)
+                            eligibleUris.add(uri)
+                            if (result.isDuplicate) {
+                                duplicateCount++
+                                itemRecords.add(
+                                    ImportItemRecord(
+                                        sourceUri = uri,
+                                        type = ImportItemType.DUPLICATE,
+                                        syncKey = result.syncKey,
+                                        resourceId = result.resourceId,
+                                        filename = result.filename,
+                                        existingResourceId = result.existingResourceId,
+                                        existingFilename = result.existingFilename,
+                                        failReason = null
+                                    )
+                                )
+                            } else {
+                                successCount++
+                                itemRecords.add(
+                                    ImportItemRecord(
+                                        sourceUri = uri,
+                                        type = ImportItemType.NEW_ADDED,
+                                        syncKey = result.syncKey,
+                                        resourceId = result.resourceId,
+                                        filename = result.filename,
+                                        existingResourceId = null,
+                                        existingFilename = null,
+                                        failReason = null
+                                    )
+                                )
+                            }
+                        } catch (e: Exception) {
+                            TestLog.e(MODULE, "导入异常 (URI=$uri): ${e.message}", e)
                             failCount++
+                            val reason = when {
+                                e.message?.contains("Animated WebP", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_ANIM_WEBP
+                                e.message?.contains("Unsupported format", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_OTHER
+                                e.message?.contains("Failed to decode", ignoreCase = true) == true || e.message?.contains("decode", ignoreCase = true) == true -> ImportFailReason.DECODE_FAILED
+                                else -> ImportFailReason.UNKNOWN
+                            }
                             itemRecords.add(
                                 ImportItemRecord(
                                     sourceUri = uri,
@@ -485,146 +580,93 @@ class ImportActivity : AppCompatActivity() {
                                     filename = null,
                                     existingResourceId = null,
                                     existingFilename = null,
-                                    failReason = ImportFailReason.READ_FAILED
-                                )
-                            )
-                            return@forEachIndexed
-                        }
-
-                        val result = importService.import(bytes)
-                        processedResourceIds.add(result.resourceId)
-                        eligibleUris.add(uri)
-                        if (result.isDuplicate) {
-                            duplicateCount++
-                            itemRecords.add(
-                                ImportItemRecord(
-                                    sourceUri = uri,
-                                    type = ImportItemType.DUPLICATE,
-                                    syncKey = result.syncKey,
-                                    resourceId = result.resourceId,
-                                    filename = result.filename,
-                                    existingResourceId = result.existingResourceId,
-                                    existingFilename = result.existingFilename,
-                                    failReason = null
-                                )
-                            )
-                        } else {
-                            successCount++
-                            itemRecords.add(
-                                ImportItemRecord(
-                                    sourceUri = uri,
-                                    type = ImportItemType.NEW_ADDED,
-                                    syncKey = result.syncKey,
-                                    resourceId = result.resourceId,
-                                    filename = result.filename,
-                                    existingResourceId = null,
-                                    existingFilename = null,
-                                    failReason = null
+                                    failReason = reason
                                 )
                             )
                         }
-                    } catch (e: Exception) {
-                        TestLog.e(MODULE, "导入异常 (URI=$uri): ${e.message}", e)
-                        failCount++
-                        val reason = when {
-                            e.message?.contains("Animated WebP", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_ANIM_WEBP
-                            e.message?.contains("Unsupported format", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_OTHER
-                            e.message?.contains("Failed to decode", ignoreCase = true) == true || e.message?.contains("decode", ignoreCase = true) == true -> ImportFailReason.DECODE_FAILED
-                            else -> ImportFailReason.UNKNOWN
-                        }
-                        itemRecords.add(
-                            ImportItemRecord(
-                                sourceUri = uri,
-                                type = ImportItemType.FAILED,
-                                syncKey = null,
-                                resourceId = null,
-                                filename = null,
-                                existingResourceId = null,
-                                existingFilename = null,
-                                failReason = reason
-                            )
-                        )
                     }
-                }
 
-                val distinctIds = processedResourceIds.distinct()
-                val attachedNames = mutableListOf<String>()
-                var isPresetDeleted = false
+                    val distinctIds = processedResourceIds.distinct()
+                    val attachedNames = mutableListOf<String>()
+                    var isPresetDeleted = false
 
-                if (distinctIds.isNotEmpty()) {
-                    database.withTransaction {
-                        val targetCatId = presetCategoryId
-                        var resolvedPresetCatId: Long? = null
-                        if (targetCatId != null) {
-                            val category = database.categoryDao().getCategoryById(targetCatId)
-                            if (category != null) {
-                                resolvedPresetCatId = category.id
-                                attachedNames.add(category.name)
-                            } else {
-                                isPresetDeleted = true
-                                TestLog.w(MODULE, "预设分类已被删除 (ID=$targetCatId)，跳过关联预设分类操作")
+                    if (distinctIds.isNotEmpty()) {
+                        database.withTransaction {
+                            val targetCatId = presetCategoryId
+                            var resolvedPresetCatId: Long? = null
+                            if (targetCatId != null) {
+                                val category = database.categoryDao().getCategoryById(targetCatId)
+                                if (category != null) {
+                                    resolvedPresetCatId = category.id
+                                    attachedNames.add(category.name)
+                                } else {
+                                    isPresetDeleted = true
+                                    TestLog.w(MODULE, "预设分类已被删除 (ID=$targetCatId)，跳过关联预设分类操作")
+                                }
                             }
-                        }
 
-                        var resolvedFolderCatId: Long? = null
-                        if (!folderCategoryName.isNullOrBlank()) {
-                            val existingFolderCat = database.categoryDao().getCategoryByName(folderCategoryName)
-                            val fCatId = if (existingFolderCat != null) {
-                                existingFolderCat.id
-                            } else {
-                                val maxSort = database.categoryDao().getMaxSortOrder() ?: 0
-                                database.categoryDao().insertCategory(CategoryEntity(name = folderCategoryName, sortOrder = maxSort + 1))
+                            var resolvedFolderCatId: Long? = null
+                            if (!folderCategoryName.isNullOrBlank()) {
+                                val existingFolderCat = database.categoryDao().getCategoryByName(folderCategoryName)
+                                val fCatId = if (existingFolderCat != null) {
+                                    existingFolderCat.id
+                                } else {
+                                    val maxSort = database.categoryDao().getMaxSortOrder() ?: 0
+                                    database.categoryDao().insertCategory(CategoryEntity(name = folderCategoryName, sortOrder = maxSort + 1))
+                                }
+                                resolvedFolderCatId = fCatId
+                                if (!attachedNames.contains(folderCategoryName)) {
+                                    attachedNames.add(folderCategoryName)
+                                }
                             }
-                            resolvedFolderCatId = fCatId
-                            if (!attachedNames.contains(folderCategoryName)) {
-                                attachedNames.add(folderCategoryName)
-                            }
-                        }
 
-                        val targetCatIds = listOfNotNull(resolvedPresetCatId, resolvedFolderCatId).distinct()
-                        for (catId in targetCatIds) {
-                            try {
-                                database.resourceCategoryDao().addResourcesToCategoryBatch(distinctIds, catId)
-                                TestLog.i(MODULE, "已将 ${distinctIds.size} 张表情关联到分类 (ID=$catId)")
-                            } catch (e: Exception) {
-                                TestLog.e(MODULE, "关联分类异常 (ID=$catId): ${e.message}", e)
+                            val targetCatIds = listOfNotNull(resolvedPresetCatId, resolvedFolderCatId).distinct()
+                            for (catId in targetCatIds) {
+                                try {
+                                    database.resourceCategoryDao().addResourcesToCategoryBatch(distinctIds, catId)
+                                    TestLog.i(MODULE, "已将 ${distinctIds.size} 张表情关联到分类 (ID=$catId)")
+                                } catch (e: Exception) {
+                                    TestLog.e(MODULE, "关联分类异常 (ID=$catId): ${e.message}", e)
+                                }
                             }
                         }
                     }
+                    attachedNames to isPresetDeleted
                 }
-                attachedNames to isPresetDeleted
+
+                binding.tvProgress.text = "导入流程已完成"
+                val summaryText = when {
+                    presetDeleted && attachedCategoryNames.isEmpty() -> {
+                        "新增 $successCount 张，重复 $duplicateCount 张，失败 $failCount 张（目标分类已不存在，仅导入资源库）"
+                    }
+                    attachedCategoryNames.isNotEmpty() -> {
+                        val catText = attachedCategoryNames.joinToString("") { "「$it」" }
+                        "新增 $successCount 张，重复 $duplicateCount 张（已归入$catText），失败 $failCount 张"
+                    }
+                    else -> {
+                        "成功导入 $successCount 张，重复跳过 $duplicateCount 张，失败 $failCount 张"
+                    }
+                }
+                binding.tvSummary.text = summaryText
+
+                // 构建聚合卡片数据
+                val aggregateCards = buildAggregateCards(itemRecords)
+                ImportResultHolder.records = itemRecords
+                ImportResultHolder.aggregateCards = aggregateCards
+
+                // 若有重复或失败，展示查看详情入口
+                if (aggregateCards.isNotEmpty()) {
+                    binding.tvViewDetailAction.visibility = android.view.View.VISIBLE
+                } else {
+                    binding.tvViewDetailAction.visibility = android.view.View.GONE
+                }
+
+                // 导入结束后，分流待清理 URI 并弹窗提示
+                handlePostImportCleanup(eligibleUris, successCount, duplicateCount, failCount)
+            } finally {
+                binding.progressBar.visibility = android.view.View.GONE
+                setButtonsEnabled(true)
             }
-
-            binding.tvProgress.text = "导入流程已完成"
-            val summaryText = when {
-                presetDeleted && attachedCategoryNames.isEmpty() -> {
-                    "新增 $successCount 张，重复 $duplicateCount 张，失败 $failCount 张（目标分类已不存在，仅导入资源库）"
-                }
-                attachedCategoryNames.isNotEmpty() -> {
-                    val catText = attachedCategoryNames.joinToString("") { "「$it」" }
-                    "新增 $successCount 张，重复 $duplicateCount 张（已归入$catText），失败 $failCount 张"
-                }
-                else -> {
-                    "成功导入 $successCount 张，重复跳过 $duplicateCount 张，失败 $failCount 张"
-                }
-            }
-            binding.tvSummary.text = summaryText
-            setButtonsEnabled(true)
-
-            // 构建聚合卡片数据
-            val aggregateCards = buildAggregateCards(itemRecords)
-            ImportResultHolder.records = itemRecords
-            ImportResultHolder.aggregateCards = aggregateCards
-
-            // 若有重复或失败，展示查看详情入口
-            if (aggregateCards.isNotEmpty()) {
-                binding.tvViewDetailAction.visibility = android.view.View.VISIBLE
-            } else {
-                binding.tvViewDetailAction.visibility = android.view.View.GONE
-            }
-
-            // 导入结束后，分流待清理 URI 并弹窗提示
-            handlePostImportCleanup(eligibleUris, successCount, duplicateCount, failCount)
         }
     }
 

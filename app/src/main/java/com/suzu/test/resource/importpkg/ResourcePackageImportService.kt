@@ -11,6 +11,9 @@ import com.suzu.test.resource.ResourceImportService
 import com.suzu.test.ui.import.ImportFailReason
 import com.suzu.test.ui.import.ImportItemRecord
 import com.suzu.test.ui.import.ImportItemType
+import android.provider.OpenableColumns
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -18,7 +21,14 @@ import java.io.File
 import java.io.InputStream
 import java.util.LinkedHashSet
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
+
+enum class PackageImportStage {
+    COPYING,
+    PARSING,
+    IMPORTING
+}
 
 data class PackageImportSummary(
     val successCount: Int,
@@ -42,142 +52,232 @@ class ResourcePackageImportService(
         private const val MODULE = "ResourcePackageImport"
     }
 
-    suspend fun importFromZip(packageUri: Uri): PackageImportExecutionResult {
-        val zipBytes = context.contentResolver.openInputStream(packageUri)?.use { it.readBytes() }
-            ?: throw IllegalArgumentException("无法读取 zip 文件")
-
-        val zipContent = readZipEntries(zipBytes)
-        val manifestJson = zipContent["manifest.json"]
-            ?: throw IllegalArgumentException("资源包缺少 manifest.json")
-        val catalogJson = zipContent["catalog.json"]
-            ?: throw IllegalArgumentException("资源包缺少 catalog.json")
-
-        val manifest = JSONObject(manifestJson.decodeToString())
-        val formatVersion = manifest.optInt("format_version", -1)
-        if (formatVersion != 1) {
-            throw IllegalArgumentException("不支持的资源包版本: $formatVersion")
-        }
-
-        val catalog = JSONObject(catalogJson.decodeToString())
-        val categories = parseCategories(catalog.optJSONArray("categories"))
-        val categoryRefToName = categories.associate { it.ref to it.name }
-        val resources = parseResources(catalog.optJSONArray("resources"))
-
-        if (resources.isEmpty()) {
-            throw IllegalArgumentException("资源包中没有可导入的资源")
-        }
-
-        val records = mutableListOf<ImportItemRecord>()
-        val categoryNameToResourceIds = linkedMapOf<String, MutableSet<Long>>()
-        val touchedCategoryNames = LinkedHashSet<String>()
-
-        var successCount = 0
-        var duplicateCount = 0
-        var failCount = 0
-
-        for (resource in resources) {
-            val assetBytes = zipContent[resource.assetPath]
-            if (assetBytes == null || assetBytes.isEmpty()) {
-                failCount++
-                records.add(
-                    ImportItemRecord(
-                        sourceUri = packageUri,
-                        type = ImportItemType.FAILED,
-                        syncKey = resource.syncKey,
-                        resourceId = null,
-                        filename = resource.displayName,
-                        existingResourceId = null,
-                        existingFilename = null,
-                        failReason = ImportFailReason.READ_FAILED,
-                        previewFilePath = null
-                    )
-                )
-                continue
-            }
-
-            val previewFilePath = createPreviewTempFile(resource, assetBytes)
-
+    suspend fun importFromZip(
+        packageUri: Uri,
+        onProgress: (stage: PackageImportStage, progress: Long, total: Long) -> Unit
+    ): PackageImportExecutionResult = withContext(Dispatchers.IO) {
+        val cacheDir = context.cacheDir
+        
+        // 每次导入开始前，清理上一次残留的临时文件
+        val oldTempFiles = cacheDir.listFiles { _, name -> name.startsWith("import_tmp_") }
+        oldTempFiles?.forEach {
             try {
-                val result = resourceImportService.import(assetBytes)
-                if (result.isDuplicate) {
-                    duplicateCount++
-                    records.add(
-                        ImportItemRecord(
-                            sourceUri = packageUri,
-                            type = ImportItemType.DUPLICATE,
-                            syncKey = result.syncKey,
-                            resourceId = result.resourceId,
-                            filename = result.filename,
-                            existingResourceId = result.existingResourceId,
-                            existingFilename = result.existingFilename,
-                            failReason = null,
-                            previewFilePath = previewFilePath
-                        )
-                    )
-                } else {
-                    successCount++
-                    records.add(
-                        ImportItemRecord(
-                            sourceUri = packageUri,
-                            type = ImportItemType.NEW_ADDED,
-                            syncKey = result.syncKey,
-                            resourceId = result.resourceId,
-                            filename = result.filename,
-                            existingResourceId = null,
-                            existingFilename = null,
-                            failReason = null,
-                            previewFilePath = previewFilePath
-                        )
-                    )
+                it.delete()
+            } catch (e: Exception) {
+                TestLog.w(MODULE, "清理残留临时文件失败: ${it.name}, ${e.message}")
+            }
+        }
+
+        // 检查包大小与可用空间
+        var packageSize: Long = -1L
+        context.contentResolver.query(packageUri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (sizeIndex != -1) {
+                    packageSize = cursor.getLong(sizeIndex)
+                }
+            }
+        }
+
+        if (packageSize > 0) {
+            val usableSpace = cacheDir.usableSpace
+            if (usableSpace < packageSize) {
+                throw IllegalStateException("存储空间不足，无法导入该资源包")
+            }
+        }
+
+        val tempZipFile = File(cacheDir, "import_tmp_${System.currentTimeMillis()}.zip")
+        try {
+            // 阶段一：拷贝临时文件
+            context.contentResolver.openInputStream(packageUri)?.use { input ->
+                tempZipFile.outputStream().use { output ->
+                    val buffer = ByteArray(8192)
+                    var bytesCopied = 0L
+                    var bytes = input.read(buffer)
+                    while (bytes >= 0) {
+                        output.write(buffer, 0, bytes)
+                        bytesCopied += bytes
+                        onProgress(PackageImportStage.COPYING, bytesCopied, packageSize)
+                        bytes = input.read(buffer)
+                    }
+                }
+            } ?: throw IllegalArgumentException("无法读取 zip 文件")
+
+            // 阶段二：解析 manifest 与 catalog
+            onProgress(PackageImportStage.PARSING, 0L, 0L)
+
+            ZipFile(tempZipFile).use { zipFile ->
+                val manifestEntry = zipFile.getEntry("manifest.json")
+                    ?: throw IllegalArgumentException("资源包缺少 manifest.json")
+                val catalogEntry = zipFile.getEntry("catalog.json")
+                    ?: throw IllegalArgumentException("资源包缺少 catalog.json")
+
+                val manifestJson = zipFile.getInputStream(manifestEntry).use { it.readBytes() }
+                val catalogJson = zipFile.getInputStream(catalogEntry).use { it.readBytes() }
+
+                val manifest = JSONObject(manifestJson.decodeToString())
+                val formatVersion = manifest.optInt("format_version", -1)
+                if (formatVersion != 1) {
+                    throw IllegalArgumentException("不支持的资源包版本: $formatVersion")
                 }
 
-                val resourceId = result.resourceId
-                val categoryNames = resource.categoryRefs
-                    .mapNotNull { categoryRefToName[it] }
-                    .map { it.trim() }
-                    .filter { it.isNotEmpty() }
+                val catalog = JSONObject(catalogJson.decodeToString())
+                val categories = parseCategories(catalog.optJSONArray("categories"))
+                val categoryRefToName = categories.associate { it.ref to it.name }
+                val resources = parseResources(catalog.optJSONArray("resources"))
 
-                for (categoryName in categoryNames) {
-                    touchedCategoryNames.add(categoryName)
-                    categoryNameToResourceIds
-                        .getOrPut(categoryName) { linkedSetOf() }
-                        .add(resourceId)
+                if (resources.isEmpty()) {
+                    throw IllegalArgumentException("资源包中没有可导入的资源")
+                }
+
+                val records = mutableListOf<ImportItemRecord>()
+                val categoryNameToResourceIds = linkedMapOf<String, MutableSet<Long>>()
+                val touchedCategoryNames = LinkedHashSet<String>()
+
+                var successCount = 0
+                var duplicateCount = 0
+                var failCount = 0
+
+                val totalCount = resources.size.toLong()
+
+                for ((index, resource) in resources.withIndex()) {
+                    // 阶段三：逐项导入资源
+                    onProgress(PackageImportStage.IMPORTING, index.toLong(), totalCount)
+
+                    val assetEntry = zipFile.getEntry(resource.assetPath)
+                    if (assetEntry == null) {
+                        failCount++
+                        records.add(
+                            ImportItemRecord(
+                                sourceUri = packageUri,
+                                type = ImportItemType.FAILED,
+                                syncKey = resource.syncKey,
+                                resourceId = null,
+                                filename = resource.displayName,
+                                existingResourceId = null,
+                                existingFilename = null,
+                                failReason = ImportFailReason.READ_FAILED,
+                                previewFilePath = null
+                            )
+                        )
+                        continue
+                    }
+
+                    val assetBytes = zipFile.getInputStream(assetEntry).use { it.readBytes() }
+                    if (assetBytes.isEmpty()) {
+                        failCount++
+                        records.add(
+                            ImportItemRecord(
+                                sourceUri = packageUri,
+                                type = ImportItemType.FAILED,
+                                syncKey = resource.syncKey,
+                                resourceId = null,
+                                filename = resource.displayName,
+                                existingResourceId = null,
+                                existingFilename = null,
+                                failReason = ImportFailReason.READ_FAILED,
+                                previewFilePath = null
+                            )
+                        )
+                        continue
+                    }
+
+                    val previewFilePath = createPreviewTempFile(resource, assetBytes)
+
+                    try {
+                        val result = resourceImportService.import(assetBytes)
+                        if (result.isDuplicate) {
+                            duplicateCount++
+                            records.add(
+                                ImportItemRecord(
+                                    sourceUri = packageUri,
+                                    type = ImportItemType.DUPLICATE,
+                                    syncKey = result.syncKey,
+                                    resourceId = result.resourceId,
+                                    filename = result.filename,
+                                    existingResourceId = result.existingResourceId,
+                                    existingFilename = result.existingFilename,
+                                    failReason = null,
+                                    previewFilePath = previewFilePath
+                                )
+                            )
+                        } else {
+                            successCount++
+                            records.add(
+                                ImportItemRecord(
+                                    sourceUri = packageUri,
+                                    type = ImportItemType.NEW_ADDED,
+                                    syncKey = result.syncKey,
+                                    resourceId = result.resourceId,
+                                    filename = result.filename,
+                                    existingResourceId = null,
+                                    existingFilename = null,
+                                    failReason = null,
+                                    previewFilePath = previewFilePath
+                                )
+                            )
+                        }
+
+                        val resourceId = result.resourceId
+                        val categoryNames = resource.categoryRefs
+                            .mapNotNull { categoryRefToName[it] }
+                            .map { it.trim() }
+                            .filter { it.isNotEmpty() }
+
+                        for (categoryName in categoryNames) {
+                            touchedCategoryNames.add(categoryName)
+                            categoryNameToResourceIds
+                                .getOrPut(categoryName) { linkedSetOf() }
+                                .add(resourceId)
+                        }
+                    } catch (e: Exception) {
+                        TestLog.e(MODULE, "导入资源失败: asset=${resource.assetPath}, error=${e.message}", e)
+                        failCount++
+                        val reason = when {
+                            e.message?.contains("Unsupported format", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_OTHER
+                            e.message?.contains("decode", ignoreCase = true) == true -> ImportFailReason.DECODE_FAILED
+                            else -> ImportFailReason.UNKNOWN
+                        }
+                        records.add(
+                            ImportItemRecord(
+                                sourceUri = packageUri,
+                                type = ImportItemType.FAILED,
+                                syncKey = resource.syncKey,
+                                resourceId = null,
+                                filename = resource.displayName,
+                                existingResourceId = null,
+                                existingFilename = null,
+                                failReason = reason,
+                                previewFilePath = previewFilePath
+                            )
+                        )
+                    }
+                }
+
+                // 导入彻底完成时，报告最后的进度 100%
+                onProgress(PackageImportStage.IMPORTING, totalCount, totalCount)
+
+                attachCategories(categoryNameToResourceIds)
+
+                PackageImportExecutionResult(
+                    records = records,
+                    summary = PackageImportSummary(
+                        successCount = successCount,
+                        duplicateCount = duplicateCount,
+                        failCount = failCount,
+                        attachedCategoryNames = touchedCategoryNames.toList()
+                    )
+                )
+            }
+        } finally {
+            try {
+                if (tempZipFile.exists()) {
+                    tempZipFile.delete()
                 }
             } catch (e: Exception) {
-                TestLog.e(MODULE, "导入资源失败: asset=${resource.assetPath}, error=${e.message}", e)
-                failCount++
-                val reason = when {
-                    e.message?.contains("Unsupported format", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_OTHER
-                    e.message?.contains("decode", ignoreCase = true) == true -> ImportFailReason.DECODE_FAILED
-                    else -> ImportFailReason.UNKNOWN
-                }
-                records.add(
-                    ImportItemRecord(
-                        sourceUri = packageUri,
-                        type = ImportItemType.FAILED,
-                        syncKey = resource.syncKey,
-                        resourceId = null,
-                        filename = resource.displayName,
-                        existingResourceId = null,
-                        existingFilename = null,
-                        failReason = reason,
-                        previewFilePath = previewFilePath
-                    )
-                )
+                TestLog.w(MODULE, "删除临时 zip 文件失败: ${e.message}")
             }
         }
-
-        attachCategories(categoryNameToResourceIds)
-
-        return PackageImportExecutionResult(
-            records = records,
-            summary = PackageImportSummary(
-                successCount = successCount,
-                duplicateCount = duplicateCount,
-                failCount = failCount,
-                attachedCategoryNames = touchedCategoryNames.toList()
-            )
-        )
     }
 
     private fun createPreviewTempFile(resource: CatalogResource, assetBytes: ByteArray): String? {

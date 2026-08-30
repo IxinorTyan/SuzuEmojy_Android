@@ -7,6 +7,8 @@ import com.suzu.test.db.SuzuDatabase
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.db.entity.ResourceEntity
 import com.suzu.test.log.TestLog
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -14,6 +16,11 @@ import java.security.MessageDigest
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+
+enum class PackageExportStage {
+    PACKING,
+    WRITING
+}
 
 data class PackageExportSummary(
     val manifest: JSONObject,
@@ -34,7 +41,8 @@ class ResourcePackageExportService(
     suspend fun exportToZip(
         targetUri: Uri,
         packageName: String,
-        selectedCategoryIds: List<Long> = emptyList()
+        selectedCategoryIds: List<Long> = emptyList(),
+        onProgress: ((stage: PackageExportStage, progress: Int, total: Int) -> Unit)? = null
     ): PackageExportSummary {
         val packageBaseName = normalizePackageName(packageName)
         val resourcesDir = File(context.filesDir, "resources")
@@ -70,7 +78,9 @@ class ResourcePackageExportService(
             dedup.values.sortedWith(compareBy<ResourceEntity> { it.sortOrder }.thenBy { it.id })
         }
 
-        for (resource in resources) {
+        val totalResourcesCount = resources.size
+        resources.forEachIndexed { index, resource ->
+            currentCoroutineContext().ensureActive()
             val packed = packResource(
                 resource = resource,
                 resourcesDir = resourcesDir,
@@ -83,12 +93,12 @@ class ResourcePackageExportService(
                         .put("name", resource.filename)
                         .put("reason", "source file missing or unreadable")
                 )
-                continue
+            } else {
+                exportedResources.add(packed)
+                totalAssetBytes += packed.assetSize
+                relationsCount += packed.categoryRefs.size
             }
-
-            exportedResources.add(packed)
-            totalAssetBytes += packed.assetSize
-            relationsCount += packed.categoryRefs.size
+            onProgress?.invoke(PackageExportStage.PACKING, index + 1, totalResourcesCount)
         }
 
         val categoriesJson = JSONArray().apply {
@@ -153,7 +163,9 @@ class ResourcePackageExportService(
             .put("categories", categoriesJson)
             .put("resources", resourcesJson)
 
-        writeZip(targetUri, manifest, catalog, exportedResources)
+        writeZip(targetUri, manifest, catalog, exportedResources) { progress, total ->
+            onProgress?.invoke(PackageExportStage.WRITING, progress, total)
+        }
 
         TestLog.i(
             MODULE,
@@ -177,10 +189,15 @@ class ResourcePackageExportService(
         val sourceFile = File(resourcesDir, resource.filename)
         if (!sourceFile.exists() || !sourceFile.isFile) return null
 
-        val bytes = runCatching { sourceFile.readBytes() }.getOrNull() ?: return null
+        val fileSize = sourceFile.length()
+        if (fileSize <= 0) return null
+
+        val assetSha256 = runCatching { streamSha256Hex(sourceFile) }.getOrNull() ?: return null
+
         val syncKey = resource.syncKey.ifBlank {
             if (resource.isAnimated) {
-                "f:${md5Hex(bytes)}"
+                val fileMd5 = runCatching { streamMd5Hex(sourceFile) }.getOrNull() ?: return null
+                "f:$fileMd5"
             } else {
                 "p:${resource.pixelMd5.orEmpty()}"
             }
@@ -193,8 +210,8 @@ class ResourcePackageExportService(
         return ExportedResource(
             syncKey = syncKey,
             assetPath = assetPathFor(resource),
-            assetSize = bytes.size.toLong(),
-            assetSha256 = sha256Hex(bytes),
+            assetSize = fileSize,
+            assetSha256 = assetSha256,
             pixelMd5 = resource.pixelMd5,
             fileMd5 = resource.fileMd5,
             format = resource.format,
@@ -205,27 +222,50 @@ class ResourcePackageExportService(
             keywords = parseKeywords(resource.keywords),
             createdAt = resource.createdAt,
             displayName = resource.filename,
-            categoryRefs = categoryRefs,
-            payload = bytes
+            categoryRefs = categoryRefs
         )
     }
 
-    private fun writeZip(
+    private suspend fun writeZip(
         targetUri: Uri,
         manifest: JSONObject,
         catalog: JSONObject,
-        resources: List<ExportedResource>
+        resources: List<ExportedResource>,
+        onWriteProgress: ((progress: Int, total: Int) -> Unit)? = null
     ) {
         val resolver = context.contentResolver
         resolver.openOutputStream(targetUri, "w")?.use { output ->
             ZipOutputStream(output).use { zip ->
                 putEntry(zip, "manifest.json", manifest.toString(2).toByteArray(Charsets.UTF_8))
                 putEntry(zip, "catalog.json", catalog.toString(2).toByteArray(Charsets.UTF_8))
-                resources.forEach { item ->
-                    putEntry(zip, item.assetPath, item.payload)
+                
+                val resourcesDir = File(context.filesDir, "resources")
+                val total = resources.size
+                resources.forEachIndexed { index, item ->
+                    currentCoroutineContext().ensureActive()
+                    val file = File(resourcesDir, item.displayName)
+                    if (file.exists() && file.isFile) {
+                        putEntry(zip, item.assetPath, file)
+                    }
+                    onWriteProgress?.invoke(index + 1, total)
                 }
             }
         } ?: throw IllegalStateException("无法打开导出目标文件")
+    }
+
+    private suspend fun putEntry(zip: ZipOutputStream, name: String, file: File) {
+        val entry = ZipEntry(name)
+        zip.putNextEntry(entry)
+        file.inputStream().use { input ->
+            val buffer = ByteArray(8192)
+            var bytesRead = input.read(buffer)
+            while (bytesRead != -1) {
+                currentCoroutineContext().ensureActive()
+                zip.write(buffer, 0, bytesRead)
+                bytesRead = input.read(buffer)
+            }
+        }
+        zip.closeEntry()
     }
 
     private fun putEntry(zip: ZipOutputStream, name: String, bytes: ByteArray) {
@@ -233,6 +273,24 @@ class ResourcePackageExportService(
         zip.putNextEntry(entry)
         zip.write(bytes)
         zip.closeEntry()
+    }
+
+    private fun streamMd5Hex(file: File): String = streamDigestHex("MD5", file)
+
+    private fun streamSha256Hex(file: File): String = streamDigestHex("SHA-256", file)
+
+    private fun streamDigestHex(algorithm: String, file: File): String {
+        val digest = MessageDigest.getInstance(algorithm)
+        file.inputStream().use { input ->
+            val buffer = ByteArray(8192)
+            var bytesRead = input.read(buffer)
+            while (bytesRead != -1) {
+                digest.update(buffer, 0, bytesRead)
+                bytesRead = input.read(buffer)
+            }
+        }
+        val bytes = digest.digest()
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     private fun assetPathFor(resource: ResourceEntity): String {
@@ -277,15 +335,6 @@ class ResourcePackageExportService(
             .distinct()
     }
 
-    private fun md5Hex(bytes: ByteArray): String = digestHex("MD5", bytes)
-
-    private fun sha256Hex(bytes: ByteArray): String = digestHex("SHA-256", bytes)
-
-    private fun digestHex(algorithm: String, bytes: ByteArray): String {
-        val digest = MessageDigest.getInstance(algorithm).digest(bytes)
-        return digest.joinToString("") { "%02x".format(it) }
-    }
-
     private data class ExportedResource(
         val syncKey: String,
         val assetPath: String,
@@ -301,7 +350,6 @@ class ResourcePackageExportService(
         val keywords: List<String>,
         val createdAt: Long,
         val displayName: String,
-        val categoryRefs: List<Int>,
-        val payload: ByteArray
+        val categoryRefs: List<Int>
     )
 }

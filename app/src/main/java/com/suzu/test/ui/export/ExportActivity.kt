@@ -15,11 +15,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.suzu.test.R
 import com.suzu.test.databinding.ActivityExportBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.entity.CategoryEntity
+import com.suzu.test.resource.exportpkg.PackageExportStage
 import com.suzu.test.resource.exportpkg.ResourcePackageExportService
+import com.suzu.test.log.TestLog
+import android.widget.ProgressBar
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -30,6 +35,7 @@ class ExportActivity : AppCompatActivity() {
 
     private var pendingPackageName: String = ""
     private var pendingSelectedCategoryIds: List<Long> = emptyList()
+    private var progressDialog: AlertDialog? = null
 
     private val openDocumentTreeLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -181,15 +187,55 @@ class ExportActivity : AppCompatActivity() {
         lifecycleScope.launch {
             binding.btnExportAll.isEnabled = false
             binding.btnExportSelected.isEnabled = false
+
+            val dialogView = layoutInflater.inflate(R.layout.dialog_export_progress, null)
+            val tvProgressMessage = dialogView.findViewById<TextView>(R.id.tvProgressMessage)
+            val progressBarExport = dialogView.findViewById<ProgressBar>(R.id.progressBarExport)
+
+            progressBarExport.isIndeterminate = false
+            progressBarExport.max = 100
+            progressBarExport.progress = 0
+            tvProgressMessage.text = "正在准备导出..."
+
+            val currentJob = coroutineContext[Job]
+            val dialog = AlertDialog.Builder(this@ExportActivity)
+                .setTitle("正在导出资源包")
+                .setView(dialogView)
+                .setNegativeButton("取消") { _, _ ->
+                    currentJob?.cancel()
+                }
+                .setCancelable(false)
+                .create()
+
+            progressDialog = dialog
+            dialog.show()
+
+            var targetUri: Uri? = null
             try {
                 val result = withContext(Dispatchers.IO) {
                     val zipName = sanitizeZipName(pendingPackageName) + ".zip"
-                    val targetUri = createTargetDocument(treeUri, zipName)
+                    val uri = createTargetDocument(treeUri, zipName)
+                    targetUri = uri
+
                     exportService.exportToZip(
-                        targetUri = targetUri,
+                        targetUri = uri,
                         packageName = pendingPackageName,
                         selectedCategoryIds = pendingSelectedCategoryIds
-                    )
+                    ) { stage, progress, total ->
+                        runOnUiThread {
+                            if (isFinishing || isDestroyed) return@runOnUiThread
+                            progressBarExport.max = total
+                            progressBarExport.progress = progress
+                            when (stage) {
+                                PackageExportStage.PACKING -> {
+                                    tvProgressMessage.text = "正在准备: $progress / $total"
+                                }
+                                PackageExportStage.WRITING -> {
+                                    tvProgressMessage.text = "正在写入: $progress / $total"
+                                }
+                            }
+                        }
+                    }
                 }
                 binding.tvProgress.text = "导出完成"
                 binding.tvSummary.text = "导出 ${result.exportedCount} 张，跳过 ${result.skippedCount} 张"
@@ -198,15 +244,48 @@ class ExportActivity : AppCompatActivity() {
                     "已导出资源包：${result.packageName}.zip",
                     Toast.LENGTH_LONG
                 ).show()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                binding.tvProgress.text = "导出被取消"
+                binding.tvSummary.text = ""
+                Toast.makeText(this@ExportActivity, "导出已被取消", Toast.LENGTH_SHORT).show()
+                targetUri?.let { uri ->
+                    withContext(Dispatchers.IO) {
+                        try {
+                            DocumentsContract.deleteDocument(contentResolver, uri)
+                        } catch (ex: Exception) {
+                            TestLog.w("ExportActivity", "清理取消后的 SAF 半成品失败: ${ex.message}")
+                        }
+                    }
+                }
+                throw e
             } catch (e: Exception) {
                 binding.tvProgress.text = "导出失败"
                 binding.tvSummary.text = ""
                 Toast.makeText(this@ExportActivity, e.message ?: "导出失败", Toast.LENGTH_LONG).show()
+                targetUri?.let { uri ->
+                    withContext(Dispatchers.IO) {
+                        try {
+                            DocumentsContract.deleteDocument(contentResolver, uri)
+                        } catch (ex: Exception) {
+                            TestLog.w("ExportActivity", "清理失败后的 SAF 半成品失败: ${ex.message}")
+                        }
+                    }
+                }
             } finally {
                 binding.btnExportAll.isEnabled = true
                 binding.btnExportSelected.isEnabled = true
+                if (!isFinishing && !isDestroyed) {
+                    progressDialog?.dismiss()
+                }
+                progressDialog = null
             }
         }
+    }
+
+    override fun onDestroy() {
+        progressDialog?.dismiss()
+        progressDialog = null
+        super.onDestroy()
     }
 
     private fun createTargetDocument(treeUri: Uri, displayName: String): Uri {
