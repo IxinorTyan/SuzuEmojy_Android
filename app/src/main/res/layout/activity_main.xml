@@ -29,7 +29,7 @@
             android:id="@+id/btnTopSettings"
             android:layout_width="38dp"
             android:layout_height="38dp"
-            android:background="@drawable/bg_floating_ball"
+            android:background="@android:color/transparent"
             android:src="@drawable/ic_settings_gear"
             android:tint="#444444"
             android:contentDescription="设置" />
@@ -83,12 +83,15 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:layout_marginTop="12dp"
-        android:scrollbars="none">
+        android:scrollbars="none"
+        android:clipToPadding="false"
+        android:clipChildren="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:clipChildren="false">
 
             <!-- 首次引导态卡片 (IME 未启用且未点稍后再说时显示) -->
             <LinearLayout
@@ -402,7 +405,8 @@
                 android:id="@+id/layoutMainHomeContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:clipChildren="false">
 
                 <!-- 1. 我的资源库卡片 -->
                 <LinearLayout
@@ -415,7 +419,8 @@
                     android:padding="16dp"
                     android:elevation="1.5dp"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:clipChildren="false">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -460,7 +465,8 @@
                     android:background="@drawable/bg_home_card"
                     android:padding="16dp"
                     android:elevation="1.5dp"
-                    android:layout_marginTop="16dp">
+                    android:layout_marginTop="16dp"
+                    android:clipChildren="false">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -501,7 +507,8 @@
                     android:elevation="1.5dp"
                     android:layout_marginTop="16dp"
                     android:clickable="true"
-                    android:focusable="true">
+                    android:focusable="true"
+                    android:clipChildren="false">
 
                     <FrameLayout
                         android:layout_width="48dp"
@@ -537,6 +544,67 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="添加新的图片到资源库"
+                            android:textSize="12sp"
+                            android:textColor="#888888"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=">"
+                        android:textSize="18sp"
+                        android:textColor="#999999" />
+                </LinearLayout>
+
+                <!-- 4. 导出资源包卡片 -->
+                <LinearLayout
+                    android:id="@+id/cardExportPackage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_home_card"
+                    android:padding="16dp"
+                    android:elevation="1.5dp"
+                    android:layout_marginTop="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:clipChildren="false">
+
+                    <FrameLayout
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_home_import_icon">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_export_simple"
+                            android:tint="#1976D2"
+                            android:contentDescription="导出资源包" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="14dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="导出资源包"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:textColor="#333333" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="导出当前资源库为资源包"
                             android:textSize="12sp"
                             android:textColor="#888888"
                             android:layout_marginTop="2dp" />

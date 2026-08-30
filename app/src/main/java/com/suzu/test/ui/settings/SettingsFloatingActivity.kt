@@ -1,7 +1,9 @@
 package com.suzu.test.ui.settings
 
 import android.app.Activity
+import android.view.MenuItem
 import android.content.Intent
+import androidx.appcompat.app.ActionBar
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -56,12 +58,28 @@ class SettingsFloatingActivity : AppCompatActivity() {
         binding = ActivitySettingsFloatingBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        supportActionBar?.hide()
+
+        binding.btnBack.setOnClickListener {
+            finish()
+        }
+
         setupMasterSwitch()
         setupFloatingAdjusters()
         setupShapeSelector()
         setupAppFilter()
         setupCustomImageActions()
         observeA11yState()
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                finish()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     private fun observeA11yState() {

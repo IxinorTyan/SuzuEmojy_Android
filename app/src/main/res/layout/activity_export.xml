@@ -3,7 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="24dp"
+    android:paddingTop="24dp"
+    android:paddingLeft="24dp"
+    android:paddingRight="24dp"
+    android:paddingBottom="32dp"
     android:gravity="center_horizontal">
 
     <LinearLayout
@@ -26,7 +29,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="表情包导入"
+            android:text="表情包导出"
             android:textSize="22sp"
             android:textStyle="bold"
             android:textColor="#111111"
@@ -38,41 +41,53 @@
     </LinearLayout>
 
     <Button
-        android:id="@+id/btnPickImages"
+        android:id="@+id/btnExportAll"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="从相册选择"
+        android:text="导出全部表情"
         android:textSize="16sp" />
 
     <Button
-        android:id="@+id/btnPickFromFiles"
+        android:id="@+id/btnExportSelected"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_marginTop="12dp"
-        android:text="从系统文件选择"
+        android:text="导出指定收藏夹"
         android:textSize="16sp" />
 
-    <Button
-        android:id="@+id/btnPickFromFolder"
+    <LinearLayout
+        android:id="@+id/layoutSelectedCategoriesCard"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="12dp"
-        android:text="从文件夹选择"
-        android:textSize="16sp" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#FFFFFF"
+        android:padding="16dp"
+        android:layout_marginTop="16dp"
+        android:visibility="gone">
 
-    <Button
-        android:id="@+id/btnImportFromPackage"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="12dp"
-        android:text="从资源包导入"
-        android:textSize="16sp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="已选收藏夹"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333" />
+
+        <TextView
+            android:id="@+id/tvSelectedCategoriesSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text=""
+            android:textSize="14sp"
+            android:textColor="#666666" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tvProgress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="等待选择..."
+        android:text="等待开始导出..."
         android:textSize="15sp"
         android:textColor="#666666"
         android:layout_marginTop="24dp" />
@@ -86,17 +101,5 @@
         android:textColor="#008800"
         android:textAlignment="center"
         android:layout_marginTop="16dp" />
-
-    <TextView
-        android:id="@+id/tvViewDetailAction"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="查看重复与失败详情 >"
-        android:textSize="14sp"
-        android:textColor="#0078D4"
-        android:textStyle="bold"
-        android:padding="8dp"
-        android:layout_marginTop="6dp"
-        android:visibility="gone" />
 
 </LinearLayout>

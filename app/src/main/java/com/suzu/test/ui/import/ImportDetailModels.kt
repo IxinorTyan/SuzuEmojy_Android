@@ -24,7 +24,8 @@ data class ImportItemRecord(
     val filename: String?,
     val existingResourceId: Long?,
     val existingFilename: String?,
-    val failReason: ImportFailReason?
+    val failReason: ImportFailReason?,
+    val previewFilePath: String? = null
 )
 
 sealed class ImportAggregateCard {
@@ -33,7 +34,9 @@ sealed class ImportAggregateCard {
         val count: Int,
         val mainFilename: String?,
         val mainUri: Uri?,
+        val mainPreviewFilePath: String?,
         val itemUris: List<Uri>,
+        val itemPreviewFilePaths: List<String?>,
         val syncKey: String
     ) : ImportAggregateCard()
 

@@ -66,6 +66,12 @@
             android:exported="false"
             android:label="导入结果详情" />
 
+        <!-- 导出资源包界面 -->
+        <activity
+            android:name=".ui.export.ExportActivity"
+            android:exported="false"
+            android:label="导出资源包" />
+
         <!-- 自建媒体选择器界面 -->
         <activity
             android:name=".ui.picker.MediaPickerActivity"

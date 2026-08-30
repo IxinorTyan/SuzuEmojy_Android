@@ -4,10 +4,7 @@ import android.app.Dialog
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -118,8 +115,11 @@ class AggregateCardAdapter(
                 binding.tvMainBadge.text = "已入库"
             }
 
-            val mainFile = if (!item.mainFilename.isNullOrBlank()) File(resourcesDir, item.mainFilename) else null
-            val mainLoadTarget: Any? = if (mainFile != null && mainFile.exists()) mainFile else item.mainUri
+            val mainFile = resolvePreviewFile(item.mainPreviewFilePath, item.mainFilename)
+            val mainLoadTarget: Any? = when {
+                mainFile != null && mainFile.exists() -> mainFile
+                else -> item.mainUri
+            }
 
             Glide.with(itemView.context)
                 .load(mainLoadTarget)
@@ -134,8 +134,20 @@ class AggregateCardAdapter(
             }
 
             binding.rvSources.layoutManager = LinearLayoutManager(itemView.context, LinearLayoutManager.HORIZONTAL, false)
-            binding.rvSources.adapter = SourceThumbAdapter(item.itemUris) { clickedUri ->
-                onThumbClick(clickedUri, null)
+            binding.rvSources.adapter = SourceThumbAdapter(
+                sources = item.itemUris.zip(item.itemPreviewFilePaths) { uri, path ->
+                    ThumbSource(uri = uri, previewFile = resolvePreviewFile(path, null))
+                }
+            ) { clicked ->
+                onThumbClick(clicked.uri, clicked.previewFile)
+            }
+        }
+
+        private fun resolvePreviewFile(previewPath: String?, filename: String?): File? {
+            return when {
+                !previewPath.isNullOrBlank() -> File(previewPath)
+                !filename.isNullOrBlank() -> File(resourcesDir, filename)
+                else -> null
             }
         }
     }
@@ -148,16 +160,23 @@ class AggregateCardAdapter(
             binding.tvFailureCount.text = "共 ${item.count} 张"
 
             binding.rvSources.layoutManager = LinearLayoutManager(itemView.context, LinearLayoutManager.HORIZONTAL, false)
-            binding.rvSources.adapter = SourceThumbAdapter(item.itemUris) { clickedUri ->
-                onThumbClick(clickedUri, null)
+            binding.rvSources.adapter = SourceThumbAdapter(
+                sources = item.itemUris.map { ThumbSource(uri = it, previewFile = null) }
+            ) { clicked ->
+                onThumbClick(clicked.uri, clicked.previewFile)
             }
         }
     }
 }
 
+data class ThumbSource(
+    val uri: Uri,
+    val previewFile: File?
+)
+
 class SourceThumbAdapter(
-    private val uris: List<Uri>,
-    private val onItemClick: (Uri) -> Unit
+    private val sources: List<ThumbSource>,
+    private val onItemClick: (ThumbSource) -> Unit
 ) : RecyclerView.Adapter<SourceThumbAdapter.ThumbViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ThumbViewHolder {
@@ -166,17 +185,19 @@ class SourceThumbAdapter(
     }
 
     override fun onBindViewHolder(holder: ThumbViewHolder, position: Int) {
-        holder.bind(uris[position])
+        holder.bind(sources[position])
     }
 
-    override fun getItemCount(): Int = uris.size
+    override fun getItemCount(): Int = sources.size
 
     inner class ThumbViewHolder(private val binding: ItemImportSourceThumbBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(uri: Uri) {
+        fun bind(source: ThumbSource) {
+            val loadTarget: Any? = source.previewFile?.takeIf { it.exists() } ?: source.uri
+
             Glide.with(itemView.context)
-                .load(uri)
+                .load(loadTarget)
                 .override(128, 128)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .placeholder(R.drawable.bg_image_item)
@@ -184,7 +205,7 @@ class SourceThumbAdapter(
                 .into(binding.ivThumb)
 
             binding.root.setOnClickListener {
-                onItemClick(uri)
+                onItemClick(source)
             }
         }
     }

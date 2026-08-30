@@ -29,6 +29,7 @@ import com.suzu.test.db.SuzuDatabase
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.ResourceImportService
+import com.suzu.test.resource.importpkg.ResourcePackageImportService
 import com.suzu.test.ui.picker.MediaPickerActivity
 import com.suzu.test.ui.picker.PickerResultStore
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +51,7 @@ class ImportActivity : AppCompatActivity() {
     private lateinit var binding: ActivityImportBinding
     private lateinit var database: SuzuDatabase
     private lateinit var importService: ResourceImportService
+    private lateinit var packageImportService: ResourcePackageImportService
     private val viewModel: ImportViewModel by viewModels()
 
     // 运行期暂存当前 API 29 / MediaStore 单项/批量处理时的进度
@@ -131,6 +133,16 @@ class ImportActivity : AppCompatActivity() {
         }
     }
 
+    private val openZipLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            handlePackageZipSelected(uri)
+        } else {
+            binding.tvProgress.text = "未选择资源包"
+        }
+    }
+
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { _ ->
@@ -144,6 +156,7 @@ class ImportActivity : AppCompatActivity() {
 
         database = DatabaseProvider.getDatabase(this)
         importService = ResourceImportService(this, database)
+        packageImportService = ResourcePackageImportService(this, database, importService)
 
         val targetCatId = intent.getLongExtra(EXTRA_TARGET_CATEGORY_ID, -1L)
         if (targetCatId != -1L) {
@@ -161,6 +174,10 @@ class ImportActivity : AppCompatActivity() {
 
         binding.btnPickFromFolder.setOnClickListener {
             openDocumentTreeLauncher.launch(null)
+        }
+
+        binding.btnImportFromPackage.setOnClickListener {
+            launchPackagePicker()
         }
 
         binding.tvViewDetailAction.setOnClickListener {
@@ -189,6 +206,10 @@ class ImportActivity : AppCompatActivity() {
                 "image/gif"
             )
         )
+    }
+
+    private fun launchPackagePicker() {
+        openZipLauncher.launch(arrayOf("application/zip"))
     }
 
     private fun checkAndLaunchPicker() {
@@ -403,6 +424,30 @@ class ImportActivity : AppCompatActivity() {
         binding.btnPickImages.isEnabled = enabled
         binding.btnPickFromFiles.isEnabled = enabled
         binding.btnPickFromFolder.isEnabled = enabled
+        binding.btnImportFromPackage.isEnabled = enabled
+    }
+
+    private fun handlePackageZipSelected(uri: Uri) {
+        setButtonsEnabled(false)
+        binding.tvProgress.text = "正在导入 zip 资源包..."
+        binding.tvSummary.text = ""
+        lifecycleScope.launch {
+            try {
+                val result = packageImportService.importFromZip(uri)
+                val aggregateCards = buildAggregateCards(result.records)
+                ImportResultHolder.records = result.records
+                ImportResultHolder.aggregateCards = aggregateCards
+                binding.tvProgress.text = "zip 资源包导入完成"
+                binding.tvSummary.text = "新增 ${result.summary.successCount} 张，重复 ${result.summary.duplicateCount} 张，失败 ${result.summary.failCount} 张"
+                binding.tvViewDetailAction.visibility = if (aggregateCards.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+            } catch (e: Exception) {
+                TestLog.e(MODULE, "资源包导入失败: ${e.message}", e)
+                binding.tvProgress.text = "zip 资源包导入失败"
+                Toast.makeText(this@ImportActivity, e.message ?: "资源包导入失败", Toast.LENGTH_LONG).show()
+            } finally {
+                setButtonsEnabled(true)
+            }
+        }
     }
 
     private fun startImportProcess(uris: List<Uri>, folderCategoryName: String? = null) {
@@ -631,7 +676,9 @@ class ImportActivity : AppCompatActivity() {
                             count = group.size,
                             mainFilename = newAddedRecord.filename,
                             mainUri = newAddedRecord.sourceUri,
+                            mainPreviewFilePath = newAddedRecord.previewFilePath,
                             itemUris = group.map { it.sourceUri },
+                            itemPreviewFilePaths = group.map { it.previewFilePath },
                             syncKey = syncKey
                         )
                     )
@@ -644,7 +691,9 @@ class ImportActivity : AppCompatActivity() {
                             count = duplicateRecords.size,
                             mainFilename = firstDup.existingFilename,
                             mainUri = firstDup.sourceUri,
+                            mainPreviewFilePath = firstDup.previewFilePath,
                             itemUris = duplicateRecords.map { it.sourceUri },
+                            itemPreviewFilePaths = duplicateRecords.map { it.previewFilePath },
                             syncKey = syncKey
                         )
                     )
