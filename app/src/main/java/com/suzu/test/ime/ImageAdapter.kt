@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.graphics.drawable.GradientDrawable
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.suzu.test.databinding.ItemImageGridBinding
 import com.suzu.test.ime.theme.KeyboardTheme
 
@@ -34,10 +35,15 @@ class ImageAdapter(
         holder.bind(items[position])
     }
 
+    override fun onViewRecycled(holder: ImageViewHolder) {
+        super.onViewRecycled(holder)
+        Glide.with(holder.itemView.context).clear(holder.binding.ivThumbnail)
+    }
+
     override fun getItemCount(): Int = items.size
 
     inner class ImageViewHolder(
-        private val binding: ItemImageGridBinding
+        val binding: ItemImageGridBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: ImageItem) {
@@ -64,6 +70,8 @@ class ImageAdapter(
                     } catch (e: Exception) {
                         Glide.with(itemView.context)
                             .load("file:///android_asset/${item.assetFileName}")
+                            .override(250, 250)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
                             .into(binding.ivThumbnail)
                     }
                 }
@@ -72,7 +80,9 @@ class ImageAdapter(
                     Glide.with(itemView.context)
                         .asBitmap()
                         .load(item.uri)
+                        .override(250, 250)
                         .centerCrop()
+                        .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
                         .into(binding.ivThumbnail)
                 }
                 is ImageItem.SuzuResource -> {
@@ -81,7 +91,9 @@ class ImageAdapter(
                     Glide.with(itemView.context)
                         .asBitmap()
                         .load(item.file)
+                        .override(250, 250)
                         .centerCrop()
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .into(binding.ivThumbnail)
                 }
             }

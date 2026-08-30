@@ -40,8 +40,13 @@ class RecentThumbAdapter(
         holder.bind(getItem(position))
     }
 
+    override fun onViewRecycled(holder: ThumbViewHolder) {
+        super.onViewRecycled(holder)
+        Glide.with(holder.itemView.context).clear(holder.binding.ivRecentThumb)
+    }
+
     inner class ThumbViewHolder(
-        private val binding: ItemHomeRecentThumbBinding
+        val binding: ItemHomeRecentThumbBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         init {
@@ -59,7 +64,7 @@ class RecentThumbAdapter(
                 .load(file)
                 .override(200, 200)
                 .centerCrop()
-                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .into(binding.ivRecentThumb)
         }
     }

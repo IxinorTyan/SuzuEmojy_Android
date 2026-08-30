@@ -60,8 +60,13 @@ class MediaPickerAdapter(
         }
     }
 
+    override fun onViewRecycled(holder: MediaViewHolder) {
+        super.onViewRecycled(holder)
+        Glide.with(holder.itemView.context).clear(holder.binding.ivThumbnail)
+    }
+
     inner class MediaViewHolder(
-        private val binding: ItemMediaPickerGridBinding
+        val binding: ItemMediaPickerGridBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         init {
@@ -78,7 +83,7 @@ class MediaPickerAdapter(
                 .load(item.uri)
                 .override(300, 300)
                 .centerCrop()
-                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
                 .into(binding.ivThumbnail)
 
             binding.tvImportedBadge.visibility = if (item.isLikelyImported) View.VISIBLE else View.GONE

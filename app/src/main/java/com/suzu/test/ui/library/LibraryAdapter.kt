@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.suzu.test.databinding.ItemLibraryGridBinding
 import com.suzu.test.db.entity.ResourceEntity
 import java.io.File
@@ -55,8 +56,13 @@ class LibraryAdapter(
         }
     }
 
+    override fun onViewRecycled(holder: LibraryViewHolder) {
+        super.onViewRecycled(holder)
+        Glide.with(holder.itemView.context).clear(holder.binding.ivThumbnail)
+    }
+
     inner class LibraryViewHolder(
-        private val binding: ItemLibraryGridBinding
+        val binding: ItemLibraryGridBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: ResourceEntity) {
@@ -64,7 +70,9 @@ class LibraryAdapter(
             Glide.with(itemView.context)
                 .asBitmap()
                 .load(file)
+                .override(250, 250)
                 .centerCrop()
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .into(binding.ivThumbnail)
 
             val isGif = item.format.equals("gif", ignoreCase = true)
