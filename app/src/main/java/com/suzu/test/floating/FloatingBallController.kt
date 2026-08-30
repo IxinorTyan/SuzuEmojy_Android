@@ -180,7 +180,8 @@ class FloatingBallController(private val context: Context) {
                 evaluateVisibility()
             } else {
                 mainHandler.removeCallbacks(hideRunnable)
-                mainHandler.postDelayed(hideRunnable, 150L)
+                imeVisible = false
+                evaluateVisibility()
             }
         }
     }
