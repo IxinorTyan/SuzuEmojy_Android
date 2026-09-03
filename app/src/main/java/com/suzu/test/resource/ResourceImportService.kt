@@ -64,8 +64,8 @@ class ResourceImportService(
                 syncKey = "f:${cleanResult.md5}",
                 pixelMd5 = null,
                 fileMd5 = cleanResult.md5,
-                width = 0,
-                height = 0
+                width = cleanResult.width,
+                height = cleanResult.height
             )
             is CleanResult.UnsupportedFormat -> {
                 TestLog.e(MODULE, "import 失败: 不支持的格式 (${cleanResult.reason})")

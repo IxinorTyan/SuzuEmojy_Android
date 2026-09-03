@@ -1,6 +1,7 @@
 package com.suzu.test.ui.library
 
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -167,7 +168,42 @@ class ResourceDetailActivity : AppCompatActivity() {
         }
 
         // 元数据
-        binding.tvMetaResolution.text = "尺寸: ${res.width} × ${res.height}"
+        binding.tvMetaResolution.text = if (res.width > 0 && res.height > 0) {
+            "尺寸: ${res.width} × ${res.height}"
+        } else {
+            "尺寸: 读取中"
+        }
+        if (res.width <= 0 || res.height <= 0) {
+            lifecycleScope.launch {
+                val dimensions = withContext(Dispatchers.IO) {
+                    val file = File(resourcesDir, res.filename)
+                    if (!file.exists()) {
+                        null
+                    } else {
+                        val options = BitmapFactory.Options().apply {
+                            inJustDecodeBounds = true
+                        }
+                        BitmapFactory.decodeFile(file.absolutePath, options)
+                        if (options.outWidth > 0 && options.outHeight > 0) {
+                            options.outWidth to options.outHeight
+                        } else {
+                            null
+                        }
+                    }
+                }
+                if (currentPosition == position && dimensions != null) {
+                    val (width, height) = dimensions
+                    binding.tvMetaResolution.text = "尺寸: $width × $height"
+                    val updated = res.copy(width = width, height = height)
+                    items[position] = updated
+                    withContext(Dispatchers.IO) {
+                        database.resourceDao().update(updated)
+                    }
+                } else if (currentPosition == position) {
+                    binding.tvMetaResolution.text = "尺寸: 未知"
+                }
+            }
+        }
         binding.tvMetaSize.text = "大小: ${formatFileSize(res.byteSize)}"
         binding.tvMetaFormat.text = "格式: ${res.format} ${if (res.isAnimated) "(动图)" else "(静态)"}"
 

@@ -1,6 +1,7 @@
 package com.suzu.test.resource.clean
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.hash.ResourceHasher
 import java.io.ByteArrayOutputStream
@@ -15,6 +16,8 @@ sealed class CleanResult {
 
     data class GifImage(
         val gifBytes: ByteArray,
+        val width: Int,
+        val height: Int,
         val md5: String
     ) : CleanResult()
 
@@ -57,10 +60,24 @@ object ResourceCleaner {
             TestLog.w(MODULE, "passthroughGif: 输入非合法 GIF 魔数")
             return CleanResult.UnsupportedFormat("Invalid GIF header")
         }
+        val bounds = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            TestLog.w(MODULE, "passthroughGif: 无法读取 GIF 尺寸")
+            return CleanResult.UnsupportedFormat("Failed to read GIF dimensions")
+        }
+
         val fileMd5 = ResourceHasher.fileMd5(bytes)
-        TestLog.i(MODULE, "passthroughGif: GIF 直通成功 (大小=${bytes.size}, MD5=$fileMd5)")
+        TestLog.i(
+            MODULE,
+            "passthroughGif: GIF 直通成功 (尺寸 ${bounds.outWidth}x${bounds.outHeight}, 大小=${bytes.size}, MD5=$fileMd5)"
+        )
         return CleanResult.GifImage(
             gifBytes = bytes,
+            width = bounds.outWidth,
+            height = bounds.outHeight,
             md5 = fileMd5
         )
     }

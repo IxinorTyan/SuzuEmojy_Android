@@ -71,6 +71,7 @@ class KeyboardTabBar(
                         render()
                     } else {
                         updateSelectionState(newEffectiveTab)
+                        scrollTabToSelection(newEffectiveTab)
                     }
                 }
             }
@@ -157,6 +158,7 @@ class KeyboardTabBar(
 
         scrollView?.post {
             scrollView.scrollTo(savedScrollX, 0)
+            scrollTabToSelection(effectiveTab)
         }
     }
 
@@ -178,13 +180,34 @@ class KeyboardTabBar(
         return true
     }
 
-    private fun selectTab(tabKey: String) {
-        if (currentTab == tabKey && lastNotifiedTab == tabKey) return
+    fun selectTab(tabKey: String) {
+        if (currentTab == tabKey && lastNotifiedTab == tabKey) {
+            scrollTabToSelection(tabKey)
+            return
+        }
         currentTab = tabKey
         lastNotifiedTab = tabKey
         prefs.edit().putString(KEY_LAST_TAB, tabKey).apply()
         updateSelectionState(tabKey)
+        scrollTabToSelection(tabKey)
         onTabSelected(tabKey)
+    }
+
+    private fun scrollTabToSelection(tabKey: String) {
+        val scrollView = container.parent as? android.widget.HorizontalScrollView ?: return
+        val tab = tabViewMap[tabKey] ?: return
+
+        tab.post {
+            val viewportLeft = scrollView.scrollX
+            val viewportRight = viewportLeft + scrollView.width
+            val tabLeft = tab.left
+            val tabRight = tab.right
+
+            if (tabLeft < viewportLeft || tabRight > viewportRight) {
+                val targetLeft = tabLeft - (scrollView.width - tab.width) / 2
+                scrollView.smoothScrollTo(targetLeft.coerceAtLeast(0), 0)
+            }
+        }
     }
 
     private fun createSpecialTabView(iconResId: Int, isSelected: Boolean, theme: KeyboardTheme, onClick: () -> Unit): View {
@@ -288,6 +311,8 @@ class KeyboardTabBar(
             }
         }
     }
+
+    fun getTabSizeDp(): Int = KeyboardConfig.getTabIconSizeDp(context)
 
     fun destroy() {
         observeJob?.cancel()

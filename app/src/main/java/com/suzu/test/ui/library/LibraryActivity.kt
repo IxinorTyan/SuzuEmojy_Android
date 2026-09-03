@@ -137,6 +137,10 @@ class LibraryActivity : AppCompatActivity() {
         categoryController = CategoryBarController(
             context = this,
             container = binding.llCategoryContainer,
+            categoryBarScrollView = binding.svCategoryBar,
+            dropdownButton = binding.btnCategoryDropdown,
+            dropdownPanel = binding.svCategoryDropdown,
+            dropdownGrid = binding.glCategoryDropdown,
             scope = lifecycleScope,
             isSortingMode = { isSortingMode },
             onAllLongClick = {
@@ -218,6 +222,7 @@ class LibraryActivity : AppCompatActivity() {
             return
         }
 
+        categoryController.closeDropdown()
         binding.root.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
         if (isSelectionMode) {
             setSelectionMode(false)
@@ -246,6 +251,7 @@ class LibraryActivity : AppCompatActivity() {
         isSortingMode = enabled
 
         if (enabled) {
+            categoryController.closeDropdown()
             if (isSelectionMode) {
                 setSelectionMode(false)
             }
@@ -347,6 +353,8 @@ class LibraryActivity : AppCompatActivity() {
                     setSortingMode(false)
                 } else if (isSelectionMode) {
                     setSelectionMode(false)
+                } else if (categoryController.isDropdownExpanded) {
+                    categoryController.closeDropdown()
                 } else {
                     isEnabled = false
                     onBackPressedDispatcher.onBackPressed()
@@ -361,6 +369,8 @@ class LibraryActivity : AppCompatActivity() {
                 setSortingMode(false)
             } else if (isSelectionMode) {
                 setSelectionMode(false)
+            } else if (categoryController.isDropdownExpanded) {
+                categoryController.closeDropdown()
             } else {
                 finish()
             }

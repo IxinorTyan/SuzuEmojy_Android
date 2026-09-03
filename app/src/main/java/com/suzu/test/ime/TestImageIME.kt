@@ -21,6 +21,7 @@ import com.suzu.test.ime.diag.EditorInfoDumper
 import com.suzu.test.ime.diag.ImageSendDiagnostics
 import com.suzu.test.ime.sender.ImageSender
 import com.suzu.test.ime.ui.KeyboardTabBar
+import com.suzu.test.ime.ui.ImeTabDropdownController
 import com.suzu.test.ime.config.KeyboardConfig
 import com.suzu.test.ime.theme.KeyboardTheme
 import com.suzu.test.ime.theme.ThemeApplier
@@ -53,6 +54,7 @@ class TestImageIME : InputMethodService() {
     private lateinit var dataSource: KeyboardDataSource
     private lateinit var imageSender: ImageSender
     private var tabBar: KeyboardTabBar? = null
+    private var imeTabDropdown: ImeTabDropdownController? = null
     private val dbExecutor = Executors.newSingleThreadExecutor()
     private lateinit var imageAdapter: ImageAdapter
     private var gridLayoutManager: GridLayoutManager? = null
@@ -112,16 +114,37 @@ class TestImageIME : InputMethodService() {
 
         viewBinding.btnExit.setOnClickListener { exitAndRestoreIme() }
 
+        imeTabDropdown?.destroy()
+        imeTabDropdown = null
         tabBar?.destroy()
+
         val tb = KeyboardTabBar(
             context = this,
             container = viewBinding.llTabBarContainer,
             scope = serviceScope,
-            onTabSelected = { tabKey -> loadImagesForTab(tabKey) }
+            onTabSelected = { tabKey ->
+                loadImagesForTab(tabKey)
+                imeTabDropdown?.setSelectedTab(tabKey)
+            }
         )
         tabBar = tb
+
+        val dropdown = ImeTabDropdownController(
+            context = this,
+            button = viewBinding.btnTabDropdown,
+            panel = viewBinding.svImeTabDropdown,
+            grid = viewBinding.glImeTabDropdown,
+            scope = serviceScope,
+            tabSizeDpProvider = { tb.getTabSizeDp() },
+            onTabSelected = { tabKey -> tb.selectTab(tabKey) }
+        )
+        imeTabDropdown = dropdown
+        dropdown.refreshTheme()
+
         val initialEffectiveTab = tb.getEffectiveTab()
+        dropdown.setSelectedTab(initialEffectiveTab)
         tb.start()
+        dropdown.start()
 
         loadImagesForTab(initialEffectiveTab)
         return viewBinding.root
@@ -285,14 +308,18 @@ class TestImageIME : InputMethodService() {
             resources.displayMetrics
         ).toInt()
 
+        val buttonPaddingPx = android.util.TypedValue.applyDimension(
+            android.util.TypedValue.COMPLEX_UNIT_DIP,
+            8f,
+            resources.displayMetrics
+        ).toInt()
+
+        binding?.btnTabDropdown?.let { dropdownBtn ->
+            configureHeaderButton(dropdownBtn, tabSizePx, buttonPaddingPx)
+        }
+
         binding?.btnExit?.let { exitBtn ->
-            val lp = exitBtn.layoutParams
-            if (lp != null && (lp.width != tabSizePx || lp.height != tabSizePx)) {
-                lp.width = tabSizePx
-                lp.height = tabSizePx
-                exitBtn.layoutParams = lp
-                exitBtn.requestLayout()
-            }
+            configureHeaderButton(exitBtn, tabSizePx, buttonPaddingPx)
         }
 
         binding?.llTabHeaderBar?.let { headerBar ->
@@ -305,11 +332,34 @@ class TestImageIME : InputMethodService() {
         }
     }
 
+    private fun configureHeaderButton(
+        button: android.widget.ImageButton,
+        sizePx: Int,
+        paddingPx: Int
+    ) {
+        val lp = button.layoutParams ?: return
+        var needsLayout = false
+        if (lp.width != sizePx || lp.height != sizePx) {
+            lp.width = sizePx
+            lp.height = sizePx
+            button.layoutParams = lp
+            needsLayout = true
+        }
+        button.minimumWidth = 0
+        button.minimumHeight = 0
+        button.setPadding(paddingPx, paddingPx, paddingPx, paddingPx)
+        button.scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+        if (needsLayout) {
+            button.requestLayout()
+        }
+    }
+
     private fun applyTheme() {
         val theme = KeyboardTheme.current(this)
         binding?.let { b ->
             ThemeApplier.applyTo(b, theme)
             tabBar?.refreshTheme()
+            imeTabDropdown?.refreshTheme()
             imageAdapter.notifyDataSetChanged()
             TestLog.i(MODULE, "应用键盘主题配置: isDark=${theme.isDark}")
         }
@@ -415,6 +465,8 @@ class TestImageIME : InputMethodService() {
         previewPopup = null
         super.onDestroy()
         TestLog.i(MODULE, "onDestroy: SuzuEmojy 销毁")
+        imeTabDropdown?.destroy()
+        imeTabDropdown = null
         tabBar?.destroy()
         tabBar = null
         serviceScope.cancel()

@@ -20,10 +20,31 @@ object ThemeApplier {
         }
 
         binding.flGridContainer.setBackgroundColor(theme.gridBg)
+        binding.svImeTabDropdown.background = createPopupBackground(theme)
+        binding.glImeTabDropdown.setBackgroundColor(theme.popupBg)
         binding.tvEmptyLibraryHint.setTextColor(theme.emptyHintText)
 
+        binding.llSendDiagnostic.setBackgroundColor(theme.rootBg)
+        binding.tvSendDiagnosticTitle.setTextColor(theme.tabTextSelected)
+        binding.switchDebugSkipProvider.setTextColor(theme.tabTextSelected)
+        binding.tvSendDiagnosticContent.setTextColor(theme.tabTextUnselected)
+
+        val headerButtonBackground = createTabBackground(theme)
+        binding.btnTabDropdown.imageTintList = ColorStateList.valueOf(theme.iconColor)
+        binding.btnTabDropdown.background = headerButtonBackground
         binding.btnExit.imageTintList = ColorStateList.valueOf(theme.iconColor)
         binding.btnExit.background = createTabBackground(theme)
+    }
+
+    private fun createPopupBackground(
+        theme: KeyboardTheme,
+        density: Float = 2.0f
+    ): GradientDrawable {
+        return GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            setColor(theme.popupBg)
+            setStroke((1 * density).toInt().coerceAtLeast(1), theme.popupStroke)
+        }
     }
 
     fun createTabBackground(theme: KeyboardTheme, density: Float = 2.0f): StateListDrawable {
