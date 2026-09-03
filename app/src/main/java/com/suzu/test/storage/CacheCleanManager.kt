@@ -1,7 +1,9 @@
 package com.suzu.test.storage
 
 import android.content.Context
+import android.net.Uri
 import com.bumptech.glide.Glide
+import com.suzu.test.ime.diag.ImageSendDiagnostics
 import com.suzu.test.log.TestLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -62,13 +64,25 @@ object CacheCleanManager {
             if (file.isFile) {
                 val age = now - file.lastModified()
                 if (age > maxAgeMs) {
+                    val beforeExists = file.exists()
                     val len = file.length()
-                    if (file.delete()) {
+                    val deletedNow = file.delete()
+                    if (deletedNow) {
                         deleted++
                         freed += len
                     } else {
                         failed++
                     }
+                    val record = ImageSendDiagnostics.recordForFile(file.absolutePath)
+                    ImageSendDiagnostics.recordCleanup(
+                        eventId = record?.eventId,
+                        uri = record?.uri?.takeIf { it.isNotBlank() }?.let(Uri::parse),
+                        file = file,
+                        reason = "缓存清理 cleanExpired（超过${maxAgeMs / 1000}秒）",
+                        beforeExists = beforeExists,
+                        beforeLength = len,
+                        result = if (deletedNow) "SUCCESS" else "FAILED"
+                    )
                 }
             }
         }
@@ -96,11 +110,24 @@ object CacheCleanManager {
                 if (file.isFile) {
                     val age = now - file.lastModified()
                     if (age > maxAgeMs) {
-                        if (file.delete()) {
+                        val beforeExists = file.exists()
+                        val beforeLength = file.length()
+                        val deletedNow = file.delete()
+                        if (deletedNow) {
                             deleted++
                         } else {
                             failed++
                         }
+                        val record = ImageSendDiagnostics.recordForFile(file.absolutePath)
+                        ImageSendDiagnostics.recordCleanup(
+                            eventId = record?.eventId,
+                            uri = record?.uri?.takeIf { it.isNotBlank() }?.let(Uri::parse),
+                            file = file,
+                            reason = "缓存清理 cleanAll（超过${maxAgeMs / 1000}秒）",
+                            beforeExists = beforeExists,
+                            beforeLength = beforeLength,
+                            result = if (deletedNow) "SUCCESS" else "FAILED"
+                        )
                     }
                 }
             }

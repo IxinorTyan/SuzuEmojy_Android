@@ -8,7 +8,11 @@ import android.os.ParcelFileDescriptor
 import android.os.Process
 import android.os.SystemClock
 import androidx.core.content.FileProvider
+import com.suzu.test.BuildConfig
+import com.suzu.test.ime.diag.DebugSendTestConfig
+import com.suzu.test.ime.diag.ImageSendDiagnostics
 import com.suzu.test.log.TestLog
+import java.io.File
 
 class DiagnosticFileProvider : FileProvider() {
 
@@ -16,30 +20,64 @@ class DiagnosticFileProvider : FileProvider() {
         private const val MODULE = "DiagnosticFileProvider"
     }
 
-    private fun logAccess(methodName: String, uri: Uri?, extraInfo: String = "") {
+    private fun resolveFile(uri: Uri): File? {
+        val record = ImageSendDiagnostics.recordForUri(uri)
+        return record?.filePath?.let(::File)
+    }
+
+    private fun stack(e: Exception): String =
+        android.util.Log.getStackTraceString(e)
+
+    private fun logAccess(methodName: String, uri: Uri?, mode: String?, success: String, error: Exception? = null) {
         val callingUid = Binder.getCallingUid()
-        val isSelf = (callingUid == Process.myUid())
-        val sourceTag = if (isSelf) "SELF" else "REMOTE"
-        val pm = context?.packageManager
         val packages = try {
-            pm?.getPackagesForUid(callingUid)?.joinToString() ?: "null/unknown"
+            context?.packageManager?.getPackagesForUid(callingUid)?.joinToString() ?: "null/unknown"
         } catch (e: Exception) {
             "error:${e.message}"
         }
-
-        val wallTime = System.currentTimeMillis()
-        val elapsedRealtime = SystemClock.elapsedRealtime()
-
-        TestLog.i(
-            MODULE,
-            "[$sourceTag] $methodName | uri=$uri | callingUid=$callingUid | packages=[$packages] | wallTime=$wallTime | elapsedRealtime=$elapsedRealtime ms | $extraInfo"
-        )
+        val record = uri?.let { ImageSendDiagnostics.recordForUri(it) }
+        val file = resolveFile(uri ?: Uri.EMPTY)
+        val extra = buildString {
+            append("timestamp=${System.currentTimeMillis()}")
+            append(", uri=$uri, mode=${mode ?: "N/A"}")
+            append(", callingUid=$callingUid, packages=[$packages]")
+            append(", processPid=${Process.myPid()}, processUid=${Process.myUid()}")
+            append(", eventId=${record?.eventId ?: "UNKNOWN"}")
+            append(", filePath=${file?.absolutePath ?: record?.filePath ?: "UNKNOWN"}")
+            append(", fileExists=${file?.exists() ?: false}, fileLength=${file?.length() ?: -1}")
+            append(", result=$success")
+            if (error != null) {
+                append(", exceptionType=${error::class.java.name}")
+                append(", exceptionMessage=${error.message}")
+                append(", stack=${stack(error)}")
+            }
+        }
+        TestLog.i(MODULE, "$methodName | $extra")
+        if (
+            record != null &&
+            methodName.startsWith("openFile") &&
+            callingUid != Process.myUid() &&
+            !(BuildConfig.DEBUG &&
+                DebugSendTestConfig.isSkipProviderDiagnosticAndCleanupEnabled(requireNotNull(context)))
+        ) {
+            record.providerOpen = when {
+                success == "SUCCESS" -> "成功"
+                success == "EXCEPTION" -> "异常"
+                else -> record.providerOpen
+            }
+            ImageSendDiagnostics.update(record)
+        }
     }
 
     override fun getType(uri: Uri): String? {
-        val result = super.getType(uri)
-        logAccess("getType", uri, "returnedType=$result")
-        return result
+        return try {
+            val result = super.getType(uri)
+            logAccess("getType", uri, null, "SUCCESS")
+            result
+        } catch (e: Exception) {
+            logAccess("getType", uri, null, "EXCEPTION", e)
+            throw e
+        }
     }
 
     override fun query(
@@ -49,31 +87,34 @@ class DiagnosticFileProvider : FileProvider() {
         selectionArgs: Array<out String>?,
         sortOrder: String?
     ): Cursor {
-        val projStr = projection?.joinToString() ?: "null"
-        logAccess("query", uri, "projection=[$projStr], selection=$selection")
-        return super.query(uri, projection, selection, selectionArgs, sortOrder)
+        return try {
+            val result = super.query(uri, projection, selection, selectionArgs, sortOrder)
+            logAccess("query", uri, null, "SUCCESS")
+            result
+        } catch (e: Exception) {
+            logAccess("query", uri, null, "EXCEPTION", e)
+            throw e
+        }
     }
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
-        logAccess("openFile", uri, "mode=$mode")
-        try {
-            val pfd = super.openFile(uri, mode)
-            logAccess("openFile-SUCCESS", uri, "fd=${pfd?.fd}, statSize=${pfd?.statSize}")
-            return pfd
+        return try {
+            val result = super.openFile(uri, mode)
+            logAccess("openFile", uri, mode, "SUCCESS")
+            result
         } catch (e: Exception) {
-            logAccess("openFile-EXCEPTION", uri, "error=${e.message}")
+            logAccess("openFile", uri, mode, "EXCEPTION", e)
             throw e
         }
     }
 
     override fun openAssetFile(uri: Uri, mode: String): AssetFileDescriptor? {
-        logAccess("openAssetFile", uri, "mode=$mode")
-        try {
-            val afd = super.openAssetFile(uri, mode)
-            logAccess("openAssetFile-SUCCESS", uri, "length=${afd?.length}")
-            return afd
+        return try {
+            val result = super.openAssetFile(uri, mode)
+            logAccess("openAssetFile", uri, mode, "SUCCESS")
+            result
         } catch (e: Exception) {
-            logAccess("openAssetFile-EXCEPTION", uri, "error=${e.message}")
+            logAccess("openAssetFile", uri, mode, "EXCEPTION", e)
             throw e
         }
     }

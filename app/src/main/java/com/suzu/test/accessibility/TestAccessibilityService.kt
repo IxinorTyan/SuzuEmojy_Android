@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.InputMethodManager
 import com.suzu.test.floating.FloatingBallConfig
@@ -73,6 +74,31 @@ class TestAccessibilityService : AccessibilityService() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var ballController: FloatingBallController? = null
+
+    private data class PendingShareCard(
+        val targetPackage: String,
+        val expiresAt: Long
+    )
+
+    @Volatile
+    private var pendingShareCard: PendingShareCard? = null
+
+    private val shareCardTimeoutRunnable = Runnable {
+        pendingShareCard = null
+    }
+    private var shareCardRetryCount = 0
+    private val shareCardRetryRunnable = object : Runnable {
+        override fun run() {
+            if (pendingShareCard == null) return
+            if (trySelectPendingShareCard()) return
+            if (++shareCardRetryCount < 24) {
+                mainHandler.postDelayed(this, 350L)
+            } else {
+                pendingShareCard = null
+                TestLog.w(MODULE, "分享卡片自动选择超时：未找到“发送给好友”入口")
+            }
+        }
+    }
     private var ballConfigListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     override fun onServiceConnected() {
@@ -164,8 +190,92 @@ class TestAccessibilityService : AccessibilityService() {
         }
     }
 
+    /**
+     * 登记一次通道 B 的卡片自动选择。
+     *
+     * 只在短时间内生效，并且只匹配当前目标应用的窗口；完成一次点击后立即失效，
+     * 防止服务对用户之后正常看到的同名按钮产生误触。
+     */
+    fun armShareCardAutomation(targetPackage: String) {
+        if (targetPackage.isBlank()) return
+        pendingShareCard = PendingShareCard(
+            targetPackage = targetPackage,
+            expiresAt = System.currentTimeMillis() + 8_000L
+        )
+        shareCardRetryCount = 0
+        mainHandler.removeCallbacks(shareCardTimeoutRunnable)
+        mainHandler.removeCallbacks(shareCardRetryRunnable)
+        mainHandler.postDelayed(shareCardTimeoutRunnable, 8_000L)
+        mainHandler.post(shareCardRetryRunnable)
+        TestLog.i(MODULE, "已登记通道B卡片自动选择: targetPackage=$targetPackage")
+    }
+
+    private fun tryAutoSelectShareCard(event: AccessibilityEvent) {
+        val pending = pendingShareCard ?: return
+        if (event.packageName?.toString() != pending.targetPackage) return
+        trySelectPendingShareCard()
+    }
+
+    private fun trySelectPendingShareCard(): Boolean {
+        val pending = pendingShareCard ?: return false
+        if (System.currentTimeMillis() >= pending.expiresAt) {
+            pendingShareCard = null
+            return false
+        }
+
+        val root = try { rootInActiveWindow } catch (_: Exception) { null } ?: return false
+        val labels = when (pending.targetPackage) {
+            "com.tencent.mm" -> setOf("发送给朋友", "Send to Friends")
+            else -> setOf(
+                "发送给好友", "发送给朋友", "分享给好友", "发给好友",
+                "Send to Friends", "Send to a Friend"
+            )
+        }
+
+        val candidate = findShareCardNode(root, labels) ?: return false
+        if (!clickNodeOrClickableParent(candidate)) return false
+
+        pendingShareCard = null
+        mainHandler.removeCallbacks(shareCardTimeoutRunnable)
+        mainHandler.removeCallbacks(shareCardRetryRunnable)
+        TestLog.i(
+            MODULE,
+            "已自动选择通道B发送卡片: package=${pending.targetPackage}, text=${candidate.text}"
+        )
+        return true
+    }
+
+    private fun findShareCardNode(
+        root: AccessibilityNodeInfo,
+        labels: Set<String>
+    ): AccessibilityNodeInfo? {
+        for (label in labels) {
+            val nodes = try { root.findAccessibilityNodeInfosByText(label) } catch (_: Exception) { emptyList() }
+            val exact = nodes.firstOrNull {
+                it.text?.toString()?.trim() == label ||
+                    it.contentDescription?.toString()?.trim() == label
+            }
+            if (exact != null) return exact
+        }
+        return null
+    }
+
+    private fun clickNodeOrClickableParent(node: AccessibilityNodeInfo): Boolean {
+        var current: AccessibilityNodeInfo? = node
+        repeat(6) {
+            val candidate = current ?: return@repeat
+            if (candidate.isClickable && candidate.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                return true
+            }
+            current = candidate.parent
+        }
+        return false
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
+
+        tryAutoSelectShareCard(event)
 
         // 信号一：前台应用包名（含自身 App，但排除 IME 与瞬态窗口）
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
@@ -196,6 +306,9 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
+        pendingShareCard = null
+        mainHandler.removeCallbacks(shareCardTimeoutRunnable)
+        mainHandler.removeCallbacks(shareCardRetryRunnable)
         TestLog.i(MODULE, "onInterrupt: 服务被中断")
     }
 
@@ -213,6 +326,9 @@ class TestAccessibilityService : AccessibilityService() {
         ballConfigListener = null
         ballController?.detach()
         ballController = null
+        pendingShareCard = null
+        mainHandler.removeCallbacks(shareCardTimeoutRunnable)
+        mainHandler.removeCallbacks(shareCardRetryRunnable)
         instance = null
         TestLog.i(MODULE, "onDestroy: 服务销毁")
         super.onDestroy()

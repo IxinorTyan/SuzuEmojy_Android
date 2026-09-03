@@ -23,6 +23,7 @@ import com.suzu.test.db.entity.ResourceCategoryEntity
 import com.suzu.test.db.entity.ResourceEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.KeywordUtils
+import com.suzu.test.resource.delete.ResourceDeleteHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -283,23 +284,20 @@ class ResourceDetailActivity : AppCompatActivity() {
 
     private fun executeDelete(resource: ResourceEntity) {
         val deletedIdx = currentPosition
-        lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    // 1. DAO 事务删库
-                    database.withTransaction {
-                        database.resourceDao().deleteByIds(listOf(resource.id))
-                    }
-                    // 2. 事务成功后删除物理文件
-                    val file = File(resourcesDir, resource.filename)
-                    if (file.exists()) file.delete()
-                    TestLog.i(MODULE, "成功删除表情: ID=${resource.id}, file=${resource.filename}")
-                } catch (e: Exception) {
-                    TestLog.e(MODULE, "删除表情失败: ${e.message}", e)
-                }
+        ResourceDeleteHelper.deleteResources(
+            context = this,
+            scope = lifecycleScope,
+            database = database,
+            resources = listOf(resource),
+            title = "删除表情"
+        ) { result ->
+            if (result.isCancelled || result.failedCount > 0 || result.deletedCount != 1) {
+                Toast.makeText(this, "删除失败，原表情已保留", Toast.LENGTH_SHORT).show()
+                return@deleteResources
             }
 
-            Toast.makeText(this@ResourceDetailActivity, "已删除", Toast.LENGTH_SHORT).show()
+            TestLog.i(MODULE, "成功删除表情: ID=${resource.id}, file=${resource.filename}")
+            Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show()
 
             val intent = Intent().apply {
                 putExtra(EXTRA_DELETED, true)

@@ -35,6 +35,7 @@ import com.suzu.test.db.entity.ResourceCategoryEntity
 import com.suzu.test.db.entity.ResourceEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.KeywordUtils
+import com.suzu.test.resource.delete.ResourceDeleteHelper
 import com.suzu.test.ui.picker.SlideSelectionHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -651,30 +652,24 @@ class LibraryActivity : AppCompatActivity() {
             .setPositiveButton("删除") { _, _ ->
                 val targetIds = selectedIds.toList()
                 lifecycleScope.launch {
-                    val deletedCount = withContext(Dispatchers.IO) {
-                        try {
-                            // 1. 先读出记录拿到文件名
-                            val targets = database.resourceDao().getResourcesByIds(targetIds)
-                            // 2. DAO 事务删库
-                            val affected = database.resourceDao().deleteByIds(targetIds)
-                            // 3. 事务成功后再删物理文件
-                            targets.forEach { res ->
-                                try {
-                                    val file = File(resourcesDir, res.filename)
-                                    if (file.exists()) file.delete()
-                                } catch (e: Exception) {
-                                    TestLog.e(MODULE, "删除物理文件失败 (${res.filename}): ${e.message}", e)
-                                }
-                            }
-                            affected
-                        } catch (e: Exception) {
-                            TestLog.e(MODULE, "批量删除异常: ${e.message}", e)
-                            0
-                        }
+                    val targets = withContext(Dispatchers.IO) {
+                        database.resourceDao().getResourcesByIds(targetIds)
                     }
-
-                    Toast.makeText(this@LibraryActivity, "已成功删除 $deletedCount 张图片", Toast.LENGTH_SHORT).show()
-                    setSelectionMode(false)
+                    ResourceDeleteHelper.deleteResources(
+                        context = this@LibraryActivity,
+                        scope = lifecycleScope,
+                        database = database,
+                        resources = targets
+                    ) { result ->
+                        val message = if (result.isCancelled) {
+                            "已删除 ${result.deletedCount} 张图片（已取消，失败 ${result.failedCount} 张）"
+                        } else {
+                            "已成功删除 ${result.deletedCount} 张图片" +
+                                if (result.failedCount > 0) "，失败 ${result.failedCount} 张" else ""
+                        }
+                        Toast.makeText(this@LibraryActivity, message, Toast.LENGTH_SHORT).show()
+                        setSelectionMode(false)
+                    }
                 }
             }
             .setNegativeButton("取消", null)
@@ -912,18 +907,18 @@ class LibraryActivity : AppCompatActivity() {
     }
 
     private fun deleteResource(resource: ResourceEntity) {
-        lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                try {
-                    database.withTransaction {
-                        database.resourceDao().delete(resource)
-                    }
-                    val file = File(resourcesDir, resource.filename)
-                    if (file.exists()) file.delete()
-                    TestLog.i(MODULE, "成功删除资源: ID=${resource.id}, file=${resource.filename}")
-                } catch (e: Exception) {
-                    TestLog.e(MODULE, "删除资源异常: ${e.message}", e)
-                }
+        ResourceDeleteHelper.deleteResources(
+            context = this,
+            scope = lifecycleScope,
+            database = database,
+            resources = listOf(resource)
+        ) { result ->
+            if (result.deletedCount > 0) {
+                Toast.makeText(this, "已删除此表情", Toast.LENGTH_SHORT).show()
+            } else if (result.isCancelled) {
+                Toast.makeText(this, "已取消删除", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "删除失败", Toast.LENGTH_SHORT).show()
             }
         }
     }

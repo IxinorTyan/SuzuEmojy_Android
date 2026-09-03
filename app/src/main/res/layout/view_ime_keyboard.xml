@@ -5,7 +5,6 @@
     android:orientation="vertical"
     android:background="#2B2B2B">
 
-    <!-- 顶部横向滚动分类条 + 右侧固定退出按钮 (高度由 sizeDp 驱动) -->
     <LinearLayout
         android:id="@+id/llTabHeaderBar"
         android:layout_width="match_parent"
@@ -41,7 +40,6 @@
             android:contentDescription="收起键盘" />
     </LinearLayout>
 
-    <!-- 中部图片网格 与空状态提示 -->
     <FrameLayout
         android:id="@+id/flGridContainer"
         android:layout_width="match_parent"
@@ -66,4 +64,68 @@
             android:visibility="gone" />
     </FrameLayout>
 
+    <LinearLayout
+        android:id="@+id/llSendDiagnostic"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#171717"
+        android:padding="4dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvSendDiagnosticTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="发送诊断（DEBUG）"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
+
+            <Switch
+                android:id="@+id/switchDebugSkipProvider"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="模拟未读取"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:contentDescription="模拟 Provider 未发生及未清理" />
+
+            <Button
+                android:id="@+id/btnSendDiagnosticToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="0dp"
+                android:text="查看"
+                android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/btnSendDiagnosticCopy"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:minWidth="0dp"
+                android:text="复制"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <ScrollView
+            android:id="@+id/svSendDiagnostic"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvSendDiagnosticContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#DDDDDD"
+                android:textSize="10sp"
+                android:textIsSelectable="true" />
+        </ScrollView>
+    </LinearLayout>
 </LinearLayout>

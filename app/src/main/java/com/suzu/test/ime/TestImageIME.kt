@@ -1,5 +1,7 @@
 package com.suzu.test.ime
 
+import android.content.ClipboardManager
+import android.content.ClipData
 import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.os.Build
@@ -14,7 +16,9 @@ import com.suzu.test.databinding.ViewImeKeyboardBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.entity.RecentHistoryEntity
 import com.suzu.test.ime.data.KeyboardDataSource
+import com.suzu.test.ime.diag.DebugSendTestConfig
 import com.suzu.test.ime.diag.EditorInfoDumper
+import com.suzu.test.ime.diag.ImageSendDiagnostics
 import com.suzu.test.ime.sender.ImageSender
 import com.suzu.test.ime.ui.KeyboardTabBar
 import com.suzu.test.ime.config.KeyboardConfig
@@ -78,6 +82,9 @@ class TestImageIME : InputMethodService() {
         val viewBinding = ViewImeKeyboardBinding.inflate(layoutInflater)
         binding = viewBinding
 
+        setupSendDiagnostics(viewBinding)
+        setupDebugSendSwitch(viewBinding)
+
         previewPopup?.dismiss()
         previewPopup = ImagePreviewPopup(this)
 
@@ -132,13 +139,70 @@ class TestImageIME : InputMethodService() {
 
         val onSuccessCallback: () -> Unit = { updateUsageStatsInBackground(item) }
 
-        if (targetPkg in H1B_DIRECT_FAMILY) {
+        if (targetPkg == "com.tencent.tim") {
+            TestLog.i(MODULE, "智能路由 -> Tim 使用标准图片分享，跳转发送给好友入口")
+            imageSender.executeDirectShare(
+                item = item,
+                targetPkg = targetPkg,
+                editorInfoPackage = targetPkg,
+                onSuccess = onSuccessCallback
+            )
+        } else if (targetPkg in H1B_DIRECT_FAMILY) {
             TestLog.i(MODULE, "智能路由 -> 命中 H1β 直发家族 ($targetPkg)，走 H1β 私有协议直发")
-            imageSender.executeH1b(item, targetPkg, { currentInputConnection }, onSuccessCallback)
+            imageSender.executeH1b(
+                item = item,
+                targetPkg = targetPkg,
+                editorInfoPackage = targetPkg,
+                icProvider = { currentInputConnection },
+                onSuccess = onSuccessCallback
+            )
         } else {
             TestLog.i(MODULE, "智能路由 -> 非 H1β 直发目标 ($targetPkg)，走剪贴板注入与标准粘贴")
-            imageSender.executeE(item, targetPkg, { currentInputConnection }, onSuccessCallback)
+            imageSender.executeE(
+                item = item,
+                targetPkg = targetPkg,
+                editorInfoPackage = targetPkg,
+                icProvider = { currentInputConnection },
+                onSuccess = onSuccessCallback
+            )
         }
+    }
+
+    private fun setupDebugSendSwitch(viewBinding: ViewImeKeyboardBinding) {
+        if (!BuildConfig.DEBUG) return
+        val testSwitch = viewBinding.switchDebugSkipProvider
+        testSwitch.isChecked =
+            DebugSendTestConfig.isSkipProviderDiagnosticAndCleanupEnabled(this)
+        testSwitch.setOnCheckedChangeListener { _, enabled ->
+            DebugSendTestConfig.setSkipProviderDiagnosticAndCleanupEnabled(this, enabled)
+            TestLog.i(
+                MODULE,
+                "DEBUG发送测试开关：模拟 Provider 未发生及未清理 = $enabled"
+            )
+        }
+    }
+
+    private fun setupSendDiagnostics(viewBinding: ViewImeKeyboardBinding) {
+        if (!BuildConfig.DEBUG) return
+        viewBinding.llSendDiagnostic.visibility = View.VISIBLE
+        val refresh = {
+            viewBinding.tvSendDiagnosticContent.text =
+                ImageSendDiagnostics.recent().joinToString("\n\n") { it.summary() }
+        }
+        val listener: () -> Unit = { viewBinding.root.post(refresh) }
+        ImageSendDiagnostics.addListener(listener)
+        viewBinding.btnSendDiagnosticToggle.setOnClickListener {
+            val expanded = viewBinding.svSendDiagnostic.visibility == View.VISIBLE
+            viewBinding.svSendDiagnostic.visibility = if (expanded) View.GONE else View.VISIBLE
+            viewBinding.btnSendDiagnosticToggle.text = if (expanded) "查看" else "收起"
+            refresh()
+        }
+        viewBinding.btnSendDiagnosticCopy.setOnClickListener {
+            val text = ImageSendDiagnostics.recent().joinToString("\n\n") { it.summary() }
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("SuzuEmojy_SendDiagnostics", text))
+        }
+        refresh()
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {

@@ -10,7 +10,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.room.withTransaction
 import com.suzu.test.R
 import com.suzu.test.db.CategoryIconResolver
 import com.suzu.test.db.CategoryIconResult
@@ -23,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+import com.suzu.test.resource.delete.ResourceDeleteHelper
 import com.suzu.test.resource.export.ResourceExportHelper
 
 class CategoryDialogHelper(
@@ -272,39 +272,62 @@ class CategoryDialogHelper(
             .setPositiveButton("删除") { _, _ ->
                 val shouldDeleteImages = cbDeleteImages.isChecked
                 scope.launch {
-                    withContext(Dispatchers.IO) {
-                        val db = DatabaseProvider.getDatabase(context)
-                        try {
-                            if (shouldDeleteImages) {
-                                val resources = db.resourceCategoryDao().getResourcesForCategoryList(category.id)
-                                val resIds = resources.map { it.id }
-
-                                db.withTransaction {
-                                    if (resIds.isNotEmpty()) {
-                                        db.resourceDao().deleteByIds(resIds)
-                                    }
-                                    db.categoryDao().deleteCategory(category)
-                                }
-
-                                val resourcesDir = File(context.filesDir, "resources")
-                                resources.forEach { res ->
-                                    try {
-                                        val file = File(resourcesDir, res.filename)
-                                        if (file.exists()) file.delete()
-                                    } catch (e: Exception) {
-                                        TestLog.e("CategoryDialogHelper", "删除物理文件失败 (${res.filename}): ${e.message}", e)
-                                    }
-                                }
-                                TestLog.i("CategoryDialogHelper", "已连同分类「${category.name}」删除 ${resIds.size} 张图片")
-                            } else {
-                                db.categoryDao().deleteCategory(category)
-                                TestLog.i("CategoryDialogHelper", "已删除分类「${category.name}」(保留原图)")
+                    val db = DatabaseProvider.getDatabase(context)
+                    if (shouldDeleteImages) {
+                        val resources = withContext(Dispatchers.IO) {
+                            db.resourceCategoryDao().getResourcesForCategoryList(category.id)
+                        }
+                        ResourceDeleteHelper.deleteResources(
+                            context = context,
+                            scope = scope,
+                            database = db,
+                            resources = resources,
+                            title = "删除分类图片"
+                        ) { result ->
+                            if (result.isCancelled || result.failedCount > 0) {
+                                val status = if (result.isCancelled) "已取消删除" else "图片删除失败"
+                                Toast.makeText(context, "$status，分类未删除", Toast.LENGTH_SHORT).show()
+                                return@deleteResources
                             }
-                        } catch (e: Exception) {
-                            TestLog.e("CategoryDialogHelper", "删除分类异常: ${e.message}", e)
+
+                            scope.launch {
+                                val success = withContext(Dispatchers.IO) {
+                                    try {
+                                        db.categoryDao().deleteCategory(category)
+                                        true
+                                    } catch (e: Exception) {
+                                        TestLog.e("CategoryDialogHelper", "删除分类异常: ${e.message}", e)
+                                        false
+                                    }
+                                }
+                                if (success) {
+                                    TestLog.i(
+                                        "CategoryDialogHelper",
+                                        "已连同分类「${category.name}」删除 ${result.deletedCount} 张图片"
+                                    )
+                                    onDeleteSuccess()
+                                } else {
+                                    Toast.makeText(context, "分类删除失败", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    } else {
+                        val success = withContext(Dispatchers.IO) {
+                            try {
+                                db.categoryDao().deleteCategory(category)
+                                true
+                            } catch (e: Exception) {
+                                TestLog.e("CategoryDialogHelper", "删除分类异常: ${e.message}", e)
+                                false
+                            }
+                        }
+                        if (success) {
+                            TestLog.i("CategoryDialogHelper", "已删除分类「${category.name}」(保留原图)")
+                            onDeleteSuccess()
+                        } else {
+                            Toast.makeText(context, "分类删除失败", Toast.LENGTH_SHORT).show()
                         }
                     }
-                    onDeleteSuccess()
                 }
             }
             .setNegativeButton("取消", null)
