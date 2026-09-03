@@ -92,59 +92,156 @@ object CacheCleanManager {
     }
 
     /**
-     * 手动清理: send/ 过期文件 + Glide clearDiskCache()。
-     * freedBytes 为清理前后 cacheDir 总量差。
+     * 删除资源包导入过程中遗留的临时 ZIP。
+     *
+     * 只匹配 cacheDir 根目录下由导入服务生成的 import_tmp_*.zip，
+     * 不递归、不删除其他缓存文件。
      */
-    suspend fun cleanAll(context: Context, maxAgeMs: Long = DEFAULT_MAX_AGE_MS): CleanResult = withContext(Dispatchers.IO) {
-        val beforeSize = calculateDirectorySize(context.cacheDir)
+    suspend fun cleanImportTempZipFiles(context: Context): CleanResult = withContext(Dispatchers.IO) {
+        val cacheDir = context.cacheDir
+        val targets = cacheDir.listFiles { file, name ->
+            file == cacheDir && name.startsWith("import_tmp_") && name.endsWith(".zip")
+        }?.filter { it.isFile } ?: emptyList()
 
-        // 1. send/ 过期文件清理
-        val sendDir = File(context.cacheDir, "send")
+        var freed = 0L
         var deleted = 0
         var failed = 0
-        val now = System.currentTimeMillis()
-
-        if (sendDir.exists() && sendDir.isDirectory) {
-            val files = sendDir.listFiles() ?: emptyArray()
-            for (file in files) {
-                if (file.isFile) {
-                    val age = now - file.lastModified()
-                    if (age > maxAgeMs) {
-                        val beforeExists = file.exists()
-                        val beforeLength = file.length()
-                        val deletedNow = file.delete()
-                        if (deletedNow) {
-                            deleted++
-                        } else {
-                            failed++
-                        }
-                        val record = ImageSendDiagnostics.recordForFile(file.absolutePath)
-                        ImageSendDiagnostics.recordCleanup(
-                            eventId = record?.eventId,
-                            uri = record?.uri?.takeIf { it.isNotBlank() }?.let(Uri::parse),
-                            file = file,
-                            reason = "缓存清理 cleanAll（超过${maxAgeMs / 1000}秒）",
-                            beforeExists = beforeExists,
-                            beforeLength = beforeLength,
-                            result = if (deletedNow) "SUCCESS" else "FAILED"
-                        )
-                    }
-                }
+        targets.forEach { file ->
+            val length = file.length()
+            if (file.delete()) {
+                deleted++
+                freed += length
+            } else if (file.exists()) {
+                failed++
             }
         }
 
-        // 2. 清理 Glide 磁盘缓存 (后台线程调用)
+        if (deleted > 0 || failed > 0) {
+            TestLog.i(MODULE, "清理 zip 导入临时文件: 删除 $deleted 个, 失败 $failed 个, 释放 ${formatSize(freed)}")
+        }
+        CleanResult(freed, deleted, failed)
+    }
+
+    /**
+     * 手动清理整个应用缓存。
+     *
+     * 手动清理的语义是尽可能清空 cacheDir，而不是沿用自动清理的过期时间阈值。
+     * 资源包导入产生的 ZIP、预览图片以及 send/、Glide 等缓存都会被处理。
+     * freedBytes 为清理前后 cacheDir 总量差。
+     */
+    suspend fun cleanAll(context: Context): CleanResult = withContext(Dispatchers.IO) {
+        val beforeSize = calculateDirectorySize(context.cacheDir)
+
+        // Glide 的磁盘缓存由 Glide 自身管理，先使用其 API 清理。
         try {
             Glide.get(context.applicationContext).clearDiskCache()
         } catch (e: Exception) {
             TestLog.e(MODULE, "Glide clearDiskCache 异常: ${e.message}", e)
         }
 
+        // 手动清理不使用 maxAgeMs：cacheDir 下的所有文件都属于可删除缓存。
+        val counters = CacheDeleteCounters()
+        deleteCacheContents(context.cacheDir, counters)
+
         val afterSize = calculateDirectorySize(context.cacheDir)
         val freed = (beforeSize - afterSize).coerceAtLeast(0L)
 
-        TestLog.i(MODULE, "cleanAll 完成: send删除 $deleted 个, 失败 $failed 个, 清理前 ${formatSize(beforeSize)}, 清理后 ${formatSize(afterSize)}, 释放 ${formatSize(freed)}")
+        TestLog.i(
+            MODULE,
+            "cleanAll 完成: 删除 ${counters.deleted} 个缓存文件, 失败 ${counters.failed} 个, " +
+                "清理前 ${formatSize(beforeSize)}, 清理后 ${formatSize(afterSize)}, 释放 ${formatSize(freed)}"
+        )
+        CleanResult(freed, counters.deleted, counters.failed)
+    }
+
+    /**
+     * 删除指定的 zip 导入预览暂存文件。
+     *
+     * 只允许删除 cacheDir/import_previews 目录下的文件，避免调用方传入
+     * 非暂存路径时误删正式资源。
+     */
+    suspend fun cleanImportPreviewFiles(
+        context: Context,
+        paths: Collection<String?> = emptyList()
+    ): CleanResult = withContext(Dispatchers.IO) {
+        val previewDir = File(context.cacheDir, "import_previews")
+        val allowedPath = runCatching { previewDir.canonicalPath + File.separator }.getOrNull()
+            ?: return@withContext CleanResult(0L, 0, 0)
+
+        val targets = if (paths.isEmpty()) {
+            previewDir.listFiles()?.filter { it.isFile } ?: emptyList()
+        } else {
+            paths.filterNotNull()
+                .map { File(it) }
+                .filter { file ->
+                    runCatching {
+                        file.isFile && file.canonicalPath.startsWith(allowedPath)
+                    }.getOrDefault(false)
+                }
+        }.distinctBy { it.absolutePath }
+
+        var freed = 0L
+        var deleted = 0
+        var failed = 0
+        targets.forEach { file ->
+            val length = file.length()
+            if (file.delete()) {
+                deleted++
+                freed += length
+            } else if (file.exists()) {
+                failed++
+            }
+        }
+
+        if (deleted > 0 || failed > 0) {
+            TestLog.i(MODULE, "清理 zip 导入预览: 删除 $deleted 个, 失败 $failed 个, 释放 ${formatSize(freed)}")
+        }
         CleanResult(freed, deleted, failed)
+    }
+
+    private class CacheDeleteCounters(
+        var deleted: Int = 0,
+        var failed: Int = 0
+    )
+
+    private fun deleteCacheContents(dir: File, counters: CacheDeleteCounters) {
+        val children = dir.listFiles() ?: return
+        for (child in children) {
+            if (child.isDirectory) {
+                deleteCacheContents(child, counters)
+                if (child.exists() && !child.delete() && child.exists()) {
+                    TestLog.w(MODULE, "删除缓存目录失败: ${child.absolutePath}")
+                }
+                continue
+            }
+
+            val beforeExists = child.exists()
+            val beforeLength = child.length()
+            val record = if (child.parentFile?.name == "send") {
+                ImageSendDiagnostics.recordForFile(child.absolutePath)
+            } else {
+                null
+            }
+            val deletedNow = child.delete()
+
+            if (deletedNow) {
+                counters.deleted++
+            } else if (child.exists()) {
+                counters.failed++
+            }
+
+            if (record != null) {
+                ImageSendDiagnostics.recordCleanup(
+                    eventId = record.eventId,
+                    uri = record.uri.takeIf { it.isNotBlank() }?.let(Uri::parse),
+                    file = child,
+                    reason = "缓存清理 cleanAll（手动清空）",
+                    beforeExists = beforeExists,
+                    beforeLength = beforeLength,
+                    result = if (deletedNow) "SUCCESS" else "FAILED"
+                )
+            }
+        }
     }
 
     fun formatSize(bytes: Long): String {

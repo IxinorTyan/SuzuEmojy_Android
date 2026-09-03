@@ -30,10 +30,13 @@ import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.ResourceImportService
 import com.suzu.test.resource.importpkg.PackageImportStage
+import com.suzu.test.storage.CacheCleanManager
 import com.suzu.test.resource.importpkg.ResourcePackageImportService
 import com.suzu.test.ui.picker.MediaPickerActivity
 import com.suzu.test.ui.picker.PickerResultStore
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -54,6 +57,7 @@ class ImportActivity : AppCompatActivity() {
     private lateinit var importService: ResourceImportService
     private lateinit var packageImportService: ResourcePackageImportService
     private val viewModel: ImportViewModel by viewModels()
+    private var activeImportJob: Job? = null
 
     // 运行期暂存当前 API 29 / MediaStore 单项/批量处理时的进度
     private var currentDeletingUriIndex = 0
@@ -148,6 +152,31 @@ class ImportActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { _ ->
         handlePermissionResult()
+    }
+
+    override fun onDestroy() {
+        if (!isChangingConfigurations) {
+            // 先取消导入，待其 finally 完成后再清理，避免导入任务在清理后重新写入暂存。
+            val importJob = activeImportJob
+            activeImportJob = null
+            importJob?.cancel()
+
+            ImportResultHolder.clear()
+
+            val cleanup = {
+                kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+                    CacheCleanManager.cleanImportPreviewFiles(applicationContext)
+                    CacheCleanManager.cleanImportTempZipFiles(applicationContext)
+                }
+            }
+
+            if (importJob != null) {
+                importJob.invokeOnCompletion { cleanup() }
+            } else {
+                cleanup()
+            }
+        }
+        super.onDestroy()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -434,7 +463,7 @@ class ImportActivity : AppCompatActivity() {
         binding.progressBar.isIndeterminate = true
         binding.tvProgress.text = "准备导入 zip 资源包..."
         binding.tvSummary.text = ""
-        lifecycleScope.launch {
+        activeImportJob = lifecycleScope.launch {
             try {
                 val result = packageImportService.importFromZip(uri) { stage, progress, total ->
                     runOnUiThread {
@@ -468,11 +497,21 @@ class ImportActivity : AppCompatActivity() {
                 val aggregateCards = buildAggregateCards(result.records)
                 ImportResultHolder.records = result.records
                 ImportResultHolder.aggregateCards = aggregateCards
+                ImportResultHolder.zipPreviewFilePaths = result.records
+                    .mapNotNull { it.previewFilePath }
+                    .distinct()
+                if (aggregateCards.isEmpty()) {
+                    clearZipPreviewFiles()
+                }
                 binding.tvProgress.text = "zip 资源包导入完成"
                 binding.tvSummary.text = "新增 ${result.summary.successCount} 张，重复 ${result.summary.duplicateCount} 张，失败 ${result.summary.failCount} 张"
                 binding.tvViewDetailAction.visibility = if (aggregateCards.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+            } catch (e: CancellationException) {
+                // 页面退出时取消导入，不能当作普通失败继续处理。
+                throw e
             } catch (e: Exception) {
                 TestLog.e(MODULE, "资源包导入失败: ${e.message}", e)
+                clearZipPreviewFiles()
                 binding.tvProgress.text = "zip 资源包导入失败"
                 Toast.makeText(this@ImportActivity, e.message ?: "资源包导入失败", Toast.LENGTH_LONG).show()
             } finally {
@@ -483,10 +522,14 @@ class ImportActivity : AppCompatActivity() {
     }
 
     private fun startImportProcess(uris: List<Uri>, folderCategoryName: String? = null) {
+        // 普通导入不会使用 zip 预览；清掉已失效的上一批预览，防止长期累积。
+        lifecycleScope.launch(Dispatchers.IO) {
+            CacheCleanManager.cleanImportPreviewFiles(this@ImportActivity)
+        }
         setButtonsEnabled(false)
         binding.tvSummary.text = ""
 
-        lifecycleScope.launch {
+        activeImportJob = lifecycleScope.launch {
             // 先将源 URI 去重，防止同一个 URI 重复进入统计
             val distinctSourceUris = uris.distinct()
             val total = distinctSourceUris.size
@@ -562,6 +605,8 @@ class ImportActivity : AppCompatActivity() {
                                     )
                                 )
                             }
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             TestLog.e(MODULE, "导入异常 (URI=$uri): ${e.message}", e)
                             failCount++
@@ -902,6 +947,14 @@ class ImportActivity : AppCompatActivity() {
                 }
             }
             notifyCleanupFinished(success, unhandledCount + failed)
+        }
+    }
+
+    private fun clearZipPreviewFiles() {
+        val paths = ImportResultHolder.zipPreviewFilePaths
+        ImportResultHolder.clear()
+        lifecycleScope.launch(Dispatchers.IO) {
+            CacheCleanManager.cleanImportPreviewFiles(this@ImportActivity, paths)
         }
     }
 

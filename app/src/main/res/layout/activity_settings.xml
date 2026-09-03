@@ -263,6 +263,16 @@
                     android:layout_marginBottom="4dp"
                     android:lineSpacingExtra="2dp" />
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="如果本软件完全无法正常使用，请检查设备是否安装了可能影响应用运行的第三方软件（如安全软件、权限管理工具、系统增强工具等）。如确认是第三方软件拦截导致，请自行关闭相关拦截或限制后再尝试使用。"
+                    android:textSize="11sp"
+                    android:textColor="#888888"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="4dp"
+                    android:lineSpacingExtra="2dp" />
+
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"

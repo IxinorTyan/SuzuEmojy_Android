@@ -38,7 +38,8 @@ class ImageSender(private val context: Context) {
         val uri: Uri,
         val file: File,
         val mimeType: String,
-        val diagnostic: ImageSendDiagnostics.Record
+        val diagnostic: ImageSendDiagnostics.Record,
+        val deleteFileOnCleanup: Boolean
     )
     private data class ActiveGrant(
         val uri: Uri,
@@ -107,7 +108,14 @@ class ImageSender(private val context: Context) {
                     if (ic == null) {
                         record.commandException = "InputConnection 为 null"
                         ImageSendDiagnostics.update(record)
-                        return@post TestLog.e(MODULE, "[H1β] 失败: InputConnection 为 null")
+                        TestLog.e(MODULE, "[${record.eventId}] [H1β] 失败: InputConnection 为 null，转入通道B")
+                        launchImageShare(
+                            prepared = prepared,
+                            record = record,
+                            targetPkg = targetPkg,
+                            onSuccess = onSuccess
+                        )
+                        return@post
                     }
                     try {
                         ic.beginBatchEdit()
@@ -146,7 +154,17 @@ class ImageSender(private val context: Context) {
                     } catch (e: Exception) {
                         record.commandException = exceptionText(e)
                         ImageSendDiagnostics.update(record)
-                        TestLog.e(MODULE, "[H1β] 异常: ${e.message}", e)
+                        TestLog.e(
+                            MODULE,
+                            "[${record.eventId}] [H1β] 异常: ${e.message}，转入通道B",
+                            e
+                        )
+                        launchImageShare(
+                            prepared = prepared,
+                            record = record,
+                            targetPkg = targetPkg,
+                            onSuccess = onSuccess
+                        )
                     }
                     schedulePostCommandChecks(record)
                 }
@@ -331,11 +349,22 @@ class ImageSender(private val context: Context) {
 
         val finalFile: File
         val isCachedGif: Boolean
+        val deleteFileOnCleanup: Boolean
         if (actualFile != null) {
             finalFile = actualFile
             isCachedGif = true
+            // png2gif_* 位于 cache/send，是可清理的发送中间文件；
+            // 资源库源文件只在下面的 SuzuResource 分支中标记为不可删除。
+            deleteFileOnCleanup = true
+        } else if (item is ImageItem.SuzuResource) {
+            // 资源库文件已经位于 filesDir/resources/，直接通过 FileProvider 授权读取，
+            // 不再复制到 cache/send；源文件严禁交给发送清理逻辑删除。
+            finalFile = item.file
+            isCachedGif = false
+            deleteFileOnCleanup = false
         } else {
             isCachedGif = false
+            deleteFileOnCleanup = true
             val ext = if (isOriginalGif) ".gif" else ".png"
             val safeName = if (item.displayName.contains(".")) item.displayName else "${item.displayName}$ext"
             finalFile = File(sendDir, "send_${System.currentTimeMillis()}_$safeName")
@@ -344,11 +373,9 @@ class ImageSender(private val context: Context) {
                     FileOutputStream(finalFile).use { input.copyTo(it) }
                 }
                 is ImageItem.MediaStoreImage -> context.contentResolver.openInputStream(item.uri)?.use { input ->
-                    FileOutputStream(finalFile).use { input.copyTo(it) }
+                    FileOutputStream(finalFile).use { output -> input.copyTo(output) }
                 } ?: throw IllegalStateException("无法打开图库输入流: ${item.uri}")
-                is ImageItem.SuzuResource -> item.file.inputStream().use { input ->
-                    FileOutputStream(finalFile).use { input.copyTo(it) }
-                }
+                is ImageItem.SuzuResource -> error("SuzuResource 不应进入发送副本分支")
             }
         }
 
@@ -376,8 +403,8 @@ class ImageSender(private val context: Context) {
             record.selfStack = android.util.Log.getStackTraceString(e)
             TestLog.e(MODULE, "[$record.eventId] SELF_URI_READ_FAILED", e)
         }
-        queryUidAndGrant(record, uri, targetPkg, finalFile, isCachedGif)
-        return PreparedResult(uri, finalFile, record.detectedMime, record)
+        queryUidAndGrant(record, uri, targetPkg, finalFile, deleteFileOnCleanup)
+        return PreparedResult(uri, finalFile, record.detectedMime, record, deleteFileOnCleanup)
     }
 
     private fun queryUidAndGrant(
@@ -385,7 +412,7 @@ class ImageSender(private val context: Context) {
         uri: Uri,
         targetPkg: String,
         file: File,
-        isCachedGif: Boolean
+        deleteFileOnCleanup: Boolean
     ) {
         try {
             record.targetUid = if (android.os.Build.VERSION.SDK_INT >= 33) {
@@ -405,7 +432,7 @@ class ImageSender(private val context: Context) {
             context.grantUriPermission(targetPkg, uri, READ_FLAG)
             record.grantCall = "SUCCESS"
             normalGrantTracker[uri] = ActiveGrant(uri, targetPkg, file, System.currentTimeMillis(), record.eventId)
-            scheduleNormalGrantCleanup(uri, 60000L, !isCachedGif)
+            scheduleNormalGrantCleanup(uri, 60000L, deleteFileOnCleanup)
         } catch (e: Exception) {
             record.grantCall = "FAILED"
             record.grantException = exceptionText(e)
@@ -446,7 +473,8 @@ class ImageSender(private val context: Context) {
                 uri = Uri.parse(record.uri),
                 file = file,
                 mimeType = record.detectedMime.ifBlank { "image/png" },
-                diagnostic = record
+                diagnostic = record,
+                deleteFileOnCleanup = false
             ),
             record = record,
             targetPkg = record.targetPackage.orEmpty()
@@ -483,7 +511,8 @@ class ImageSender(private val context: Context) {
                 uri = Uri.parse(record.uri),
                 file = file,
                 mimeType = record.detectedMime.ifBlank { "image/png" },
-                diagnostic = record
+                diagnostic = record,
+                deleteFileOnCleanup = false
             )
             launchImageShare(
                 prepared = prepared,

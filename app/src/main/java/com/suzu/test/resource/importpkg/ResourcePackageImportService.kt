@@ -8,11 +8,15 @@ import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.db.entity.ResourceCategoryEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.ResourceImportService
+import com.suzu.test.storage.CacheCleanManager
 import com.suzu.test.ui.import.ImportFailReason
 import com.suzu.test.ui.import.ImportItemRecord
 import com.suzu.test.ui.import.ImportItemType
 import android.provider.OpenableColumns
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -57,8 +61,11 @@ class ResourcePackageImportService(
         onProgress: (stage: PackageImportStage, progress: Long, total: Long) -> Unit
     ): PackageImportExecutionResult = withContext(Dispatchers.IO) {
         val cacheDir = context.cacheDir
-        
-        // 每次导入开始前，清理上一次残留的临时文件
+        val previewTempPaths = mutableListOf<String>()
+        var importCompleted = false
+
+        // 每次导入开始前，清理上一次残留的临时文件和预览文件
+        CacheCleanManager.cleanImportPreviewFiles(context)
         val oldTempFiles = cacheDir.listFiles { _, name -> name.startsWith("import_tmp_") }
         oldTempFiles?.forEach {
             try {
@@ -95,6 +102,7 @@ class ResourcePackageImportService(
                     var bytesCopied = 0L
                     var bytes = input.read(buffer)
                     while (bytes >= 0) {
+                        ensureActive()
                         output.write(buffer, 0, bytes)
                         bytesCopied += bytes
                         onProgress(PackageImportStage.COPYING, bytesCopied, packageSize)
@@ -141,6 +149,7 @@ class ResourcePackageImportService(
                 val totalCount = resources.size.toLong()
 
                 for ((index, resource) in resources.withIndex()) {
+                    ensureActive()
                     // 阶段三：逐项导入资源
                     onProgress(PackageImportStage.IMPORTING, index.toLong(), totalCount)
 
@@ -183,6 +192,9 @@ class ResourcePackageImportService(
                     }
 
                     val previewFilePath = createPreviewTempFile(resource, assetBytes)
+                    if (previewFilePath != null) {
+                        previewTempPaths.add(previewFilePath)
+                    }
 
                     try {
                         val result = resourceImportService.import(assetBytes)
@@ -230,6 +242,8 @@ class ResourcePackageImportService(
                                 .getOrPut(categoryName) { linkedSetOf() }
                                 .add(resourceId)
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         TestLog.e(MODULE, "导入资源失败: asset=${resource.assetPath}, error=${e.message}", e)
                         failCount++
@@ -259,6 +273,7 @@ class ResourcePackageImportService(
 
                 attachCategories(categoryNameToResourceIds)
 
+                importCompleted = true
                 PackageImportExecutionResult(
                     records = records,
                     summary = PackageImportSummary(
@@ -270,12 +285,20 @@ class ResourcePackageImportService(
                 )
             }
         } finally {
-            try {
-                if (tempZipFile.exists()) {
-                    tempZipFile.delete()
+            // 导入任务被页面返回取消后，仍必须完成暂存清理。
+            withContext(NonCancellable) {
+                try {
+                    if (tempZipFile.exists()) {
+                        tempZipFile.delete()
+                    }
+                } catch (e: Exception) {
+                    TestLog.w(MODULE, "删除临时 zip 文件失败: ${e.message}")
                 }
-            } catch (e: Exception) {
-                TestLog.w(MODULE, "删除临时 zip 文件失败: ${e.message}")
+                if (!importCompleted) {
+                    // 中断可能发生在文件写入完成但路径尚未登记的瞬间，
+                    // 因此不能只按 previewTempPaths 清理，必须清理整个导入预览目录。
+                    CacheCleanManager.cleanImportPreviewFiles(context)
+                }
             }
         }
     }

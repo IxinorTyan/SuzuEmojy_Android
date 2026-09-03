@@ -139,15 +139,7 @@ class TestImageIME : InputMethodService() {
 
         val onSuccessCallback: () -> Unit = { updateUsageStatsInBackground(item) }
 
-        if (targetPkg == "com.tencent.tim") {
-            TestLog.i(MODULE, "智能路由 -> Tim 使用标准图片分享，跳转发送给好友入口")
-            imageSender.executeDirectShare(
-                item = item,
-                targetPkg = targetPkg,
-                editorInfoPackage = targetPkg,
-                onSuccess = onSuccessCallback
-            )
-        } else if (targetPkg in H1B_DIRECT_FAMILY) {
+        if (targetPkg in H1B_DIRECT_FAMILY) {
             TestLog.i(MODULE, "智能路由 -> 命中 H1β 直发家族 ($targetPkg)，走 H1β 私有协议直发")
             imageSender.executeH1b(
                 item = item,

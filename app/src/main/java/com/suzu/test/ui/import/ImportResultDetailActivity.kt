@@ -16,6 +16,9 @@ import com.suzu.test.databinding.DialogFullImagePreviewBinding
 import com.suzu.test.databinding.ItemImportDuplicateCardBinding
 import com.suzu.test.databinding.ItemImportFailureCardBinding
 import com.suzu.test.databinding.ItemImportSourceThumbBinding
+import com.suzu.test.storage.CacheCleanManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 class ImportResultDetailActivity : AppCompatActivity() {
@@ -42,6 +45,19 @@ class ImportResultDetailActivity : AppCompatActivity() {
                 showFullScreenPreview(uri, file)
             }
         )
+    }
+
+    override fun onDestroy() {
+        if (!isChangingConfigurations) {
+            val paths = ImportResultHolder.zipPreviewFilePaths
+            ImportResultHolder.clear()
+            if (paths.isNotEmpty()) {
+                kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+                    CacheCleanManager.cleanImportPreviewFiles(this@ImportResultDetailActivity, paths)
+                }
+            }
+        }
+        super.onDestroy()
     }
 
     private fun showFullScreenPreview(uri: Uri?, file: File?) {

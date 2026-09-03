@@ -3,4 +3,5 @@
     <cache-path name="send_cache" path="send/" />
     <cache-path name="images" path="images/" />
     <files-path name="images" path="images/" />
+    <files-path name="resource_files" path="resources/" />
 </paths>

@@ -51,8 +51,15 @@ object ImportResultHolder {
     var records: List<ImportItemRecord> = emptyList()
     var aggregateCards: List<ImportAggregateCard> = emptyList()
 
+    /**
+     * 当前 zip 导入批次生成的预览暂存文件。
+     * 仅用于详情页展示结束后的定向清理。
+     */
+    var zipPreviewFilePaths: List<String> = emptyList()
+
     fun clear() {
         records = emptyList()
         aggregateCards = emptyList()
+        zipPreviewFilePaths = emptyList()
     }
 }
