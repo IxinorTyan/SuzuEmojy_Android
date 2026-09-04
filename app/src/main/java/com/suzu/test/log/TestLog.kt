@@ -12,6 +12,7 @@ import java.util.concurrent.Executors
 
 object TestLog {
     private const val TAG = "TestPoC"
+    private const val MAX_LOG_LINES = 300
     private val timeFormat = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
     private val memoryLogs = CopyOnWriteArrayList<String>()
     private val listeners = CopyOnWriteArrayList<(String) -> Unit>()
@@ -25,6 +26,10 @@ object TestLog {
                 dir.mkdirs()
             }
             logFile = File(dir, "test_poc.log")
+            val file = logFile ?: return
+            fileExecutor.execute {
+                loadAndTrimLogFile(file)
+            }
         }
     }
 
@@ -52,9 +57,9 @@ object TestLog {
             else -> Log.i(TAG, formatted)
         }
 
-        // 2. 内存列表 (限制最近 1000 条)
+        // 2. 内存列表 (仅保留最近 300 行)
         memoryLogs.add(formatted)
-        if (memoryLogs.size > 1000) {
+        while (memoryLogs.size > MAX_LOG_LINES) {
             memoryLogs.removeAt(0)
         }
 
@@ -74,6 +79,7 @@ object TestLog {
                     FileWriter(file, true).use { writer ->
                         writer.write(formatted + "\n")
                     }
+                    trimLogFile(file)
                 } catch (e: Exception) {
                     Log.e(TAG, "写入日志文件异常", e)
                 }
@@ -101,6 +107,32 @@ object TestLog {
             } catch (e: Exception) {
                 // ignore
             }
+        }
+    }
+
+    private fun loadAndTrimLogFile(file: File) {
+        try {
+            if (!file.exists()) return
+            val lines = file.readLines().takeLast(MAX_LOG_LINES)
+            memoryLogs.clear()
+            memoryLogs.addAll(lines)
+            if (file.readLines().size > MAX_LOG_LINES) {
+                file.writeText(lines.joinToString("\n") + "\n")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "加载或清理日志文件异常", e)
+        }
+    }
+
+    private fun trimLogFile(file: File) {
+        try {
+            if (!file.exists()) return
+            val lines = file.readLines()
+            if (lines.size > MAX_LOG_LINES) {
+                file.writeText(lines.takeLast(MAX_LOG_LINES).joinToString("\n") + "\n")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "清理日志文件异常", e)
         }
     }
 }

@@ -23,6 +23,7 @@ import com.suzu.test.ime.sender.ImageSender
 import com.suzu.test.ime.ui.KeyboardTabBar
 import com.suzu.test.ime.ui.ImeTabDropdownController
 import com.suzu.test.ime.config.KeyboardConfig
+import com.suzu.test.ime.config.ShareWhitelistConfig
 import com.suzu.test.ime.theme.KeyboardTheme
 import com.suzu.test.ime.theme.ThemeApplier
 import com.suzu.test.ime.ui.preview.ImagePreviewPopup
@@ -162,7 +163,15 @@ class TestImageIME : InputMethodService() {
 
         val onSuccessCallback: () -> Unit = { updateUsageStatsInBackground(item) }
 
-        if (targetPkg in H1B_DIRECT_FAMILY) {
+        if (ShareWhitelistConfig.isWhitelisted(this, targetPkg)) {
+            TestLog.i(MODULE, "智能路由 -> 命中分享白名单 ($targetPkg)，拉起系统分享选择器")
+            imageSender.executeSystemChooser(
+                item = item,
+                targetPkg = targetPkg,
+                editorInfoPackage = targetPkg,
+                onSuccess = onSuccessCallback
+            )
+        } else if (targetPkg in H1B_DIRECT_FAMILY) {
             TestLog.i(MODULE, "智能路由 -> 命中 H1β 直发家族 ($targetPkg)，走 H1β 私有协议直发")
             imageSender.executeH1b(
                 item = item,

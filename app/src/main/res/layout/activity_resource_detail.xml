@@ -15,12 +15,15 @@
         android:paddingHorizontal="8dp"
         android:background="#1E1E1E">
 
-        <Button
+        <ImageButton
             android:id="@+id/btnDetailBack"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:textSize="13sp"
-            android:text="返回" />
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="返回"
+            android:padding="12dp"
+            android:src="@drawable/ic_arrow_back_24"
+            android:scaleType="center" />
 
         <TextView
             android:id="@+id/tvPositionIndicator"
@@ -33,9 +36,15 @@
             android:textStyle="bold"
             android:text="1 / 1" />
 
-        <View
-            android:layout_width="60dp"
-            android:layout_height="36dp" />
+        <ImageButton
+            android:id="@+id/btnDetailShare"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="分享"
+            android:padding="12dp"
+            android:src="@drawable/ic_share_24"
+            android:scaleType="center" />
     </LinearLayout>
 
     <!-- ViewPager2 图片轮播区 -->

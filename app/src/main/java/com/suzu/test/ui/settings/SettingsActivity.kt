@@ -20,7 +20,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import com.suzu.test.control.ControlTestActivity
 import com.suzu.test.databinding.ActivitySettingsBinding
 import com.suzu.test.databinding.DialogLogViewerBinding
 import com.suzu.test.floating.FloatingBallConfig
@@ -73,12 +72,16 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsFloatingActivity::class.java))
         }
 
+        binding.btnNavShareWhitelist.setOnClickListener {
+            startActivity(Intent(this, ShareWhitelistActivity::class.java))
+        }
+
         binding.btnNavOtherSettings.setOnClickListener {
             startActivity(Intent(this, SettingsOtherActivity::class.java))
         }
 
-        binding.btnNavControlTest.setOnClickListener {
-            startActivity(Intent(this, ControlTestActivity::class.java))
+        binding.btnNavAbout.setOnClickListener {
+            startActivity(Intent(this, AboutActivity::class.java))
         }
 
         binding.btnNavViewLogs.setOnClickListener {

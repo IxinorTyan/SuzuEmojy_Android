@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- 权限声明 -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
@@ -121,6 +122,16 @@
             android:name=".ui.settings.SettingsOtherActivity"
             android:exported="false"
             android:label="其他设置" />
+
+        <activity
+            android:name=".ui.settings.ShareWhitelistActivity"
+            android:exported="false"
+            android:label="分享白名单" />
+
+        <activity
+            android:name=".ui.settings.AboutActivity"
+            android:exported="false"
+            android:label="关于软件" />
 
         <!-- 组件1: 无障碍切换服务 -->
         <service

@@ -387,6 +387,37 @@
                     android:layout_height="1dp"
                     android:background="#F0F0F0" />
 
+                <!-- 分享白名单 -->
+                <LinearLayout
+                    android:id="@+id/btnNavShareWhitelist"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:background="?android:attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="分享白名单"
+                        android:textSize="15sp"
+                        android:textColor="#333333" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=">"
+                        android:textSize="18sp"
+                        android:textColor="#999999" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#F0F0F0" />
+
                 <!-- 其他设置 -->
                 <LinearLayout
                     android:id="@+id/btnNavOtherSettings"
@@ -402,6 +433,37 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="其他设置"
+                        android:textSize="15sp"
+                        android:textColor="#333333" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=">"
+                        android:textSize="18sp"
+                        android:textColor="#999999" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#F0F0F0" />
+
+                <!-- 关于软件 -->
+                <LinearLayout
+                    android:id="@+id/btnNavAbout"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:background="?android:attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="关于软件"
                         android:textSize="15sp"
                         android:textColor="#333333" />
 
@@ -434,37 +496,6 @@
                     android:paddingStart="16dp"
                     android:paddingTop="16dp"
                     android:paddingBottom="8dp" />
-
-                <!-- 标准对照组测试 -->
-                <LinearLayout
-                    android:id="@+id/btnNavControlTest"
-                    android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:background="?android:attr/selectableItemBackground">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="标准对照组测试"
-                        android:textSize="15sp"
-                        android:textColor="#333333" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text=">"
-                        android:textSize="18sp"
-                        android:textColor="#999999" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#F0F0F0" />
 
                 <!-- 查看运行日志 -->
                 <LinearLayout

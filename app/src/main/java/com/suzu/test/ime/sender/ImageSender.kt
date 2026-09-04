@@ -52,6 +52,39 @@ class ImageSender(private val context: Context) {
     private val fallbackLaunchedEvents = ConcurrentHashMap.newKeySet<String>()
 
     /**
+     * 白名单目标不走目标应用专用协议，直接交给系统分享选择器。
+     */
+    fun executeSystemChooser(
+        item: ImageItem,
+        targetPkg: String,
+        editorInfoPackage: String? = targetPkg,
+        onSuccess: () -> Unit
+    ) {
+        actionExecutor.execute {
+            var prepared: PreparedResult? = null
+            try {
+                prepared = prepareValidatedUri(item, targetPkg, editorInfoPackage, "系统分享选择器")
+                val result = prepared
+                mainHandler.post {
+                    launchImageShare(
+                        prepared = result,
+                        record = result.diagnostic,
+                        targetPkg = targetPkg,
+                        useSystemChooser = true,
+                        onSuccess = onSuccess
+                    )
+                }
+            } catch (e: Exception) {
+                prepared?.diagnostic?.let {
+                    it.commandException = exceptionText(e)
+                    ImageSendDiagnostics.update(it)
+                }
+                TestLog.e(MODULE, "系统分享选择器准备异常: ${e.message}", e)
+            }
+        }
+    }
+
+    /**
      * Tim 部分版本对私有输入法命令会返回 accepted，但不会真正打开
      * “发送给好友”页面，因此直接使用包定向的标准图片分享 Intent。
      */
@@ -241,6 +274,7 @@ class ImageSender(private val context: Context) {
         prepared: PreparedResult,
         record: ImageSendDiagnostics.Record,
         targetPkg: String,
+        useSystemChooser: Boolean = false,
         onSuccess: () -> Unit
     ) {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -257,24 +291,46 @@ class ImageSender(private val context: Context) {
             val preferredIntent = preferredComponent?.let { component ->
                 Intent(shareIntent).apply { setComponent(component) }
             }
-            val launchIntent = when {
+            val targetedIntent = when {
                 preferredIntent != null &&
                     preferredIntent.resolveActivity(packageManager) != null -> preferredIntent
                 else -> Intent(shareIntent).apply { setPackage(targetPkg) }
             }
-            val resolved = launchIntent.resolveActivity(packageManager)
-                ?: throw IllegalStateException("目标应用没有可处理图片分享的 Activity: $targetPkg")
+            val baseIntent = if (useSystemChooser) shareIntent else targetedIntent
+            val resolved = baseIntent.resolveActivity(packageManager)
+                ?: throw IllegalStateException("没有可处理图片分享的 Activity: $targetPkg")
+            val launchIntent = if (useSystemChooser) {
+                Intent.createChooser(baseIntent, "选择分享应用").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            } else {
+                baseIntent
+            }
 
-            TestAccessibilityService.instance?.armShareCardAutomation(targetPkg)
+            if (!useSystemChooser) {
+                TestAccessibilityService.instance?.armShareCardAutomation(targetPkg)
+            }
             context.startActivity(launchIntent)
             val entry = resolved.className
-            record.branch = "H1β 直发 -> 通道B 发送给朋友/好友"
-            record.commandName = "Intent.ACTION_SEND(component=$entry)"
+            record.branch = if (useSystemChooser) {
+                "系统分享选择器"
+            } else {
+                "H1β 直发 -> 通道B 发送给朋友/好友"
+            }
+            record.commandName = if (useSystemChooser) {
+                "Intent.createChooser(ACTION_SEND)"
+            } else {
+                "Intent.ACTION_SEND(component=$entry)"
+            }
             ImageSendDiagnostics.update(record)
             TestLog.i(
                 MODULE,
-                "[$record.eventId] H1β 降级：已拉起目标应用好友分享入口 " +
-                    "($targetPkg/$entry)"
+                if (useSystemChooser) {
+                    "[${record.eventId}] 已拉起系统分享选择器"
+                } else {
+                    "[$record.eventId] H1β 降级：已拉起目标应用好友分享入口 " +
+                        "($targetPkg/$entry)"
+                }
             )
             onSuccess()
         } catch (e: Exception) {
