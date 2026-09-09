@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.os.Build
+import android.provider.Settings
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.recyclerview.widget.GridLayoutManager
@@ -234,7 +235,7 @@ class TestImageIME : InputMethodService() {
         TestLog.i(MODULE, "==================== onStartInputView (restarting=$restarting) ====================")
 
         // 进程内直连信号：0ms 秒级通知悬浮球 IME 已可见
-        com.suzu.test.floating.ImeVisibilityBus.notifyImeVisibilityChanged(true)
+        TestAccessibilityService.notifyImeLifecycle(true)
 
         applyKeyboardConfigLayout()
         applyTheme()
@@ -257,6 +258,10 @@ class TestImageIME : InputMethodService() {
 
     override fun onWindowShown() {
         super.onWindowShown()
+
+        // 窗口生命周期信号比无障碍窗口列表更及时，避免窗口列表残留导致状态误判。
+        TestAccessibilityService.notifyImeLifecycle(true)
+
         if (isGridClearedOnHidden) {
             isGridClearedOnHidden = false
             imageAdapter.notifyDataSetChanged()
@@ -265,6 +270,10 @@ class TestImageIME : InputMethodService() {
 
     override fun onWindowHidden() {
         super.onWindowHidden()
+
+        // 某些系统不会稳定触发 onFinishInputView，但会回调 onWindowHidden。
+        TestAccessibilityService.notifyImeLifecycle(false)
+
         clearVisibleGridViews()
     }
 
@@ -378,7 +387,7 @@ class TestImageIME : InputMethodService() {
         previewPopup?.dismiss()
         lastLoadedTabKey = null
         // 进程内直连信号：通知悬浮球 IME 已隐藏
-        com.suzu.test.floating.ImeVisibilityBus.notifyImeVisibilityChanged(false)
+        TestAccessibilityService.notifyImeLifecycle(false)
         super.onFinishInputView(finishingInput)
         TestLog.i(MODULE, "onFinishInputView: 键盘收起，自动执行静默切回原输入法...")
         autoRestorePreviousIme()
@@ -387,13 +396,25 @@ class TestImageIME : InputMethodService() {
     override fun onFinishInput() {
         previewPopup?.dismiss()
         lastLoadedTabKey = null
-        com.suzu.test.floating.ImeVisibilityBus.notifyImeVisibilityChanged(false)
+        TestAccessibilityService.notifyImeLifecycle(false)
         super.onFinishInput()
         TestLog.i(MODULE, "onFinishInput: 会话结束，自动执行静默切回原输入法...")
         autoRestorePreviousIme()
     }
 
     private fun autoRestorePreviousIme() {
+        // 防误切：若用户刚通过系统切换器主动切走（默认输入法已不是本 IME），
+        // 则尊重用户选择，不再自动拽回上一个输入法，避免二次切换造成闪烁。
+        val currentIme = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.DEFAULT_INPUT_METHOD
+        )
+        val ownImeId = packageName + "/" + TestImageIME::class.java.name
+        if (currentIme != null && currentIme != ownImeId) {
+            TestLog.i(MODULE, "autoRestorePreviousIme: 默认输入法已变更为 $currentIme (用户主动切换)，跳过自动恢复")
+            return
+        }
+
         val service = TestAccessibilityService.instance
         if (service != null && TestAccessibilityService.isAlive()) {
             service.restorePreviousIme()

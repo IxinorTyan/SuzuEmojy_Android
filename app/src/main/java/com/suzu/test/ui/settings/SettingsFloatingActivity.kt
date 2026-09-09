@@ -9,9 +9,12 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.transition.ChangeBounds
+import android.transition.TransitionManager
 import android.view.View
 import android.widget.ImageView
 import android.widget.SeekBar
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -65,9 +68,12 @@ class SettingsFloatingActivity : AppCompatActivity() {
         }
 
         setupMasterSwitch()
+        setupFloatingWindowSection()
+        setupFloatingBallSection()
         setupFloatingAdjusters()
         setupShapeSelector()
         setupAppFilter()
+        setupEdgeGestureSettings()
         setupCustomImageActions()
         observeA11yState()
     }
@@ -95,11 +101,17 @@ class SettingsFloatingActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         com.suzu.test.accessibility.AccessibilityStateMonitor.refresh()
+        binding.swMasterSwitch.isChecked = FloatingBallConfig.isFloatingMasterEnabled(this)
+        binding.swEdgeGestureEnabled.isChecked = FloatingBallConfig.isEdgeGestureEnabled(this)
         binding.swBallMasterSwitch.isChecked = FloatingBallConfig.isBallEnabled(this)
         binding.swShowOnlyWithIme.isChecked = FloatingBallConfig.isShowOnlyWithImeEnabled(this)
+        updateEdgeGestureUI()
+        updateEdgeRegionPreview()
         updateShapeRadioUI()
         checkA11yStatus()
         updateCustomImageUI()
+        updateSectionEnableStates()
+        updateSectionCollapseStates()
     }
 
     private fun setupShapeSelector() {
@@ -127,36 +139,201 @@ class SettingsFloatingActivity : AppCompatActivity() {
         binding.tvBorderlessHint.visibility = if (currentShape == FloatingBallConfig.SHAPE_BORDERLESS) View.VISIBLE else View.GONE
     }
 
-    private fun setupMasterSwitch() {
-        binding.swBallMasterSwitch.setOnClickListener {
-            val targetState = binding.swBallMasterSwitch.isChecked
+    private fun checkPermissionAndServices(): Boolean {
+        if (!android.provider.Settings.canDrawOverlays(this)) {
+            android.widget.Toast.makeText(this, "请先授予悬浮窗权限", android.widget.Toast.LENGTH_SHORT).show()
+            val intent = Intent(
+                android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                android.net.Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+            return false
+        }
 
+        val a11yEnabled = com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.value
+        if (!a11yEnabled) {
+            android.widget.Toast.makeText(this, "悬浮窗功能需要开启无障碍服务", android.widget.Toast.LENGTH_SHORT).show()
+            val intent = Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
+            return false
+        }
+        return true
+    }
+
+    private fun syncServiceState() {
+        val accessibility = com.suzu.test.accessibility.TestAccessibilityService.instance
+        if (accessibility != null) {
+            accessibility.syncBallState()
+        }
+    }
+
+    private fun setupMasterSwitch() {
+        binding.swMasterSwitch.isChecked = FloatingBallConfig.isFloatingMasterEnabled(this)
+        binding.swMasterSwitch.setOnClickListener {
+            val targetState = binding.swMasterSwitch.isChecked
             if (targetState) {
-                // 开启前置校验
-                if (!android.provider.Settings.canDrawOverlays(this)) {
-                    binding.swBallMasterSwitch.isChecked = false
-                    android.widget.Toast.makeText(this, "请先授予悬浮窗权限", android.widget.Toast.LENGTH_SHORT).show()
-                    val intent = Intent(
-                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        android.net.Uri.parse("package:$packageName")
-                    )
-                    startActivity(intent)
+                if (!checkPermissionAndServices()) {
+                    binding.swMasterSwitch.isChecked = false
                     return@setOnClickListener
                 }
+            }
 
-                if (!com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.value) {
+            FloatingBallConfig.setFloatingMasterEnabled(this, targetState)
+            syncServiceState()
+            updateSectionEnableStates()
+            updateSectionCollapseStates()
+            updateEdgeRegionPreview()
+            TestLog.i(MODULE, "悬浮窗功能总开关变更为: $targetState")
+        }
+    }
+
+    private fun setupFloatingWindowSection() {
+        binding.swEdgeGestureEnabled.isChecked = FloatingBallConfig.isEdgeGestureEnabled(this)
+        binding.swEdgeGestureEnabled.setOnClickListener {
+            val targetState = binding.swEdgeGestureEnabled.isChecked
+            if (targetState) {
+                if (!checkPermissionAndServices()) {
+                    binding.swEdgeGestureEnabled.isChecked = false
+                    return@setOnClickListener
+                }
+            }
+
+            FloatingBallConfig.setEdgeGestureEnabled(this, targetState)
+            syncServiceState()
+            updateSectionEnableStates()
+            updateSectionCollapseStates()
+            updateEdgeRegionPreview()
+            TestLog.i(MODULE, "悬浮窗(手势区域)开关变更为: $targetState")
+        }
+    }
+
+    private fun setupFloatingBallSection() {
+        binding.swBallMasterSwitch.isChecked = FloatingBallConfig.isBallEnabled(this)
+        binding.swBallMasterSwitch.setOnClickListener {
+            val targetState = binding.swBallMasterSwitch.isChecked
+            if (targetState) {
+                if (!checkPermissionAndServices()) {
                     binding.swBallMasterSwitch.isChecked = false
-                    android.widget.Toast.makeText(this, "悬浮球需要开启无障碍服务", android.widget.Toast.LENGTH_SHORT).show()
-                    val intent = Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                    startActivity(intent)
                     return@setOnClickListener
                 }
             }
 
             FloatingBallConfig.setBallEnabled(this, targetState)
-            com.suzu.test.accessibility.TestAccessibilityService.instance?.syncBallState()
-            TestLog.i(MODULE, "悬浮球总开关变更为: $targetState")
+            syncServiceState()
+            updateSectionEnableStates()
+            updateSectionCollapseStates()
+            TestLog.i(MODULE, "悬浮球开关变更为: $targetState")
         }
+    }
+
+    private fun updateSectionEnableStates() {
+        val masterEnabled = FloatingBallConfig.isFloatingMasterEnabled(this)
+        val edgeEnabled = masterEnabled && FloatingBallConfig.isEdgeGestureEnabled(this)
+        val ballEnabled = masterEnabled && FloatingBallConfig.isBallEnabled(this)
+
+        val leftEnabled = edgeEnabled && (
+            FloatingBallConfig.isEdgeLeftEnabled(this) ||
+                FloatingBallConfig.isEdgeLeftLowerEnabled(this)
+            )
+        val rightEnabled = edgeEnabled && (
+            FloatingBallConfig.isEdgeRightEnabled(this) ||
+                FloatingBallConfig.isEdgeRightLowerEnabled(this)
+            )
+
+        binding.swEdgeGestureEnabled.isEnabled = masterEnabled
+        binding.layoutSectionEdgeGesture.alpha = if (masterEnabled) 1.0f else 0.5f
+        binding.swShowEdgeRegion.isEnabled = edgeEnabled
+
+        binding.swEdgeLeftEnabled.isEnabled = edgeEnabled
+        binding.swEdgeLeftLowerEnabled.isEnabled = edgeEnabled
+        binding.swEdgeLeftUp.isEnabled = leftEnabled
+        binding.swEdgeLeftDown.isEnabled = leftEnabled
+        binding.swEdgeLeftRight.isEnabled = leftEnabled
+
+        binding.swEdgeRightEnabled.isEnabled = edgeEnabled
+        binding.swEdgeRightLowerEnabled.isEnabled = edgeEnabled
+        binding.swEdgeRightUp.isEnabled = rightEnabled
+        binding.swEdgeRightDown.isEnabled = rightEnabled
+        binding.swEdgeRightLeft.isEnabled = rightEnabled
+
+        binding.sbEdgeLeftUpperWidth.isEnabled =
+            edgeEnabled && FloatingBallConfig.isEdgeLeftEnabled(this)
+        binding.sbEdgeLeftUpperDistance.isEnabled =
+            edgeEnabled && FloatingBallConfig.isEdgeLeftEnabled(this)
+        binding.sbEdgeLeftLowerWidth.isEnabled =
+            edgeEnabled && FloatingBallConfig.isEdgeLeftLowerEnabled(this)
+        binding.sbEdgeLeftLowerDistance.isEnabled =
+            edgeEnabled && FloatingBallConfig.isEdgeLeftLowerEnabled(this)
+        binding.sbEdgeRightUpperWidth.isEnabled =
+            edgeEnabled && FloatingBallConfig.isEdgeRightEnabled(this)
+        binding.sbEdgeRightUpperDistance.isEnabled =
+            edgeEnabled && FloatingBallConfig.isEdgeRightEnabled(this)
+        binding.sbEdgeRightLowerWidth.isEnabled =
+            edgeEnabled && FloatingBallConfig.isEdgeRightLowerEnabled(this)
+        binding.sbEdgeRightLowerDistance.isEnabled =
+            edgeEnabled && FloatingBallConfig.isEdgeRightLowerEnabled(this)
+        binding.sbEdgeSafetyDistance.isEnabled = edgeEnabled && (
+            FloatingBallConfig.isEdgeLeftEnabled(this) ||
+                FloatingBallConfig.isEdgeRightEnabled(this)
+            )
+        binding.sbEdgeLowerSafetyDistance.isEnabled = edgeEnabled && (
+            FloatingBallConfig.isEdgeLeftLowerEnabled(this) ||
+                FloatingBallConfig.isEdgeRightLowerEnabled(this)
+            )
+
+        binding.swBallMasterSwitch.isEnabled = masterEnabled
+        binding.layoutSectionFloatingBall.alpha = if (masterEnabled) 1.0f else 0.5f
+        binding.sbBallSize.isEnabled = ballEnabled
+        binding.sbBallAlpha.isEnabled = ballEnabled
+        binding.sbBallAnimDuration.isEnabled = ballEnabled
+        binding.rbShapeCircle.isEnabled = ballEnabled
+        binding.rbShapeRoundedRect.isEnabled = ballEnabled
+        binding.rbShapeBorderless.isEnabled = ballEnabled
+        binding.btnSelectBallImage.isEnabled = ballEnabled
+        binding.btnResetBallImage.isEnabled = ballEnabled
+        binding.swShowOnlyWithIme.isEnabled = ballEnabled
+    }
+
+    /**
+     * 未开启时自动折叠属性面板：
+     * - 手势区域属性需总开关 + 手势开关均开启才展开
+     * - 悬浮球属性需总开关 + 悬浮球开关均开启才展开
+     * - 预览块为独立区块：仅跟随总开关显示，不随悬浮球/手势折叠
+     */
+    private fun updateSectionCollapseStates() {
+        val masterEnabled = FloatingBallConfig.isFloatingMasterEnabled(this)
+        val edgeEnabled = masterEnabled && FloatingBallConfig.isEdgeGestureEnabled(this)
+        val ballEnabled = masterEnabled && FloatingBallConfig.isBallEnabled(this)
+
+        TransitionManager.beginDelayedTransition(
+            binding.root as android.view.ViewGroup,
+            ChangeBounds().apply { duration = 200 }
+        )
+        binding.layoutEdgeGestureContent.visibility =
+            if (edgeEnabled) View.VISIBLE else View.GONE
+        binding.layoutBallContent.visibility =
+            if (ballEnabled) View.VISIBLE else View.GONE
+        binding.layoutPreviewBlock.visibility =
+            if (masterEnabled) View.VISIBLE else View.GONE
+        updatePreviewContentVisibility()
+    }
+
+    /**
+     * 独立预览区块内部可见性：
+     * - 悬浮球示意仅在悬浮球开启时展示
+     * - 手势区域示意图可见性由 updateEdgeRegionPreview() 控制
+     * - 两者皆不可见时展示占位提示
+     */
+    private fun updatePreviewContentVisibility() {
+        val ballEnabled = FloatingBallConfig.isFloatingMasterEnabled(this) &&
+            FloatingBallConfig.isBallEnabled(this)
+        binding.flPreviewContainer.visibility =
+            if (ballEnabled) View.VISIBLE else View.GONE
+
+        val gesturePreviewVisible =
+            binding.edgeGestureRegionView.visibility == View.VISIBLE
+        binding.tvPreviewPlaceholder.visibility =
+            if (!ballEnabled && !gesturePreviewVisible) View.VISIBLE else View.GONE
     }
 
     private fun setupCustomImageActions() {
@@ -317,7 +494,8 @@ class SettingsFloatingActivity : AppCompatActivity() {
 
     private fun checkA11yStatus() {
         val isA11yEnabled = com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.value
-        binding.tvA11yWarning.visibility = if (isA11yEnabled) View.GONE else View.VISIBLE
+        binding.tvA11yWarning.visibility =
+            if (isA11yEnabled) View.GONE else View.VISIBLE
     }
 
     private fun setupAppFilter() {
@@ -326,6 +504,385 @@ class SettingsFloatingActivity : AppCompatActivity() {
             FloatingBallConfig.setShowOnlyWithImeEnabled(this, isChecked)
             TestLog.i(MODULE, "仅在弹出键盘时显示开关: $isChecked")
         }
+    }
+
+    private fun setupEdgeGestureSettings() {
+        binding.swShowEdgeRegion.setOnCheckedChangeListener { _, show ->
+            FloatingBallConfig.setShowEdgeRegionEnabled(this, show)
+            updateEdgeRegionPreview()
+            TestLog.i(MODULE, "显示边缘手势判定区域: $show")
+        }
+
+        binding.swEdgeLeftEnabled.setOnCheckedChangeListener { _, enabled ->
+            FloatingBallConfig.setEdgeLeftEnabled(this, enabled)
+            syncServiceState()
+            updateSectionEnableStates()
+            updateEdgeRegionPreview()
+            TestLog.i(MODULE, "启用左上区域变更: $enabled")
+        }
+
+        binding.swEdgeLeftLowerEnabled.setOnCheckedChangeListener { _, enabled ->
+            FloatingBallConfig.setEdgeLeftLowerEnabled(this, enabled)
+            syncServiceState()
+            updateSectionEnableStates()
+            updateEdgeRegionPreview()
+            TestLog.i(MODULE, "启用左下输入法覆盖区域变更: $enabled")
+        }
+
+        binding.swEdgeRightEnabled.setOnCheckedChangeListener { _, enabled ->
+            FloatingBallConfig.setEdgeRightEnabled(this, enabled)
+            syncServiceState()
+            updateSectionEnableStates()
+            updateEdgeRegionPreview()
+            TestLog.i(MODULE, "启用右上区域变更: $enabled")
+        }
+
+        binding.swEdgeRightLowerEnabled.setOnCheckedChangeListener { _, enabled ->
+            FloatingBallConfig.setEdgeRightLowerEnabled(this, enabled)
+            syncServiceState()
+            updateSectionEnableStates()
+            updateEdgeRegionPreview()
+            TestLog.i(MODULE, "启用右下输入法覆盖区域变更: $enabled")
+        }
+
+        val directionSwitches = listOf(
+            binding.swEdgeLeftUp to FloatingBallConfig.KEY_EDGE_LEFT_UP_ENABLED,
+            binding.swEdgeLeftDown to FloatingBallConfig.KEY_EDGE_LEFT_DOWN_ENABLED,
+            binding.swEdgeLeftRight to FloatingBallConfig.KEY_EDGE_LEFT_RIGHT_ENABLED,
+            binding.swEdgeRightUp to FloatingBallConfig.KEY_EDGE_RIGHT_UP_ENABLED,
+            binding.swEdgeRightDown to FloatingBallConfig.KEY_EDGE_RIGHT_DOWN_ENABLED,
+            binding.swEdgeRightLeft to FloatingBallConfig.KEY_EDGE_RIGHT_LEFT_ENABLED
+        )
+        directionSwitches.forEach { (switch, key) ->
+            switch.setOnCheckedChangeListener { _, enabled ->
+                FloatingBallConfig.setEdgeGestureDirectionEnabled(this, key, enabled)
+                updateEdgeRegionPreview()
+                TestLog.i(MODULE, "边缘手势方向变更: key=$key, enabled=$enabled")
+            }
+        }
+
+        setupEdgeRegionAdjuster(
+            binding.sbEdgeLeftUpperWidth,
+            binding.tvEdgeLeftUpperWidthValue,
+            FloatingBallConfig.KEY_EDGE_LEFT_UPPER_WIDTH_DP,
+            isWidth = true
+        )
+        setupEdgeRegionAdjuster(
+            binding.sbEdgeLeftUpperDistance,
+            binding.tvEdgeLeftUpperDistanceValue,
+            FloatingBallConfig.KEY_EDGE_LEFT_UPPER_DISTANCE_DP,
+            isWidth = false
+        )
+        setupEdgeRegionAdjuster(
+            binding.sbEdgeLeftLowerWidth,
+            binding.tvEdgeLeftLowerWidthValue,
+            FloatingBallConfig.KEY_EDGE_LEFT_LOWER_WIDTH_DP,
+            isWidth = true
+        )
+        setupEdgeRegionAdjuster(
+            binding.sbEdgeLeftLowerDistance,
+            binding.tvEdgeLeftLowerDistanceValue,
+            FloatingBallConfig.KEY_EDGE_LEFT_LOWER_DISTANCE_DP,
+            isWidth = false
+        )
+        setupEdgeRegionAdjuster(
+            binding.sbEdgeRightUpperWidth,
+            binding.tvEdgeRightUpperWidthValue,
+            FloatingBallConfig.KEY_EDGE_RIGHT_UPPER_WIDTH_DP,
+            isWidth = true
+        )
+        setupEdgeRegionAdjuster(
+            binding.sbEdgeRightUpperDistance,
+            binding.tvEdgeRightUpperDistanceValue,
+            FloatingBallConfig.KEY_EDGE_RIGHT_UPPER_DISTANCE_DP,
+            isWidth = false
+        )
+        setupEdgeRegionAdjuster(
+            binding.sbEdgeRightLowerWidth,
+            binding.tvEdgeRightLowerWidthValue,
+            FloatingBallConfig.KEY_EDGE_RIGHT_LOWER_WIDTH_DP,
+            isWidth = true
+        )
+        setupEdgeRegionAdjuster(
+            binding.sbEdgeRightLowerDistance,
+            binding.tvEdgeRightLowerDistanceValue,
+            FloatingBallConfig.KEY_EDGE_RIGHT_LOWER_DISTANCE_DP,
+            isWidth = false
+        )
+
+        val currentSafetyDistance = FloatingBallConfig.getEdgeKeyboardSafetyDistancePx(this)
+        binding.sbEdgeSafetyDistance.progress = currentSafetyDistance - FloatingBallConfig.MIN_EDGE_KEYBOARD_SAFETY_DISTANCE_PX
+        binding.tvEdgeSafetyDistanceValue.text = "$currentSafetyDistance px"
+        binding.sbEdgeSafetyDistance.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val safetyDistance = progress + FloatingBallConfig.MIN_EDGE_KEYBOARD_SAFETY_DISTANCE_PX
+                binding.tvEdgeSafetyDistanceValue.text = "$safetyDistance px"
+                FloatingBallConfig.setEdgeKeyboardSafetyDistancePx(this@SettingsFloatingActivity, safetyDistance)
+                updateEdgeRegionPreview()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+
+        val currentLowerSafetyDistance =
+            FloatingBallConfig.getEdgeLowerKeyboardSafetyDistancePx(this)
+        binding.sbEdgeLowerSafetyDistance.progress =
+            currentLowerSafetyDistance -
+                FloatingBallConfig.MIN_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX
+        binding.tvEdgeLowerSafetyDistanceValue.text = "$currentLowerSafetyDistance px"
+        binding.sbEdgeLowerSafetyDistance.setOnSeekBarChangeListener(
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(
+                    seekBar: SeekBar?,
+                    progress: Int,
+                    fromUser: Boolean
+                ) {
+                    val safetyDistance =
+                        progress +
+                            FloatingBallConfig.MIN_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX
+                    binding.tvEdgeLowerSafetyDistanceValue.text = "$safetyDistance px"
+                    FloatingBallConfig.setEdgeLowerKeyboardSafetyDistancePx(
+                        this@SettingsFloatingActivity,
+                        safetyDistance
+                    )
+                    updateEdgeRegionPreview()
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+            }
+        )
+
+        updateEdgeGestureUI()
+    }
+
+    private fun setupEdgeRegionAdjuster(
+        seekBar: SeekBar,
+        valueView: TextView,
+        key: String,
+        isWidth: Boolean
+    ) {
+        val minimum = if (isWidth) {
+            FloatingBallConfig.MIN_EDGE_WIDTH_DP
+        } else {
+            FloatingBallConfig.MIN_EDGE_TRIGGER_DISTANCE_DP
+        }
+        val current = if (isWidth) {
+            FloatingBallConfig.getEdgeRegionWidthDp(this, key)
+        } else {
+            FloatingBallConfig.getEdgeRegionTriggerDistanceDp(this, key)
+        }
+        seekBar.progress = current - minimum
+        valueView.text = "$current dp"
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(
+                seekBar: SeekBar?,
+                progress: Int,
+                fromUser: Boolean
+            ) {
+                val value = progress + minimum
+                valueView.text = "$value dp"
+                if (isWidth) {
+                    FloatingBallConfig.setEdgeRegionWidthDp(
+                        this@SettingsFloatingActivity,
+                        key,
+                        value
+                    )
+                } else {
+                    FloatingBallConfig.setEdgeRegionTriggerDistanceDp(
+                        this@SettingsFloatingActivity,
+                        key,
+                        value
+                    )
+                }
+                updateEdgeRegionPreview()
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+    }
+
+    private fun updateEdgeRegionAdjusterValue(
+        seekBar: SeekBar,
+        valueView: TextView,
+        key: String,
+        isWidth: Boolean
+    ) {
+        val minimum = if (isWidth) {
+            FloatingBallConfig.MIN_EDGE_WIDTH_DP
+        } else {
+            FloatingBallConfig.MIN_EDGE_TRIGGER_DISTANCE_DP
+        }
+        val value = if (isWidth) {
+            FloatingBallConfig.getEdgeRegionWidthDp(this, key)
+        } else {
+            FloatingBallConfig.getEdgeRegionTriggerDistanceDp(this, key)
+        }
+        seekBar.progress = value - minimum
+        valueView.text = "$value dp"
+    }
+
+    private fun updateEdgeGestureUI() {
+        binding.swEdgeGestureEnabled.isChecked =
+            FloatingBallConfig.isEdgeGestureEnabled(this)
+        binding.swEdgeLeftEnabled.isChecked =
+            FloatingBallConfig.isEdgeLeftEnabled(this)
+        binding.swEdgeLeftLowerEnabled.isChecked =
+            FloatingBallConfig.isEdgeLeftLowerEnabled(this)
+        binding.swEdgeRightEnabled.isChecked =
+            FloatingBallConfig.isEdgeRightEnabled(this)
+        binding.swEdgeRightLowerEnabled.isChecked =
+            FloatingBallConfig.isEdgeRightLowerEnabled(this)
+        binding.swEdgeLeftUp.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+            this, FloatingBallConfig.KEY_EDGE_LEFT_UP_ENABLED
+        )
+        binding.swEdgeLeftDown.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+            this, FloatingBallConfig.KEY_EDGE_LEFT_DOWN_ENABLED
+        )
+        binding.swEdgeLeftRight.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+            this, FloatingBallConfig.KEY_EDGE_LEFT_RIGHT_ENABLED
+        )
+        binding.swEdgeRightUp.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+            this, FloatingBallConfig.KEY_EDGE_RIGHT_UP_ENABLED
+        )
+        binding.swEdgeRightDown.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+            this, FloatingBallConfig.KEY_EDGE_RIGHT_DOWN_ENABLED
+        )
+        binding.swEdgeRightLeft.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+            this, FloatingBallConfig.KEY_EDGE_RIGHT_LEFT_ENABLED
+        )
+
+        updateEdgeRegionAdjusterValue(
+            binding.sbEdgeLeftUpperWidth,
+            binding.tvEdgeLeftUpperWidthValue,
+            FloatingBallConfig.KEY_EDGE_LEFT_UPPER_WIDTH_DP,
+            isWidth = true
+        )
+        updateEdgeRegionAdjusterValue(
+            binding.sbEdgeLeftUpperDistance,
+            binding.tvEdgeLeftUpperDistanceValue,
+            FloatingBallConfig.KEY_EDGE_LEFT_UPPER_DISTANCE_DP,
+            isWidth = false
+        )
+        updateEdgeRegionAdjusterValue(
+            binding.sbEdgeLeftLowerWidth,
+            binding.tvEdgeLeftLowerWidthValue,
+            FloatingBallConfig.KEY_EDGE_LEFT_LOWER_WIDTH_DP,
+            isWidth = true
+        )
+        updateEdgeRegionAdjusterValue(
+            binding.sbEdgeLeftLowerDistance,
+            binding.tvEdgeLeftLowerDistanceValue,
+            FloatingBallConfig.KEY_EDGE_LEFT_LOWER_DISTANCE_DP,
+            isWidth = false
+        )
+        updateEdgeRegionAdjusterValue(
+            binding.sbEdgeRightUpperWidth,
+            binding.tvEdgeRightUpperWidthValue,
+            FloatingBallConfig.KEY_EDGE_RIGHT_UPPER_WIDTH_DP,
+            isWidth = true
+        )
+        updateEdgeRegionAdjusterValue(
+            binding.sbEdgeRightUpperDistance,
+            binding.tvEdgeRightUpperDistanceValue,
+            FloatingBallConfig.KEY_EDGE_RIGHT_UPPER_DISTANCE_DP,
+            isWidth = false
+        )
+        updateEdgeRegionAdjusterValue(
+            binding.sbEdgeRightLowerWidth,
+            binding.tvEdgeRightLowerWidthValue,
+            FloatingBallConfig.KEY_EDGE_RIGHT_LOWER_WIDTH_DP,
+            isWidth = true
+        )
+        updateEdgeRegionAdjusterValue(
+            binding.sbEdgeRightLowerDistance,
+            binding.tvEdgeRightLowerDistanceValue,
+            FloatingBallConfig.KEY_EDGE_RIGHT_LOWER_DISTANCE_DP,
+            isWidth = false
+        )
+
+        val safetyDistance = FloatingBallConfig.getEdgeKeyboardSafetyDistancePx(this)
+        binding.sbEdgeSafetyDistance.progress =
+            safetyDistance - FloatingBallConfig.MIN_EDGE_KEYBOARD_SAFETY_DISTANCE_PX
+        binding.tvEdgeSafetyDistanceValue.text = "$safetyDistance px"
+
+        val lowerSafetyDistance =
+            FloatingBallConfig.getEdgeLowerKeyboardSafetyDistancePx(this)
+        binding.sbEdgeLowerSafetyDistance.progress =
+            lowerSafetyDistance -
+                FloatingBallConfig.MIN_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX
+        binding.tvEdgeLowerSafetyDistanceValue.text = "$lowerSafetyDistance px"
+
+        binding.swShowEdgeRegion.isChecked =
+            FloatingBallConfig.isShowEdgeRegionEnabled(this)
+        updateEdgeRegionPreview()
+    }
+
+    private fun updateEdgeRegionPreview() {
+        val gestureEnabled =
+            FloatingBallConfig.isFloatingMasterEnabled(this) &&
+                FloatingBallConfig.isEdgeGestureEnabled(this)
+        val showPreview =
+            gestureEnabled && FloatingBallConfig.isShowEdgeRegionEnabled(this)
+        binding.edgeGestureRegionView.visibility =
+            if (showPreview) View.VISIBLE else View.GONE
+        updatePreviewContentVisibility()
+
+        binding.edgeGestureRegionView.update(
+            leftUpperWidthDp = FloatingBallConfig.getEdgeRegionWidthDp(
+                this, FloatingBallConfig.KEY_EDGE_LEFT_UPPER_WIDTH_DP
+            ),
+            leftUpperDistanceDp = FloatingBallConfig.getEdgeRegionTriggerDistanceDp(
+                this, FloatingBallConfig.KEY_EDGE_LEFT_UPPER_DISTANCE_DP
+            ),
+            leftUpperEnabled = FloatingBallConfig.isEdgeLeftEnabled(this),
+            leftLowerWidthDp = FloatingBallConfig.getEdgeRegionWidthDp(
+                this, FloatingBallConfig.KEY_EDGE_LEFT_LOWER_WIDTH_DP
+            ),
+            leftLowerDistanceDp = FloatingBallConfig.getEdgeRegionTriggerDistanceDp(
+                this, FloatingBallConfig.KEY_EDGE_LEFT_LOWER_DISTANCE_DP
+            ),
+            leftLowerEnabled = FloatingBallConfig.isEdgeLeftLowerEnabled(this),
+            rightUpperWidthDp = FloatingBallConfig.getEdgeRegionWidthDp(
+                this, FloatingBallConfig.KEY_EDGE_RIGHT_UPPER_WIDTH_DP
+            ),
+            rightUpperDistanceDp = FloatingBallConfig.getEdgeRegionTriggerDistanceDp(
+                this, FloatingBallConfig.KEY_EDGE_RIGHT_UPPER_DISTANCE_DP
+            ),
+            rightUpperEnabled = FloatingBallConfig.isEdgeRightEnabled(this),
+            rightLowerWidthDp = FloatingBallConfig.getEdgeRegionWidthDp(
+                this, FloatingBallConfig.KEY_EDGE_RIGHT_LOWER_WIDTH_DP
+            ),
+            rightLowerDistanceDp = FloatingBallConfig.getEdgeRegionTriggerDistanceDp(
+                this, FloatingBallConfig.KEY_EDGE_RIGHT_LOWER_DISTANCE_DP
+            ),
+            rightLowerEnabled = FloatingBallConfig.isEdgeRightLowerEnabled(this),
+            upperSafetyDistancePx =
+                FloatingBallConfig.getEdgeKeyboardSafetyDistancePx(this),
+            lowerSafetyDistancePx =
+                FloatingBallConfig.getEdgeLowerKeyboardSafetyDistancePx(this),
+            gestureEnabled = gestureEnabled,
+            leftUpEnabled = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+                this, FloatingBallConfig.KEY_EDGE_LEFT_UP_ENABLED
+            ),
+            leftDownEnabled = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+                this, FloatingBallConfig.KEY_EDGE_LEFT_DOWN_ENABLED
+            ),
+            leftRightEnabled = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+                this, FloatingBallConfig.KEY_EDGE_LEFT_RIGHT_ENABLED
+            ),
+            rightUpEnabled = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+                this, FloatingBallConfig.KEY_EDGE_RIGHT_UP_ENABLED
+            ),
+            rightDownEnabled = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+                this, FloatingBallConfig.KEY_EDGE_RIGHT_DOWN_ENABLED
+            ),
+            rightLeftEnabled = FloatingBallConfig.isEdgeGestureDirectionEnabled(
+                this, FloatingBallConfig.KEY_EDGE_RIGHT_LEFT_ENABLED
+            )
+        )
     }
 
     private fun setupFloatingAdjusters() {

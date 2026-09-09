@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.suzu.test.ime.ui.SquareFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp">
+
+    <ImageView
+        android:id="@+id/ivRecentThumb"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:background="#EEEEEE"
+        android:contentDescription="最近添加表情" />
+
+</com.suzu.test.ime.ui.SquareFrameLayout>

@@ -14,7 +14,7 @@ class KeyboardDataSource(private val context: Context) {
 
     companion object {
         private const val MODULE = "KeyboardDataSource"
-        private const val QUERY_LIMIT = 200
+        private const val RECENT_LIMIT = 200
     }
 
     private val resourcesDir = File(context.filesDir, "resources").apply {
@@ -27,14 +27,14 @@ class KeyboardDataSource(private val context: Context) {
             val db = DatabaseProvider.getDatabase(context)
             val entities: List<ResourceEntity> = when {
                 tabKey == "RECENT" -> {
-                    db.resourceDao().getRecentResourcesFlow(QUERY_LIMIT).first()
+                    db.resourceDao().getRecentResourcesFlow(RECENT_LIMIT).first()
                 }
                 tabKey == "ALL" -> {
-                    db.resourceDao().getAllResourcesOrdered().first().take(QUERY_LIMIT)
+                    db.resourceDao().getAllResourcesOrdered().first()
                 }
                 tabKey.startsWith("cat:") -> {
                     val catId = tabKey.removePrefix("cat:").toLongOrNull() ?: 0L
-                    db.resourceCategoryDao().getResourcesForCategory(catId).first().take(QUERY_LIMIT)
+                    db.resourceCategoryDao().getResourcesForCategory(catId).first()
                 }
                 else -> emptyList()
             }

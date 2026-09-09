@@ -197,7 +197,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateGuideStatus(ime: Boolean, storage: Boolean, overlay: Boolean, a11y: Boolean) {
+    private fun updateGuideStatus(
+        ime: Boolean,
+        storage: Boolean,
+        overlay: Boolean,
+        a11y: Boolean
+    ) {
         if (ime) {
             binding.tvGuideImeDot.text = "✓"
             binding.tvGuideImeDot.setTextColor(0xFF4CAF50.toInt())
@@ -260,7 +265,7 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
             }
         } else if (!a11y && notifyA11y) {
-            // 优先级 2: 无障碍已关闭 且 开启了提示开关
+            // 优先级 2: 无障碍已关闭且开启了提示开关
             binding.layoutPermissionWarning.visibility = View.VISIBLE
             binding.tvWarningText.text = "无障碍服务已关闭，悬浮球功能不可用"
             binding.btnWarningAction.text = "去开启"

@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import android.graphics.Typeface
 import com.suzu.test.databinding.ActivitySettingsBinding
 import com.suzu.test.databinding.DialogLogViewerBinding
 import com.suzu.test.floating.FloatingBallConfig
@@ -137,6 +138,7 @@ class SettingsActivity : AppCompatActivity() {
                 binding.tvPermAutoStartSub.text = "请前往系统「设置 - 应用管理」中开启自启动权限"
             }
         }
+
     }
 
     private fun setupA11ySwitch() {

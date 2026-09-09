@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -11,7 +12,7 @@
         android:layout_height="48dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="20dp">
 
         <ImageButton
             android:id="@+id/btnBack"
@@ -26,7 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="悬浮球设置"
+            android:text="悬浮窗设置"
             android:textSize="22sp"
             android:textStyle="bold"
             android:textColor="#111111" />
@@ -42,7 +43,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- 悬浮球总开关 -->
+            <!-- ================= 区块 1：悬浮窗功能总开关 ================= -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -62,28 +63,29 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="显示悬浮球"
-                        android:textSize="15sp"
+                        android:text="悬浮窗功能总开关"
+                        android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="#333333" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="在其他应用上显示快捷切换按钮"
+                        android:text="总控开关，关闭后所有悬浮窗与手势功能均不生效"
                         android:textSize="12sp"
                         android:textColor="#888888"
                         android:layout_marginTop="2dp" />
                 </LinearLayout>
 
                 <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/swBallMasterSwitch"
+                    android:id="@+id/swMasterSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
-            <!-- 悬浮球大小与透明度调节 -->
+            <!-- ================= 区块 2：悬浮窗 (手势区域) ================= -->
             <LinearLayout
+                android:id="@+id/layoutSectionEdgeGesture"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
@@ -95,127 +97,20 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="外观与尺寸"
-                    android:textSize="15sp"
+                    android:text="悬浮窗"
+                    android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="#333333" />
-
-                <!-- 悬浮球大小调节 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="16dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="悬浮球大小 (40 - 80 dp)"
-                        android:textSize="14sp"
-                        android:textColor="#555555" />
-
-                    <TextView
-                        android:id="@+id/tvSizeValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="56 dp"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="#007AFF" />
-                </LinearLayout>
-
-                <SeekBar
-                    android:id="@+id/sbBallSize"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="40"
-                    android:layout_marginTop="6dp" />
-
-                <!-- 悬浮球透明度调节 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="16dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="不透明度 (30% - 100%)"
-                        android:textSize="14sp"
-                        android:textColor="#555555" />
-
-                    <TextView
-                        android:id="@+id/tvAlphaValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="80 %"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="#007AFF" />
-                </LinearLayout>
-
-                <SeekBar
-                    android:id="@+id/sbBallAlpha"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="70"
-                    android:layout_marginTop="6dp" />
-
-                <!-- 悬浮球动画时长调节 (0 - 200 ms, 步进 20 ms, max 10) -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="16dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="渐显/渐隐动画时长 (0 - 200 ms)"
-                        android:textSize="14sp"
-                        android:textColor="#555555" />
-
-                    <TextView
-                        android:id="@+id/tvAnimDurationValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="100 ms"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="#007AFF" />
-                </LinearLayout>
-
-                <SeekBar
-                    android:id="@+id/sbBallAnimDuration"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="10"
-                    android:layout_marginTop="6dp" />
-            </LinearLayout>
-
-            <!-- 触发显示条件设置 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:padding="16dp"
-                android:elevation="1dp"
-                android:layout_marginBottom="16dp">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="显示触发规则"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="#333333" />
+                    android:text="屏幕两侧边缘手势触发区域，在键盘弹出时滑动快速切换输入法"
+                    android:textSize="12sp"
+                    android:textColor="#888888"
+                    android:layout_marginTop="4dp" />
 
-                <!-- 开关1：仅在弹出键盘时显示 -->
+                <!-- 独立开关：悬浮窗(手势区域) -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -232,45 +127,667 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="仅在弹出键盘时显示"
+                            android:text="开启悬浮窗 (手势区域)"
                             android:textSize="14sp"
+                            android:textStyle="bold"
                             android:textColor="#333333" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="未检测到输入法时自动隐藏悬浮球；在本应用内始终显示"
+                            android:text="启用屏幕边缘手势滑动切换"
                             android:textSize="12sp"
                             android:textColor="#888888"
                             android:layout_marginTop="2dp" />
                     </LinearLayout>
 
                     <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/swShowOnlyWithIme"
+                        android:id="@+id/swEdgeGestureEnabled"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tvA11yWarning"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⚠️ 需要开启无障碍服务才能检测键盘弹出"
-                    android:textSize="12sp"
-                    android:textColor="#E65100"
-                    android:layout_marginTop="4dp"
-                    android:visibility="gone" />
-
-                <View
+                <!-- ====== 折叠容器：手势区域全部属性（未开启时隐藏） ====== -->
+                <LinearLayout
+                    android:id="@+id/layoutEdgeGestureContent"
                     android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#F0F0F0"
-                    android:layout_marginVertical="12dp" />
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F0F0F0"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 显示判定区域开关 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="显示判定区域"
+                                android:textSize="14sp"
+                                android:textColor="#333333" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="在屏幕两侧绘制手势感应条，方便调试与定位"
+                                android:textSize="12sp"
+                                android:textColor="#888888"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/swShowEdgeRegion"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <!-- ========== 子区块 A：上半区域（键盘上方） ========== -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_sub_section"
+                        android:padding="12dp"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="上半区域（键盘上方）"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#1A73C4" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="位于输入法上方，应用上半安全距离"
+                            android:textSize="11sp"
+                            android:textColor="#888888"
+                            android:layout_marginTop="2dp" />
+
+                        <!-- 启用左上区域 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="10dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="启用左上区域"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#333333" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/swEdgeLeftEnabled"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+
+                        <!-- 启用右上区域 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="6dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="启用右上区域"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#333333" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/swEdgeRightEnabled"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+
+                        <!-- 左上区域宽度 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="12dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="左上宽度 (12 - 64 dp)"
+                                android:textSize="14sp"
+                                android:textColor="#555555" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeLeftUpperWidthValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="24 dp"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="#007AFF" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/sbEdgeLeftUpperWidth"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:max="52"
+                            android:layout_marginTop="4dp" />
+
+                        <!-- 左上区域触发距离 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="左上触发距离 (48 - 200 dp)"
+                                android:textSize="14sp"
+                                android:textColor="#555555" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeLeftUpperDistanceValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="80 dp"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="#007AFF" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/sbEdgeLeftUpperDistance"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:max="152"
+                            android:layout_marginTop="4dp" />
+
+                        <!-- 右上区域宽度 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="右上宽度 (12 - 64 dp)"
+                                android:textColor="#555555"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeRightUpperWidthValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="24 dp"
+                                android:textColor="#007AFF"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/sbEdgeRightUpperWidth"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:max="52" />
+
+                        <!-- 右上区域触发距离 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="右上触发距离 (48 - 200 dp)"
+                                android:textColor="#555555"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeRightUpperDistanceValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="80 dp"
+                                android:textColor="#007AFF"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/sbEdgeRightUpperDistance"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:max="152" />
+
+                        <!-- 上半安全距离作用于左上、右上区域 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="10dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="上半区域安全距离 (0 - 1000 px)"
+                                android:textSize="14sp"
+                                android:textColor="#555555" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeSafetyDistanceValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="150 px"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="#007AFF" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/sbEdgeSafetyDistance"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:max="1000"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <!-- ========== 子区块 B：下半区域（键盘两侧） ========== -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_sub_section"
+                        android:padding="12dp"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="下半区域（键盘两侧）"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#0E8060" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="覆盖输入法左右两侧边缘，应用下半安全距离"
+                            android:textSize="11sp"
+                            android:textColor="#888888"
+                            android:layout_marginTop="2dp" />
+
+                        <!-- 启用左下区域 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="10dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="启用左下区域"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#333333" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/swEdgeLeftLowerEnabled"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+
+                        <!-- 启用右下区域 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="6dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="启用右下区域"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#333333" />
+                            </LinearLayout>
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/swEdgeRightLowerEnabled"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+
+                        <!-- 左下区域宽度 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="左下宽度 (12 - 64 dp)"
+                                android:textColor="#555555"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeLeftLowerWidthValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="24 dp"
+                                android:textColor="#007AFF"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/sbEdgeLeftLowerWidth"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:max="52" />
+
+                        <!-- 左下区域触发距离 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="左下触发距离 (48 - 200 dp)"
+                                android:textColor="#555555"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeLeftLowerDistanceValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="80 dp"
+                                android:textColor="#007AFF"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/sbEdgeLeftLowerDistance"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:max="152" />
+
+                        <!-- 右下区域宽度 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="右下宽度 (12 - 64 dp)"
+                                android:textColor="#555555"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeRightLowerWidthValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="24 dp"
+                                android:textColor="#007AFF"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/sbEdgeRightLowerWidth"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:max="52" />
+
+                        <!-- 右下区域触发距离 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="右下触发距离 (48 - 200 dp)"
+                                android:textColor="#555555"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeRightLowerDistanceValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="80 dp"
+                                android:textColor="#007AFF"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/sbEdgeRightLowerDistance"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:max="152" />
+
+                        <!-- 下半安全距离作用于左下、右下区域 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="下半区域安全距离 (0 - 1000 px)"
+                                android:textColor="#555555"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeLowerSafetyDistanceValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="150 px"
+                                android:textColor="#007AFF"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/sbEdgeLowerSafetyDistance"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:max="1000" />
+                    </LinearLayout>
+
+                    <!-- ========== 子区块 C：触发方向（上下区域共用） ========== -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_sub_section"
+                        android:padding="12dp"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="触发方向（上下区域共用）"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#555555" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="左侧"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textColor="#444444"
+                            android:layout_marginTop="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="4dp">
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/swEdgeLeftUp"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="上滑"
+                                android:textSize="14sp" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/swEdgeLeftDown"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="下滑"
+                                android:textSize="14sp" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/swEdgeLeftRight"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="右滑"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="右侧"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textColor="#444444"
+                            android:layout_marginTop="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="4dp">
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/swEdgeRightUp"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="上滑"
+                                android:textSize="14sp" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/swEdgeRightDown"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="下滑"
+                                android:textSize="14sp" />
+
+                            <androidx.appcompat.widget.SwitchCompat
+                                android:id="@+id/swEdgeRightLeft"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="左滑"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
 
             </LinearLayout>
 
-            <!-- 悬浮球形态选择 -->
+            <!-- ================= 区块 3：悬浮球 ================= -->
             <LinearLayout
+                android:id="@+id/layoutSectionFloatingBall"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
@@ -282,131 +799,368 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="悬浮球形态"
-                    android:textSize="15sp"
+                    android:text="悬浮球(已被悬浮窗值班)"
+                    android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="#333333" />
 
-                <RadioGroup
-                    android:id="@+id/rgBallShape"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="12dp">
-
-                    <RadioButton
-                        android:id="@+id/rbShapeCircle"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="圆形"
-                        android:textSize="14sp"
-                        android:textColor="#333333" />
-
-                    <RadioButton
-                        android:id="@+id/rbShapeRoundedRect"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="圆角方形"
-                        android:textSize="14sp"
-                        android:textColor="#333333" />
-
-                    <RadioButton
-                        android:id="@+id/rbShapeBorderless"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="无边框"
-                        android:textSize="14sp"
-                        android:textColor="#333333" />
-                </RadioGroup>
-
                 <TextView
-                    android:id="@+id/tvBorderlessHint"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="💡 提示：请选用透明底、裁切紧密的正方形画布图片。透明区域不会误触发悬浮球，但受系统限制无法点击穿透到底层应用。请勿使用完全空的图片。"
+                    android:text="在屏幕上显示可移动快捷悬浮按钮，点击快速切换输入法"
                     android:textSize="12sp"
-                    android:textColor="#007AFF"
-                    android:lineSpacingExtra="2dp"
-                    android:layout_marginTop="8dp"
-                    android:visibility="gone" />
-            </LinearLayout>
+                    android:textColor="#888888"
+                    android:layout_marginTop="4dp" />
 
-            <!-- 悬浮球外观与贴图 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:padding="16dp"
-                android:elevation="1dp"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="悬浮球贴图"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="#333333" />
-
-                <TextView
-                    android:id="@+id/tvCustomImageStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="当前外观: 默认纯色球"
-                    android:textSize="13sp"
-                    android:textColor="#666666"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="12dp" />
-
+                <!-- 独立开关：悬浮球 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="12dp">
 
-                    <Button
-                        android:id="@+id/btnSelectBallImage"
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="从资源库选图" />
+                        android:orientation="vertical">
 
-                    <Button
-                        android:id="@+id/btnResetBallImage"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="12dp"
-                        android:text="恢复默认纯色" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="开启悬浮球"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#333333" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="在其他应用上显示快捷切换按钮"
+                            android:textSize="12sp"
+                            android:textColor="#888888"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/swBallMasterSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
+
+                <!-- ====== 折叠容器：悬浮球全部属性（未开启时隐藏） ====== -->
+                <LinearLayout
+                    android:id="@+id/layoutBallContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F0F0F0"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 仅在弹出键盘时显示 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="仅在弹出键盘时显示"
+                                android:textSize="14sp"
+                                android:textColor="#333333" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="未检测到输入法时自动隐藏悬浮球；在本应用内始终显示"
+                                android:textSize="12sp"
+                                android:textColor="#888888"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/swShowOnlyWithIme"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvA11yWarning"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚠️ 需要开启无障碍服务才能检测键盘弹出"
+                        android:textSize="12sp"
+                        android:textColor="#E65100"
+                        android:layout_marginTop="4dp"
+                        android:visibility="gone" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F0F0F0"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 悬浮球外观与尺寸 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="外观与尺寸"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#444444" />
+
+                    <!-- 悬浮球大小调节 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="悬浮球大小 (40 - 80 dp)"
+                            android:textSize="14sp"
+                            android:textColor="#555555" />
+
+                        <TextView
+                            android:id="@+id/tvSizeValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="56 dp"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#007AFF" />
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/sbBallSize"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="40"
+                        android:layout_marginTop="6dp" />
+
+                    <!-- 悬浮球透明度调节 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="不透明度 (30% - 100%)"
+                            android:textSize="14sp"
+                            android:textColor="#555555" />
+
+                        <TextView
+                            android:id="@+id/tvAlphaValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="80 %"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#007AFF" />
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/sbBallAlpha"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="70"
+                        android:layout_marginTop="6dp" />
+
+                    <!-- 悬浮球动画时长调节 (0 - 200 ms, 步进 20 ms, max 10) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="渐显/渐隐动画时长 (0 - 200 ms)"
+                            android:textSize="14sp"
+                            android:textColor="#555555" />
+
+                        <TextView
+                            android:id="@+id/tvAnimDurationValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="100 ms"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#007AFF" />
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/sbBallAnimDuration"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="10"
+                        android:layout_marginTop="6dp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F0F0F0"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 悬浮球形态选择 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="悬浮球形态"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#444444" />
+
+                    <RadioGroup
+                        android:id="@+id/rgBallShape"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="10dp">
+
+                        <RadioButton
+                            android:id="@+id/rbShapeCircle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="圆形"
+                            android:textSize="14sp"
+                            android:textColor="#333333" />
+
+                        <RadioButton
+                            android:id="@+id/rbShapeRoundedRect"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="圆角方形"
+                            android:textSize="14sp"
+                            android:textColor="#333333" />
+
+                        <RadioButton
+                            android:id="@+id/rbShapeBorderless"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="无边框"
+                            android:textSize="14sp"
+                            android:textColor="#333333" />
+                    </RadioGroup>
+
+                    <TextView
+                        android:id="@+id/tvBorderlessHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="💡 提示：请选用透明底、裁切紧密的正方形画布图片。透明区域不会误触发悬浮球，但受系统限制无法点击穿透到底层应用。请勿使用完全空的图片。"
+                        android:textSize="12sp"
+                        android:textColor="#007AFF"
+                        android:lineSpacingExtra="2dp"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F0F0F0"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 悬浮球贴图 -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="悬浮球贴图"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#444444" />
+
+                    <TextView
+                        android:id="@+id/tvCustomImageStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="当前外观: 默认纯色球"
+                        android:textSize="13sp"
+                        android:textColor="#666666"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnSelectBallImage"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="从资源库选图" />
+
+                        <Button
+                            android:id="@+id/btnResetBallImage"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="12dp"
+                            android:text="恢复默认纯色" />
+                    </LinearLayout>
+                </LinearLayout>
+
             </LinearLayout>
 
-            <!-- 静态示意预览区 -->
+            <!-- ================= 区块 4：实时示意预览（独立区块，仅跟随总开关，不随悬浮球/手势折叠） ================= -->
             <LinearLayout
+                android:id="@+id/layoutPreviewBlock"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="#FFFFFF"
                 android:padding="16dp"
                 android:elevation="1dp"
-                android:layout_marginBottom="24dp">
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="实时示意预览"
-                    android:textSize="13sp"
-                    android:textColor="#888888"
-                    android:layout_marginBottom="16dp" />
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#444444"
+                    android:layout_marginBottom="8dp" />
 
                 <FrameLayout
                     android:id="@+id/flPreviewBackground"
                     android:layout_width="match_parent"
                     android:layout_height="140dp"
                     android:background="#F0F0F0">
+
+                    <com.suzu.test.ui.view.EdgeGestureRegionView
+                        android:id="@+id/edgeGestureRegionView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:visibility="gone" />
 
                     <FrameLayout
                         android:id="@+id/flPreviewContainer"
@@ -421,13 +1175,24 @@
                             android:layout_height="match_parent"
                             android:visibility="gone" />
 
-                        <!-- 无边框模式命中区可视化遮罩（死区压暗，有效命中区镂空） -->
+                        <!-- 无边框模式命中区可视化遮罩 -->
                         <ImageView
                             android:id="@+id/ivHitRegionOverlay"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:visibility="gone" />
                     </FrameLayout>
+
+                    <!-- 独立预览占位提示：总开关开启但无可预览内容时展示 -->
+                    <TextView
+                        android:id="@+id/tvPreviewPlaceholder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="开启悬浮球或边缘手势后，此处实时显示效果示意"
+                        android:textSize="13sp"
+                        android:textColor="#999999"
+                        android:visibility="gone" />
                 </FrameLayout>
             </LinearLayout>
 

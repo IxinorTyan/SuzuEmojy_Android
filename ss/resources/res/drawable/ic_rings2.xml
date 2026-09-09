@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:height="192dp"
+    android:width="192dp"
+    android:viewportWidth="192"
+    android:viewportHeight="192">
+    <path
+        android:name="ring1"
+        android:fillColor="@color/colorAccent"
+        android:pathData="m96 12c46.39 0 84 37.61 84 84c0 46.39 -37.61 84 -84 84c-46.39 0 -84 -37.61 -84 -84c0 -46.39 37.61 -84 84 -84zm0 -10c-51.91 0 -94 42.09 -94 94c0 51.91 42.09 94 94 94c51.91 0 94 -42.09 94 -94c0 -51.91 -42.09 -94 -94 -94z"
+        android:fillAlpha="0.8"/>
+    <path
+        android:name="ring2"
+        android:fillColor="@color/white"
+        android:pathData="m96 32c35.35 0 64 28.65 64 64c0 35.35 -28.65 64 -64 64c-35.35 0 -64 -28.65 -64 -64c0 -35.35 28.65 -64 64 -64zm0 -10c-40.87 0 -74 33.13 -74 74c0 40.87 33.13 74 74 74c40.87 0 74 -33.13 74 -74c0 -40.87 -33.13 -74 -74 -74z"/>
+</vector>

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.Material.Light">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:dialogTheme">@style/DialogThemeDark</item>
+        <item name="android:alertDialogTheme">@style/DialogThemeDark</item>
+        <item name="android:colorPrimary">@color/light_back</item>
+        <item name="android:colorPrimaryDark">@color/light_back</item>
+        <item name="android:colorAccent">@color/colorAccent</item>
+        <item name="android:statusBarColor">@color/light_back</item>
+        <item name="theme_accent_color">@color/green</item>
+        <item name="theme_background_color">@color/light_back</item>
+        <item name="theme_float_item_bkg_color">@color/white</item>
+        <item name="theme_item_back_color">@color/light_item</item>
+        <item name="theme_logo_color">@color/green</item>
+        <item name="theme_split_line_color">@color/light_item</item>
+        <item name="theme_text_color">@color/text_color_light</item>
+        <item name="theme_title_back_color">@color/green</item>
+        <item name="theme_title_color">@color/text_color_light</item>
+    </style>
+    <style name="AppThemeDark" parent="@android:style/ThemeOverlay.Material.Dark">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:dialogTheme">@style/DialogThemeDark</item>
+        <item name="android:alertDialogTheme">@style/DialogThemeDark</item>
+        <item name="android:colorPrimary">@color/dark_back</item>
+        <item name="android:colorPrimaryDark">@color/dark_back</item>
+        <item name="android:colorAccent">@color/green</item>
+        <item name="android:statusBarColor">@color/dark_back</item>
+        <item name="theme_accent_color">@color/green</item>
+        <item name="theme_background_color">@color/dark_back</item>
+        <item name="theme_float_item_bkg_color">@color/dark_item</item>
+        <item name="theme_item_back_color">@color/dark_item</item>
+        <item name="theme_logo_color">@color/green</item>
+        <item name="theme_split_line_color">@color/dark_item</item>
+        <item name="theme_text_color">@color/text_color_dark</item>
+        <item name="theme_title_back_color">@color/dark_back</item>
+        <item name="theme_title_color">@color/light_grey</item>
+    </style>
+    <style name="AppThemeTitle" parent="@android:style/ThemeOverlay.Material.ActionBar">
+        <item name="android:colorPrimary">@color/colorPrimary</item>
+        <item name="android:colorPrimaryDark">@color/colorPrimary</item>
+        <item name="android:colorAccent">@color/colorAccent</item>
+    </style>
+    <style name="DialogTheme" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:backgroundDimAmount">0.7</item>
+        <item name="android:windowBackground">@color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+    <style name="DialogThemeDark" parent="@style/DialogTheme">
+        <item name="android:colorForeground">?attr/theme_text_color</item>
+        <item name="android:windowBackground">@drawable/menu_bkg</item>
+        <item name="android:popupBackground">@android:color/transparent</item>
+    </style>
+    <style name="FullscreenTheme" parent="@android:style/Theme.Material.NoActionBar.Overscan">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+    </style>
+    <style name="TextAppearance.Compat.Notification" parent="@android:style/TextAppearance.Material.Notification">
+    </style>
+    <style name="TextAppearance.Compat.Notification.Info" parent="@android:style/TextAppearance.Material.Notification.Info">
+    </style>
+    <style name="TextAppearance.Compat.Notification.Line2" parent="@style/TextAppearance.Compat.Notification.Info">
+    </style>
+    <style name="TextAppearance.Compat.Notification.Time" parent="@android:style/TextAppearance.Material.Notification.Time">
+    </style>
+    <style name="TextAppearance.Compat.Notification.Title" parent="@android:style/TextAppearance.Material.Notification.Title">
+    </style>
+    <style name="TranslucentTheme" parent="@style/DialogTheme">
+        <item name="android:backgroundDimAmount">0</item>
+    </style>
+    <style name="Widget.Compat.NotificationActionContainer" parent="">
+        <item name="android:background">@drawable/notification_action_background</item>
+    </style>
+    <style name="Widget.Compat.NotificationActionText" parent="">
+        <item name="android:textAppearance">?android:attr/textAppearanceButton</item>
+        <item name="android:textSize">@dimen/notification_action_text_size</item>
+        <item name="android:textColor">@color/secondary_text_default_material_light</item>
+    </style>
+    <style name="blurBackTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+    </style>
+    <style name="breath_anim" parent="">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/alpha_out</item>
+    </style>
+    <style name="capture_anim" parent="">
+        <item name="android:windowEnterAnimation">@anim/capture_in</item>
+        <item name="android:windowExitAnimation">@anim/capture_out</item>
+    </style>
+    <style name="drawer_anim_down" parent="">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/drawer_down_out</item>
+    </style>
+    <style name="drawer_anim_left" parent="">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/drawer_left_out</item>
+    </style>
+    <style name="drawer_anim_right" parent="">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/drawer_right_out</item>
+    </style>
+    <style name="drawer_anim_up" parent="">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/drawer_up_out</item>
+    </style>
+    <style name="feedback_anim" parent="">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/alpha_out_200</item>
+    </style>
+    <style name="four_in_one_anim_left" parent="">
+        <item name="android:windowEnterAnimation">@anim/scale_in</item>
+        <item name="android:windowExitAnimation">@anim/scale_out</item>
+    </style>
+    <style name="handy_anim" parent="">
+        <item name="android:windowEnterAnimation">@anim/handy_in</item>
+        <item name="android:windowExitAnimation">@anim/handy_out</item>
+    </style>
+    <style name="home_theme" parent="@android:style/Theme.Wallpaper.NoTitleBar">
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+    <style name="light_anim" parent="">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/alpha_out</item>
+    </style>
+    <style name="mouse_anim" parent="">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/scale_out</item>
+    </style>
+    <style name="panel_anim" parent="">
+        <item name="android:windowEnterAnimation">@anim/alpha_in_anim</item>
+        <item name="android:windowExitAnimation">@null</item>
+    </style>
+    <style name="panel_dark_theme" parent="@style/blurBackTheme">
+        <item name="panel_custom_item_color">@color/transparent</item>
+        <item name="panel_item_background">@color/night</item>
+        <item name="panel_item_color">@color/day</item>
+        <item name="theme_float_item_bkg_color">@color/dark_float_item</item>
+        <item name="theme_item_back_color">@color/dark_item</item>
+        <item name="theme_text_color">@color/text_color_dark</item>
+    </style>
+    <style name="panel_dark_theme7" parent="@style/panel_dark_theme">
+        <item name="panel_item_background">@color/night7</item>
+    </style>
+    <style name="panel_dark_theme8" parent="@style/panel_dark_theme">
+        <item name="panel_item_background">@color/night8</item>
+    </style>
+    <style name="panel_dark_theme9" parent="@style/panel_dark_theme">
+        <item name="panel_item_background">@color/night9</item>
+    </style>
+    <style name="panel_light_theme" parent="@style/blurBackTheme">
+        <item name="panel_custom_item_color">@color/transparent</item>
+        <item name="panel_item_background">@color/day</item>
+        <item name="panel_item_color">@color/night</item>
+        <item name="theme_float_item_bkg_color">@color/white</item>
+        <item name="theme_item_back_color">@color/white</item>
+        <item name="theme_text_color">@color/text_color_light</item>
+    </style>
+    <style name="panel_light_theme7" parent="@style/panel_light_theme">
+        <item name="panel_item_background">@color/day7</item>
+    </style>
+    <style name="panel_light_theme8" parent="@style/panel_light_theme">
+        <item name="panel_item_background">@color/day8</item>
+    </style>
+    <style name="panel_light_theme9" parent="@style/panel_light_theme">
+        <item name="panel_item_background">@color/day9</item>
+    </style>
+    <style name="recent_anim" parent="">
+        <item name="android:windowEnterAnimation">@anim/alpha_in</item>
+        <item name="android:windowExitAnimation">@anim/zoom_out</item>
+    </style>
+    <style name="spinner_style" parent="">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">?attr/theme_accent_color</item>
+        <item name="android:padding">5dp</item>
+    </style>
+    <style name="switcher_anim_down" parent="">
+        <item name="android:windowEnterAnimation">@anim/drawer_down_in</item>
+        <item name="android:windowExitAnimation">@anim/drawer_down_out</item>
+    </style>
+    <style name="switcher_anim_left" parent="">
+        <item name="android:windowEnterAnimation">@anim/drawer_left_in</item>
+        <item name="android:windowExitAnimation">@anim/drawer_left_out</item>
+    </style>
+    <style name="switcher_anim_right" parent="">
+        <item name="android:windowEnterAnimation">@anim/drawer_right_in</item>
+        <item name="android:windowExitAnimation">@anim/drawer_right_out</item>
+    </style>
+    <style name="switcher_anim_up" parent="">
+        <item name="android:windowEnterAnimation">@anim/drawer_up_in</item>
+        <item name="android:windowExitAnimation">@anim/drawer_up_out</item>
+    </style>
+    <style name="three_in_one_bottom_anim" parent="">
+        <item name="android:windowEnterAnimation">@anim/bottom_zoom_in</item>
+        <item name="android:windowExitAnimation">@anim/bottom_zoom_out</item>
+    </style>
+    <style name="three_in_one_left_anim" parent="">
+        <item name="android:windowEnterAnimation">@anim/left_zoom_in</item>
+        <item name="android:windowExitAnimation">@anim/left_zoom_out</item>
+    </style>
+    <style name="three_in_one_right_anim" parent="">
+        <item name="android:windowEnterAnimation">@anim/right_zoom_in</item>
+        <item name="android:windowExitAnimation">@anim/right_zoom_out</item>
+    </style>
+    <style name="wave_anim" parent="">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/alpha_out</item>
+    </style>
+</resources>

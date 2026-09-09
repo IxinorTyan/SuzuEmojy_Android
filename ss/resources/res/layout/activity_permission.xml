@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/round_shape_light"
+    android:padding="10dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <TextView
+        android:textColor="@color/text_color_light"
+        android:id="@+id/tip_tv"
+        android:background="@drawable/wave_bkg"
+        android:padding="@dimen/cc_item_padding"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/app_name"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <TextView
+        android:textColor="@color/green"
+        android:id="@+id/cancel_btn"
+        android:background="@drawable/wave_bkg"
+        android:padding="@dimen/cc_item_padding"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="@string/cancel_text"
+        app:layout_constraintEnd_toStartOf="@+id/grant_btn"
+        app:layout_constraintTop_toBottomOf="@+id/tip_tv"/>
+    <TextView
+        android:textColor="@color/green"
+        android:id="@+id/grant_btn"
+        android:background="@drawable/wave_bkg"
+        android:padding="@dimen/cc_item_padding"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="@string/go_grant_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tip_tv"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

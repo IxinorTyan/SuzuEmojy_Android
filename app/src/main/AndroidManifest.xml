@@ -111,7 +111,7 @@
         <activity
             android:name=".ui.settings.SettingsFloatingActivity"
             android:exported="false"
-            android:label="悬浮球设置" />
+            android:label="悬浮窗设置" />
 
         <activity
             android:name=".ui.settings.FloatingBallPickerActivity"

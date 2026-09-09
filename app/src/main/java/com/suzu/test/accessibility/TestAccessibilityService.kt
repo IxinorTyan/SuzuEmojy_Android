@@ -33,6 +33,15 @@ class TestAccessibilityService : AccessibilityService() {
         fun isAlive(): Boolean {
             return instance != null
         }
+
+        /**
+         * 由自家 IME 生命周期回调提供更及时的窗口状态。
+         * 收起后短时间内忽略无障碍窗口列表中的残留 IME 窗口。
+         */
+        fun notifyImeLifecycle(visible: Boolean) {
+            instance?.onImeLifecycleChanged(visible)
+            com.suzu.test.floating.ImeVisibilityBus.notifyImeVisibilityChanged(visible)
+        }
     }
 
     @Volatile
@@ -43,11 +52,27 @@ class TestAccessibilityService : AccessibilityService() {
     var imeDetectionAvailable: Boolean = true
         private set
 
+    // 旧版精髓：无障碍通道自行缓存上次可见性，仅真实跃迁时才通知悬浮球
+    private var lastImeVisible: Boolean? = null
+
+    // 自家 IME 已明确隐藏后的短暂保护期，避免无障碍窗口列表残留立即覆盖为 true
+    @Volatile
+    private var imeLifecycleHiddenUntil: Long = 0L
+
     @Volatile
     private var cachedDefaultImePackage: String? = null
 
-    @Volatile
-    private var lastImeVisible: Boolean = false
+    private fun onImeLifecycleChanged(visible: Boolean) {
+        imeLifecycleHiddenUntil = if (visible) {
+            0L
+        } else {
+            System.currentTimeMillis() + 200L
+        }
+        lastImeVisible = visible
+        mainHandler.post {
+            ballController?.onImeVisibilityChanged(visible)
+        }
+    }
 
     private val IME_DIAG = false // 自测开关（已关闭诊断）
     private var lastDiagTime = 0L
@@ -114,7 +139,14 @@ class TestAccessibilityService : AccessibilityService() {
     private fun observeBallConfig() {
         val sp = getSharedPreferences(FloatingBallConfig.SP_NAME, Context.MODE_PRIVATE)
         ballConfigListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == FloatingBallConfig.KEY_BALL_ENABLED) {
+            if (key == FloatingBallConfig.KEY_FLOATING_MASTER_ENABLED ||
+                key == FloatingBallConfig.KEY_BALL_ENABLED ||
+                key == FloatingBallConfig.KEY_EDGE_GESTURE_ENABLED ||
+                key == FloatingBallConfig.KEY_EDGE_LEFT_ENABLED ||
+                key == FloatingBallConfig.KEY_EDGE_LEFT_LOWER_ENABLED ||
+                key == FloatingBallConfig.KEY_EDGE_RIGHT_ENABLED ||
+                key == FloatingBallConfig.KEY_EDGE_RIGHT_LOWER_ENABLED
+            ) {
                 mainHandler.post { syncBallState() }
             }
         }
@@ -122,9 +154,9 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     fun syncBallState() {
-        val enabled = FloatingBallConfig.isBallEnabled(this)
+        val enabled = FloatingBallConfig.isAnyFloatingFeatureEnabled(this)
         val canDraw = Settings.canDrawOverlays(this)
-        TestLog.i(MODULE, "syncBallState: enabled=$enabled, canDrawOverlays=$canDraw")
+        TestLog.i(MODULE, "syncBallState: anyFloatingEnabled=$enabled, canDrawOverlays=$canDraw")
         if (enabled && canDraw) {
             if (ballController == null) {
                 ballController = FloatingBallController(this)
@@ -136,19 +168,72 @@ class TestAccessibilityService : AccessibilityService() {
         }
     }
 
+    private fun getScreenHeight(): Int {
+        val wm = getSystemService(Context.WINDOW_SERVICE) as? android.view.WindowManager ?: return 0
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            wm.currentWindowMetrics.bounds.height()
+        } else {
+            @Suppress("DEPRECATION")
+            wm.defaultDisplay.height
+        }
+    }
+
+    private fun isImeWindowValid(rect: android.graphics.Rect, screenHeight: Int): Boolean {
+        if (rect.isEmpty) return false
+        if (rect.height() <= 100 || rect.width() <= 100) return false
+        if (screenHeight > 0) {
+            val visibleTop = maxOf(rect.top, 0)
+            val visibleBottom = minOf(rect.bottom, screenHeight)
+            val visibleHeight = visibleBottom - visibleTop
+            if (visibleHeight <= 100) return false
+        }
+        return true
+    }
+
     private fun syncImeStateFromWindows() {
         val winList = try { windows } catch (e: Exception) { null }
+        val screenHeight = getScreenHeight()
         if (winList.isNullOrEmpty()) {
+            // 窗口列表为空仅代表此刻检测不可用（如 IME 切换间隙），
+            // 不强制上报 false，配合悬浮球侧 fail-open 避免切换间隙误隐藏。
             imeDetectionAvailable = false
         } else {
             imeDetectionAvailable = true
-            val visible = winList.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+            // 不能仅凭 TYPE_INPUT_METHOD 判断可见：
+            // 部分系统在键盘收起后仍会暂时保留 IME 窗口对象，
+            // 但其边界已经为空、过小或完全位于屏幕外。
+            // 只有存在有效屏幕可见区域的 IME 窗口时，才认为键盘真正展开。
+            val imeRects = winList
+                .asSequence()
+                .filter { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+                .mapNotNull { window ->
+                    try {
+                        android.graphics.Rect().also { window.getBoundsInScreen(it) }
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                .toList()
+
+            val windowVisible = imeRects.any { rect -> isImeWindowValid(rect, screenHeight) }
+            val lifecycleHidden = System.currentTimeMillis() < imeLifecycleHiddenUntil
+            val visible = windowVisible && !lifecycleHidden
             if (visible != lastImeVisible) {
                 lastImeVisible = visible
-                TestLog.i(MODULE, "IME 窗口可见性信号: visible=$visible")
                 mainHandler.post {
                     ballController?.onImeVisibilityChanged(visible)
                 }
+            }
+
+            // 有效 IME 边界同时供边缘手势跟随。
+            val imeTop = imeRects
+                .asSequence()
+                .filter { rect -> isImeWindowValid(rect, screenHeight) }
+                .minByOrNull { it.top }
+                ?.top
+
+            mainHandler.post {
+                ballController?.onImeBoundsChanged(imeTop)
             }
 
             if (foregroundAppPackage == null) {
@@ -156,7 +241,7 @@ class TestAccessibilityService : AccessibilityService() {
                 val rootNode = try { focusedWin?.root } catch (e: Exception) { null }
                 try {
                     val pkg = rootNode?.packageName?.toString()
-                    if (!pkg.isNullOrEmpty() && pkg != "com.android.systemui" && pkg != cachedDefaultImePackage) {
+                    if (!pkg.isNullOrEmpty() && pkg != "com.android.systemui") {
                         foregroundAppPackage = pkg
                         TestLog.i(MODULE, "初始化补齐前台应用包名: $pkg")
                         mainHandler.post {
@@ -169,16 +254,6 @@ class TestAccessibilityService : AccessibilityService() {
                 }
             }
         }
-    }
-
-    fun isImeVisibleNow(): Boolean {
-        val winList = try { windows } catch (e: Exception) { null }
-        if (winList.isNullOrEmpty()) {
-            imeDetectionAvailable = false
-            return true // fail-open
-        }
-        imeDetectionAvailable = true
-        return winList.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
     }
 
     private fun refreshDefaultImePackage() {
@@ -281,12 +356,12 @@ class TestAccessibilityService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val pkg = event.packageName?.toString()
             val cls = event.className?.toString() ?: ""
-            val isImePkg = !cachedDefaultImePackage.isNullOrEmpty() && pkg == cachedDefaultImePackage
             val isTransientOrImeCls = cls.contains("InputMethod", ignoreCase = true) ||
                     cls.contains("SoftInputWindow", ignoreCase = true) ||
-                    cls.contains("PopupWindow", ignoreCase = true)
+                    cls.contains("PopupWindow", ignoreCase = true) ||
+                    cls == TestImageIME::class.java.name
 
-            if (!pkg.isNullOrEmpty() && pkg != "com.android.systemui" && !isImePkg && !isTransientOrImeCls) {
+            if (!pkg.isNullOrEmpty() && pkg != "com.android.systemui" && !isTransientOrImeCls) {
                 if (pkg != foregroundAppPackage) {
                     foregroundAppPackage = pkg
                     TestLog.i(MODULE, "前台应用变更信号: $pkg")

@@ -21,6 +21,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.gif.GifDrawable
 import com.google.android.material.shape.RelativeCornerSize
 import com.google.android.material.shape.ShapeAppearanceModel
 import com.suzu.test.R
@@ -53,21 +54,34 @@ class FloatingBallController(private val context: Context) {
     private var isBallVisible: Boolean = true
     private var ballBinding: LayoutFloatingBallBinding? = null
     private var controllerScope: CoroutineScope? = null
+    private var edgeGestureController: EdgeGestureController? = null
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var imeVisible: Boolean = true
     private var imeSwitchGuardUntil: Long = 0L
     private var isAttached: Boolean = false
 
+    /**
+     * 切换输入法期间可能会暂时忽略隐藏请求，但不能永久丢失该请求。
+     * 保护锁到期后重新读取当前 imeVisible 并补做一次可见性评估。
+     */
+    private val imeGuardRecheck = object : Runnable {
+        override fun run() {
+            val remaining = imeSwitchGuardUntil - System.currentTimeMillis()
+            if (remaining > 0L) {
+                mainHandler.postDelayed(this, remaining)
+            } else {
+                evaluateVisibility()
+            }
+        }
+    }
+
     // 命中检测位图（仅无边框模式且有贴图时启用，GIF取首帧，内存控制在数百KB内）
     // 说明：由于跨窗口点击穿透受 Android 窗口分发机制限制，此位图用于「防止透明区域误触发悬浮球」
     @Volatile
     private var hitTestBitmap: Bitmap? = null
 
-    private val hideRunnable = Runnable {
-        imeVisible = false
-        evaluateVisibility()
-    }
+    // 无延迟直接评估隐藏
 
     fun attach() {
         if (isAttached) return
@@ -83,7 +97,15 @@ class FloatingBallController(private val context: Context) {
         observeConfigChanges()
 
         lastForegroundPackage = TestAccessibilityService.instance?.foregroundAppPackage
-        imeVisible = TestAccessibilityService.instance?.isImeVisibleNow() ?: true
+        // 旧版行为：挂载时默认 IME 可见，交由后续真实信号修正，避免初始化期误隐藏
+        imeVisible = true
+        edgeGestureController = EdgeGestureController(context) { _, _ ->
+            onFloatingBallActionTriggered()
+        }.also {
+            it.attach()
+            it.onForegroundAppChanged(lastForegroundPackage)
+            it.onImeVisibilityChanged(imeVisible)
+        }
         cleanLegacyFilterConfigOnce()
         applyBallImage()
         observeImeVisibilityBus()
@@ -105,6 +127,8 @@ class FloatingBallController(private val context: Context) {
         controllerScope?.cancel()
         controllerScope = null
         mainHandler.removeCallbacksAndMessages(null)
+        edgeGestureController?.detach()
+        edgeGestureController = null
 
         releaseHitTestBitmap()
 
@@ -132,6 +156,25 @@ class FloatingBallController(private val context: Context) {
         hitTestBitmap = null
     }
 
+    /**
+     * 根据悬浮球当前可见状态控制 GIF 动画。
+     *
+     * GifDrawable.stop() 会停止帧调度并保留当前帧；重新 start() 时从暂停位置继续，
+     * 从而避免悬浮球隐藏期间仍持续消耗动画解码与定时任务资源。
+     */
+    private fun updateGifPlayback() {
+        val gifDrawable = ballBinding?.ivSkinIcon?.drawable as? GifDrawable ?: return
+        if (isBallVisible) {
+            if (!gifDrawable.isRunning) {
+                gifDrawable.start()
+            }
+        } else {
+            if (gifDrawable.isRunning) {
+                gifDrawable.stop()
+            }
+        }
+    }
+
     private fun cleanLegacyFilterConfigOnce() {
         val sp = context.getSharedPreferences(FloatingBallConfig.SP_NAME, Context.MODE_PRIVATE)
         if (!sp.getBoolean("sp_cleanup_v2", false)) {
@@ -157,6 +200,8 @@ class FloatingBallController(private val context: Context) {
                 FloatingBallConfig.KEY_IMAGE_RESOURCE_ID -> {
                     applyBallImage()
                 }
+                FloatingBallConfig.KEY_FLOATING_MASTER_ENABLED,
+                FloatingBallConfig.KEY_BALL_ENABLED,
                 FloatingBallConfig.KEY_SHOW_ONLY_WITH_IME -> {
                     evaluateVisibility()
                 }
@@ -168,21 +213,22 @@ class FloatingBallController(private val context: Context) {
     fun onForegroundAppChanged(packageName: String?) {
         mainHandler.post {
             lastForegroundPackage = packageName
+            edgeGestureController?.onForegroundAppChanged(packageName)
             evaluateVisibility()
         }
     }
 
     fun onImeVisibilityChanged(visible: Boolean) {
         mainHandler.post {
-            if (visible) {
-                mainHandler.removeCallbacks(hideRunnable)
-                imeVisible = true
-                evaluateVisibility()
-            } else {
-                mainHandler.removeCallbacks(hideRunnable)
-                imeVisible = false
-                evaluateVisibility()
-            }
+            imeVisible = visible
+            edgeGestureController?.onImeVisibilityChanged(visible)
+            evaluateVisibility()
+        }
+    }
+
+    fun onImeBoundsChanged(topPx: Int?) {
+        mainHandler.post {
+            edgeGestureController?.onImeBoundsChanged(topPx)
         }
     }
 
@@ -230,12 +276,20 @@ class FloatingBallController(private val context: Context) {
 
     private fun applyVisibility(shouldShow: Boolean) {
         if (!shouldShow && System.currentTimeMillis() < imeSwitchGuardUntil) {
-            TestLog.i(MODULE, "IME 切换保护锁生效中，忽略隐藏操作")
+            // 不立即隐藏以避免输入法切换过程中的闪烁，但保护期结束后必须补做评估。
+            mainHandler.removeCallbacks(imeGuardRecheck)
+            mainHandler.postAtTime(imeGuardRecheck, imeSwitchGuardUntil)
+            TestLog.i(MODULE, "IME 切换保护锁生效中，延迟到保护期结束后重新评估隐藏")
             return
         }
 
-        if (shouldShow == isBallVisible) return
+        if (shouldShow == isBallVisible) {
+            updateGifPlayback()
+            return
+        }
+
         isBallVisible = shouldShow
+        updateGifPlayback()
 
         val fView = floatingView ?: return
         val params = layoutParams ?: return
@@ -268,6 +322,15 @@ class FloatingBallController(private val context: Context) {
                 finalizeState(targetAlpha)
             } else {
                 fView.animate().cancel()
+                // 当需要隐藏时，立即加上 FLAG_NOT_TOUCHABLE，避免透明淡出过程中仍拦截点击
+                if (!shouldShow) {
+                    params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                    try {
+                        wm.updateViewLayout(fView, params)
+                    } catch (e: Exception) {
+                        TestLog.e(MODULE, "updateViewLayout 异常: ${e.message}", e)
+                    }
+                }
                 fView.animate()
                     .alpha(targetAlpha)
                     .setDuration(animDuration.toLong())
@@ -278,13 +341,11 @@ class FloatingBallController(private val context: Context) {
 
                 if (shouldShow) {
                     params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
-                } else {
-                    params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                }
-                try {
-                    wm.updateViewLayout(fView, params)
-                } catch (e: Exception) {
-                    TestLog.e(MODULE, "updateViewLayout 异常: ${e.message}", e)
+                    try {
+                        wm.updateViewLayout(fView, params)
+                    } catch (e: Exception) {
+                        TestLog.e(MODULE, "updateViewLayout 异常: ${e.message}", e)
+                    }
                 }
             }
 
@@ -300,8 +361,11 @@ class FloatingBallController(private val context: Context) {
     }
 
     private fun determineShouldShow(): Boolean {
+        if (!FloatingBallConfig.isBallEnabled(context)) return false
+        // 自家软件前台常显：在自家 App 中始终显示悬浮球方便配置、调试和预览
         if (lastForegroundPackage == context.packageName) return true
         if (!FloatingBallConfig.isShowOnlyWithImeEnabled(context)) return true
+        // 检测不可用时 fail-open：宁可显示也不误隐藏（旧版精髓）
         val accOk = TestAccessibilityService.instance?.imeDetectionAvailable ?: false
         return if (!accOk) true else imeVisible
     }
@@ -403,6 +467,14 @@ class FloatingBallController(private val context: Context) {
                     .load(file)
                     .into(binding.ivSkinIcon)
 
+                // GIF 由 Glide 异步解码；加载完成后按当前可见状态同步播放状态。
+                // 这样可以覆盖“悬浮球已隐藏，但 GIF 才刚加载完成”的竞态。
+                binding.ivSkinIcon.post {
+                    if (binding.ivSkinIcon.drawable is GifDrawable) {
+                        updateGifPlayback()
+                    }
+                }
+
                 // 无边框模式下异步解码低分辨率位图供防误触判定
                 if (ballShape == FloatingBallConfig.SHAPE_BORDERLESS) {
                     val decodedBmp = withContext(Dispatchers.IO) {
@@ -501,9 +573,15 @@ class FloatingBallController(private val context: Context) {
             if (params.x != savedX || params.y != savedY) {
                 FloatingBallConfig.saveBallPosition(context, params.x, params.y)
             }
+            // 初始状态下根据是否仅在键盘弹出时显示，决定初始 alpha 与 touchable flag
+            val initialShow = determineShouldShow()
+            isBallVisible = initialShow
+            if (!initialShow) {
+                binding.root.alpha = 0f
+                params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            }
             windowManager?.addView(floatingView, params)
-            isBallVisible = true
-            TestLog.i(MODULE, "悬浮球常驻挂载到 WindowManager 成功 (x=${params.x}, y=${params.y})")
+            TestLog.i(MODULE, "悬浮球常驻挂载到 WindowManager 成功 (x=${params.x}, y=${params.y}, show=$initialShow)")
         } catch (e: Exception) {
             TestLog.e(MODULE, "挂载悬浮球到 WindowManager 失败: ${e.message}", e)
         }
@@ -595,7 +673,7 @@ class FloatingBallController(private val context: Context) {
                     if (!isDownConsumed) return@setOnTouchListener false
                     isDownConsumed = false
                     if (isClick) {
-                        onFloatingBallClicked()
+                        onFloatingBallActionTriggered()
                     } else {
                         FloatingBallConfig.saveBallPosition(context, params.x, params.y)
                         TestLog.i(MODULE, "拖拽结束已持久化坐标: (${params.x}, ${params.y})")
@@ -621,12 +699,12 @@ class FloatingBallController(private val context: Context) {
     /**
      * 单击悬浮球 (纯静默切换):
      */
-    private fun onFloatingBallClicked() {
-        TestLog.i(MODULE, "========== 悬浮球被单击 (静默切换) ==========")
+    fun onFloatingBallActionTriggered() {
+        TestLog.i(MODULE, "========== 悬浮球动作触发 (静默切换) ==========")
 
         val accessibility = TestAccessibilityService.instance
-        if (accessibility == null || !TestAccessibilityService.isAlive()) {
-            TestLog.w(MODULE, "无障碍辅助服务未连接，打开设置")
+        if (accessibility == null) {
+            TestLog.w(MODULE, "无障碍辅助服务未就绪，打开无障碍设置")
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
@@ -634,18 +712,19 @@ class FloatingBallController(private val context: Context) {
             return
         }
 
-        imeSwitchGuardUntil = System.currentTimeMillis() + 2000L
+        // 切换保护锁：覆盖旧窗口销毁 → 新窗口就绪的间隙，期间忽略一切隐藏信号（旧版精髓）
+        imeSwitchGuardUntil = System.currentTimeMillis() + 100L
 
         val currentIme = Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
         val testImeId = accessibility.findTestImeId()
 
         TestLog.i(MODULE, "当前默认 IME = $currentIme, 目标 IME = $testImeId")
 
-        if (testImeId != null && currentIme == testImeId) {
-            TestLog.i(MODULE, "当前已处于 SuzuEmojy，静默执行 restorePreviousIme()...")
+        if (currentIme == testImeId) {
+            TestLog.i(MODULE, "当前已处于 SuzuEmojy，静默恢复原输入法...")
             accessibility.restorePreviousIme()
         } else {
-            TestLog.i(MODULE, "当前非 SuzuEmojy，静默执行 switchToTestIme()...")
+            TestLog.i(MODULE, "当前非 SuzuEmojy，静默切换到 SuzuEmojy...")
             accessibility.switchToTestIme()
         }
     }

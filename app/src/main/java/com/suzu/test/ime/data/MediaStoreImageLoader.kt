@@ -2,8 +2,6 @@ package com.suzu.test.ime.data
 
 import android.content.ContentUris
 import android.content.Context
-import android.os.Build
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
@@ -33,23 +31,14 @@ class MediaStoreImageLoader(private val context: Context) {
                 )
 
                 val uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                val cursor = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    val bundle = Bundle().apply {
-                        putInt(android.content.ContentResolver.QUERY_ARG_LIMIT, 100)
-                        putStringArray(
-                            android.content.ContentResolver.QUERY_ARG_SORT_COLUMNS,
-                            arrayOf(MediaStore.Images.Media.DATE_MODIFIED)
-                        )
-                        putInt(
-                            android.content.ContentResolver.QUERY_ARG_SORT_DIRECTION,
-                            android.content.ContentResolver.QUERY_SORT_DIRECTION_DESCENDING
-                        )
-                    }
-                    context.contentResolver.query(uri, projection, bundle, null)
-                } else {
-                    val sortOrder = "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
-                    context.contentResolver.query(uri, projection, null, null, sortOrder)
-                }
+                val sortOrder = "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
+                val cursor = context.contentResolver.query(
+                    uri,
+                    projection,
+                    null,
+                    null,
+                    sortOrder
+                )
 
                 cursor?.use { c ->
                     val idCol = c.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
@@ -57,8 +46,7 @@ class MediaStoreImageLoader(private val context: Context) {
                     val mimeCol = c.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE)
                     val dateCol = c.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED)
 
-                    var count = 0
-                    while (c.moveToNext() && count < 100) {
+                    while (c.moveToNext()) {
                         val id = c.getLong(idCol)
                         val name = c.getString(nameCol) ?: "image_$id"
                         val mime = c.getString(mimeCol) ?: "image/jpeg"
@@ -66,7 +54,6 @@ class MediaStoreImageLoader(private val context: Context) {
                         val contentUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
 
                         list.add(ImageItem.MediaStoreImage(id, contentUri, name, mime, date))
-                        count++
                     }
                 }
                 TestLog.i(MODULE, "相册图库加载完成: 共 ${list.size} 张用户图片")
