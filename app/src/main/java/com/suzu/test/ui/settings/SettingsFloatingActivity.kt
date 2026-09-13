@@ -16,6 +16,7 @@ import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -71,6 +72,7 @@ class SettingsFloatingActivity : AppCompatActivity() {
         setupFloatingWindowSection()
         setupFloatingBallSection()
         setupFloatingAdjusters()
+        setupSearchBarSection()
         setupShapeSelector()
         setupAppFilter()
         setupEdgeGestureSettings()
@@ -110,6 +112,7 @@ class SettingsFloatingActivity : AppCompatActivity() {
         updateShapeRadioUI()
         checkA11yStatus()
         updateCustomImageUI()
+        updateSearchBarUI()
         updateSectionEnableStates()
         updateSectionCollapseStates()
     }
@@ -246,15 +249,15 @@ class SettingsFloatingActivity : AppCompatActivity() {
 
         binding.swEdgeLeftEnabled.isEnabled = edgeEnabled
         binding.swEdgeLeftLowerEnabled.isEnabled = edgeEnabled
-        binding.swEdgeLeftUp.isEnabled = leftEnabled
-        binding.swEdgeLeftDown.isEnabled = leftEnabled
-        binding.swEdgeLeftRight.isEnabled = leftEnabled
+        binding.itemEdgeLeftUp.isEnabled = leftEnabled
+        binding.itemEdgeLeftDown.isEnabled = leftEnabled
+        binding.itemEdgeLeftRight.isEnabled = leftEnabled
 
         binding.swEdgeRightEnabled.isEnabled = edgeEnabled
         binding.swEdgeRightLowerEnabled.isEnabled = edgeEnabled
-        binding.swEdgeRightUp.isEnabled = rightEnabled
-        binding.swEdgeRightDown.isEnabled = rightEnabled
-        binding.swEdgeRightLeft.isEnabled = rightEnabled
+        binding.itemEdgeRightUp.isEnabled = rightEnabled
+        binding.itemEdgeRightDown.isEnabled = rightEnabled
+        binding.itemEdgeRightLeft.isEnabled = rightEnabled
 
         binding.sbEdgeLeftUpperWidth.isEnabled =
             edgeEnabled && FloatingBallConfig.isEdgeLeftEnabled(this)
@@ -292,6 +295,11 @@ class SettingsFloatingActivity : AppCompatActivity() {
         binding.btnSelectBallImage.isEnabled = ballEnabled
         binding.btnResetBallImage.isEnabled = ballEnabled
         binding.swShowOnlyWithIme.isEnabled = ballEnabled
+
+        binding.layoutSectionSearchBar.alpha = if (masterEnabled) 1.0f else 0.5f
+        binding.sbSearchBarTopMargin.isEnabled = masterEnabled
+        binding.btnResetSearchBarTopMargin.isEnabled = masterEnabled
+        binding.btnTestSearchBar.isEnabled = masterEnabled
     }
 
     /**
@@ -545,19 +553,18 @@ class SettingsFloatingActivity : AppCompatActivity() {
             TestLog.i(MODULE, "启用右下输入法覆盖区域变更: $enabled")
         }
 
-        val directionSwitches = listOf(
-            binding.swEdgeLeftUp to FloatingBallConfig.KEY_EDGE_LEFT_UP_ENABLED,
-            binding.swEdgeLeftDown to FloatingBallConfig.KEY_EDGE_LEFT_DOWN_ENABLED,
-            binding.swEdgeLeftRight to FloatingBallConfig.KEY_EDGE_LEFT_RIGHT_ENABLED,
-            binding.swEdgeRightUp to FloatingBallConfig.KEY_EDGE_RIGHT_UP_ENABLED,
-            binding.swEdgeRightDown to FloatingBallConfig.KEY_EDGE_RIGHT_DOWN_ENABLED,
-            binding.swEdgeRightLeft to FloatingBallConfig.KEY_EDGE_RIGHT_LEFT_ENABLED
+        val directionActionItems = listOf(
+            Triple(binding.itemEdgeLeftUp, binding.tvEdgeLeftUpAction, FloatingBallConfig.KEY_EDGE_LEFT_UP_ACTION to "左侧上滑动作"),
+            Triple(binding.itemEdgeLeftDown, binding.tvEdgeLeftDownAction, FloatingBallConfig.KEY_EDGE_LEFT_DOWN_ACTION to "左侧下滑动作"),
+            Triple(binding.itemEdgeLeftRight, binding.tvEdgeLeftRightAction, FloatingBallConfig.KEY_EDGE_LEFT_RIGHT_ACTION to "左侧向内滑动作 (右滑)"),
+            Triple(binding.itemEdgeRightUp, binding.tvEdgeRightUpAction, FloatingBallConfig.KEY_EDGE_RIGHT_UP_ACTION to "右侧上滑动作"),
+            Triple(binding.itemEdgeRightDown, binding.tvEdgeRightDownAction, FloatingBallConfig.KEY_EDGE_RIGHT_DOWN_ACTION to "右侧下滑动作"),
+            Triple(binding.itemEdgeRightLeft, binding.tvEdgeRightLeftAction, FloatingBallConfig.KEY_EDGE_RIGHT_LEFT_ACTION to "右侧向内滑动作 (左滑)")
         )
-        directionSwitches.forEach { (switch, key) ->
-            switch.setOnCheckedChangeListener { _, enabled ->
-                FloatingBallConfig.setEdgeGestureDirectionEnabled(this, key, enabled)
-                updateEdgeRegionPreview()
-                TestLog.i(MODULE, "边缘手势方向变更: key=$key, enabled=$enabled")
+        directionActionItems.forEach { (item, tv, pair) ->
+            val (key, title) = pair
+            item.setOnClickListener {
+                showGestureActionDialog(title, key, tv)
             }
         }
 
@@ -724,6 +731,35 @@ class SettingsFloatingActivity : AppCompatActivity() {
         valueView.text = "$value dp"
     }
 
+    private fun updateGestureActionView(tv: TextView, action: FloatingBallConfig.EdgeGestureAction) {
+        tv.text = action.title
+        if (action == FloatingBallConfig.EdgeGestureAction.NONE) {
+            tv.setTextColor(Color.parseColor("#999999"))
+        } else {
+            tv.setTextColor(Color.parseColor("#007AFF"))
+        }
+    }
+
+    private fun showGestureActionDialog(title: String, actionKey: String, tvValue: TextView) {
+        val actions = FloatingBallConfig.EdgeGestureAction.entries.toTypedArray()
+        val items = actions.map { it.title }.toTypedArray()
+        val currentAction = FloatingBallConfig.getEdgeGestureAction(this, actionKey)
+        val currentIndex = actions.indexOf(currentAction).coerceAtLeast(0)
+
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setSingleChoiceItems(items, currentIndex) { dialog, which ->
+                val selectedAction = actions[which]
+                FloatingBallConfig.setEdgeGestureAction(this, actionKey, selectedAction)
+                updateGestureActionView(tvValue, selectedAction)
+                updateEdgeRegionPreview()
+                TestLog.i(MODULE, "边缘手势动作变更: key=$actionKey, action=${selectedAction.name}")
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
     private fun updateEdgeGestureUI() {
         binding.swEdgeGestureEnabled.isChecked =
             FloatingBallConfig.isEdgeGestureEnabled(this)
@@ -735,23 +771,30 @@ class SettingsFloatingActivity : AppCompatActivity() {
             FloatingBallConfig.isEdgeRightEnabled(this)
         binding.swEdgeRightLowerEnabled.isChecked =
             FloatingBallConfig.isEdgeRightLowerEnabled(this)
-        binding.swEdgeLeftUp.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
-            this, FloatingBallConfig.KEY_EDGE_LEFT_UP_ENABLED
+
+        updateGestureActionView(
+            binding.tvEdgeLeftUpAction,
+            FloatingBallConfig.getEdgeGestureAction(this, FloatingBallConfig.KEY_EDGE_LEFT_UP_ACTION)
         )
-        binding.swEdgeLeftDown.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
-            this, FloatingBallConfig.KEY_EDGE_LEFT_DOWN_ENABLED
+        updateGestureActionView(
+            binding.tvEdgeLeftDownAction,
+            FloatingBallConfig.getEdgeGestureAction(this, FloatingBallConfig.KEY_EDGE_LEFT_DOWN_ACTION)
         )
-        binding.swEdgeLeftRight.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
-            this, FloatingBallConfig.KEY_EDGE_LEFT_RIGHT_ENABLED
+        updateGestureActionView(
+            binding.tvEdgeLeftRightAction,
+            FloatingBallConfig.getEdgeGestureAction(this, FloatingBallConfig.KEY_EDGE_LEFT_RIGHT_ACTION)
         )
-        binding.swEdgeRightUp.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
-            this, FloatingBallConfig.KEY_EDGE_RIGHT_UP_ENABLED
+        updateGestureActionView(
+            binding.tvEdgeRightUpAction,
+            FloatingBallConfig.getEdgeGestureAction(this, FloatingBallConfig.KEY_EDGE_RIGHT_UP_ACTION)
         )
-        binding.swEdgeRightDown.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
-            this, FloatingBallConfig.KEY_EDGE_RIGHT_DOWN_ENABLED
+        updateGestureActionView(
+            binding.tvEdgeRightDownAction,
+            FloatingBallConfig.getEdgeGestureAction(this, FloatingBallConfig.KEY_EDGE_RIGHT_DOWN_ACTION)
         )
-        binding.swEdgeRightLeft.isChecked = FloatingBallConfig.isEdgeGestureDirectionEnabled(
-            this, FloatingBallConfig.KEY_EDGE_RIGHT_LEFT_ENABLED
+        updateGestureActionView(
+            binding.tvEdgeRightLeftAction,
+            FloatingBallConfig.getEdgeGestureAction(this, FloatingBallConfig.KEY_EDGE_RIGHT_LEFT_ACTION)
         )
 
         updateEdgeRegionAdjusterValue(
@@ -948,5 +991,46 @@ class SettingsFloatingActivity : AppCompatActivity() {
         alphaPct?.let {
             binding.flPreviewContainer.alpha = it / 100f
         }
+    }
+
+    private fun setupSearchBarSection() {
+        updateSearchBarUI()
+
+        binding.sbSearchBarTopMargin.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val marginDp = progress + FloatingBallConfig.MIN_SEARCH_BAR_TOP_MARGIN_DP
+                binding.tvSearchBarTopMarginValue.text = "$marginDp dp"
+                FloatingBallConfig.setSearchBarTopMarginDp(this@SettingsFloatingActivity, marginDp)
+                TestLog.i(MODULE, "修改搜索框顶边距: $marginDp dp")
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+
+        binding.btnResetSearchBarTopMargin.setOnClickListener {
+            val defaultMargin = FloatingBallConfig.getDefaultSearchBarTopMarginDp(this)
+            FloatingBallConfig.setSearchBarTopMarginDp(this, defaultMargin)
+            updateSearchBarUI()
+            TestLog.i(MODULE, "已恢复搜索框默认顶边距: $defaultMargin dp")
+        }
+
+        binding.btnTestSearchBar.setOnClickListener {
+            if (!checkPermissionAndServices()) return@setOnClickListener
+            val accessibility = com.suzu.test.accessibility.TestAccessibilityService.instance
+            if (accessibility == null) {
+                android.widget.Toast.makeText(this, "无障碍服务未启动", android.widget.Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            accessibility.syncBallState()
+            accessibility.showSearchBar()
+        }
+    }
+
+    private fun updateSearchBarUI() {
+        val currentMargin = FloatingBallConfig.getSearchBarTopMarginDp(this)
+        binding.sbSearchBarTopMargin.progress =
+            currentMargin - FloatingBallConfig.MIN_SEARCH_BAR_TOP_MARGIN_DP
+        binding.tvSearchBarTopMarginValue.text = "$currentMargin dp"
     }
 }

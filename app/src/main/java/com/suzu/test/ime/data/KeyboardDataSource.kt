@@ -26,6 +26,15 @@ class KeyboardDataSource(private val context: Context) {
         try {
             val db = DatabaseProvider.getDatabase(context)
             val entities: List<ResourceEntity> = when {
+                tabKey == "SEARCH" -> {
+                    val query = com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value
+                    if (!query.isNullOrBlank()) {
+                        val all = db.resourceDao().getAllResourcesOrdered().first()
+                        com.suzu.test.resource.KeywordUtils.filterAndSort(all, query)
+                    } else {
+                        emptyList()
+                    }
+                }
                 tabKey == "RECENT" -> {
                     db.resourceDao().getRecentResourcesFlow(RECENT_LIMIT).first()
                 }

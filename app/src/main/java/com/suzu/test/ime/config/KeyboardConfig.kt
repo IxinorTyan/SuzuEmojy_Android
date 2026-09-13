@@ -1,6 +1,7 @@
 package com.suzu.test.ime.config
 
 import android.content.Context
+import com.suzu.test.R
 
 object KeyboardConfig {
     const val SP_NAME = "app_settings"
@@ -22,6 +23,20 @@ object KeyboardConfig {
 
     const val KEY_SHOW_RECENT_TAB = "keyboard_show_recent_tab"
     const val DEFAULT_SHOW_RECENT_TAB = true
+
+    const val KEY_SHOW_ALL_TAB = "keyboard_show_all_tab"
+    const val DEFAULT_SHOW_ALL_TAB = true
+
+    const val KEY_DROPDOWN_ICON_STYLE = "keyboard_dropdown_icon_style"
+    const val DROPDOWN_ICON_ARROW = "arrow"
+    const val DROPDOWN_ICON_MENU = "menu"
+    const val DROPDOWN_ICON_MORE = "more"
+    const val DEFAULT_DROPDOWN_ICON_STYLE = DROPDOWN_ICON_ARROW
+
+    const val KEY_DROPDOWN_POSITION = "keyboard_dropdown_position"
+    const val DROPDOWN_POSITION_LEFT = "left"
+    const val DROPDOWN_POSITION_RIGHT = "right"
+    const val DEFAULT_DROPDOWN_POSITION = DROPDOWN_POSITION_LEFT
 
     fun getGridHeightDp(context: Context): Int {
         val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
@@ -75,5 +90,51 @@ object KeyboardConfig {
             .edit()
             .putBoolean(KEY_SHOW_RECENT_TAB, enabled)
             .apply()
+    }
+
+    fun isAllTabEnabled(context: Context): Boolean {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getBoolean(KEY_SHOW_ALL_TAB, DEFAULT_SHOW_ALL_TAB)
+    }
+
+    fun setAllTabEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_SHOW_ALL_TAB, enabled)
+            .apply()
+    }
+
+    fun getDropdownIconStyle(context: Context): String {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getString(KEY_DROPDOWN_ICON_STYLE, DEFAULT_DROPDOWN_ICON_STYLE)
+            ?: DEFAULT_DROPDOWN_ICON_STYLE
+    }
+
+    fun setDropdownIconStyle(context: Context, style: String) {
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_DROPDOWN_ICON_STYLE, style)
+            .apply()
+    }
+
+    fun getDropdownPosition(context: Context): String {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getString(KEY_DROPDOWN_POSITION, DEFAULT_DROPDOWN_POSITION)
+            ?: DEFAULT_DROPDOWN_POSITION
+    }
+
+    fun setDropdownPosition(context: Context, position: String) {
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_DROPDOWN_POSITION, position)
+            .apply()
+    }
+
+    fun getDropdownIconRes(context: Context): Int {
+        return when (getDropdownIconStyle(context)) {
+            DROPDOWN_ICON_MENU -> R.drawable.ic_tab_dropdown_menu
+            DROPDOWN_ICON_MORE -> R.drawable.ic_tab_dropdown_more
+            else -> R.drawable.ic_keyboard_expand_24
+        }
     }
 }

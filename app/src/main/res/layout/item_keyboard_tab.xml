@@ -8,8 +8,8 @@
 
     <ImageView
         android:id="@+id/ivTabIcon"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_gravity="center"
         android:scaleType="centerInside"
         android:visibility="gone"

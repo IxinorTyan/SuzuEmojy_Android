@@ -40,6 +40,7 @@ class ImeTabDropdownController(
         private const val RECENT = "RECENT"
         private const val ALL = "ALL"
         private const val MIN_COLUMN_COUNT = 3
+        private const val TAB_ICON_SCALE = 0.72f
     }
 
     private val resourcesDir = File(context.filesDir, "resources")
@@ -77,7 +78,7 @@ class ImeTabDropdownController(
 
     fun setExpanded(expanded: Boolean) {
         panel.visibility = if (expanded) View.VISIBLE else View.GONE
-        button.setImageResource(R.drawable.ic_keyboard_expand_24)
+        button.setImageResource(KeyboardConfig.getDropdownIconRes(context))
         button.contentDescription = "展开收藏夹"
         if (expanded) render()
     }
@@ -91,6 +92,15 @@ class ImeTabDropdownController(
         grid.columnCount = calculateColumnCount()
         val theme = KeyboardTheme.current(context)
 
+        val hasSearch = !com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value.isNullOrBlank()
+        if (hasSearch) {
+            addTab(
+                key = "SEARCH",
+                icon = R.drawable.ic_search_24,
+                theme = theme
+            )
+        }
+
         if (KeyboardConfig.isRecentTabEnabled(context)) {
             addTab(
                 key = RECENT,
@@ -98,7 +108,9 @@ class ImeTabDropdownController(
                 theme = theme
             )
         }
-        addTab(key = ALL, icon = R.drawable.ic_tab_all, theme = theme)
+        if (KeyboardConfig.isAllTabEnabled(context)) {
+            addTab(key = ALL, icon = R.drawable.ic_tab_all, theme = theme)
+        }
 
         categories.forEach { category ->
             addCategoryTab(category, theme)
@@ -215,7 +227,7 @@ class ImeTabDropdownController(
         item.findViewById<ImageView>(R.id.ivTabIcon).let { icon ->
             // 下拉项的图标与栏位尺寸保持比例，避免小栏位仍使用固定 28dp
             // 导致内容挤压并影响 GridLayout 的测量和换行表现。
-            val iconSize = (size * 0.5f).toInt().coerceAtLeast(dp(1))
+            val iconSize = (size * TAB_ICON_SCALE).toInt().coerceAtLeast(dp(1))
             icon.layoutParams = icon.layoutParams.apply {
                 width = iconSize
                 height = iconSize
@@ -265,6 +277,7 @@ class ImeTabDropdownController(
 
     private fun applyButtonTheme() {
         val theme = KeyboardTheme.current(context)
+        button.setImageResource(KeyboardConfig.getDropdownIconRes(context))
         button.imageTintList = ColorStateList.valueOf(theme.iconColor)
         button.setPadding(dp(8), dp(8), dp(8), dp(8))
         button.scaleType = ImageView.ScaleType.CENTER_INSIDE

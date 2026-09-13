@@ -18,10 +18,11 @@ class ImageAdapter(
 
     private val items = mutableListOf<ImageItem>()
 
-    fun submitList(newItems: List<ImageItem>) {
+    fun submitList(newItems: List<ImageItem>, onSubmitted: (() -> Unit)? = null) {
         items.clear()
         items.addAll(newItems)
         notifyDataSetChanged()
+        onSubmitted?.invoke()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ImageViewHolder {
@@ -48,6 +49,7 @@ class ImageAdapter(
 
         fun bind(item: ImageItem) {
             val theme = KeyboardTheme.current(itemView.context)
+            val placeholderDrawable = android.graphics.drawable.ColorDrawable(theme.itemBgColor)
             val itemBgDrawable = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 setColor(theme.itemBgColor)
@@ -71,7 +73,8 @@ class ImageAdapter(
                         Glide.with(itemView.context)
                             .load("file:///android_asset/${item.assetFileName}")
                             .override(250, 250)
-                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .placeholder(placeholderDrawable)
+                            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                             .into(binding.ivThumbnail)
                     }
                 }
@@ -82,7 +85,8 @@ class ImageAdapter(
                         .load(item.uri)
                         .override(250, 250)
                         .centerCrop()
-                        .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
+                        .placeholder(placeholderDrawable)
+                        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                         .into(binding.ivThumbnail)
                 }
                 is ImageItem.SuzuResource -> {
@@ -93,7 +97,8 @@ class ImageAdapter(
                         .load(item.file)
                         .override(250, 250)
                         .centerCrop()
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .placeholder(placeholderDrawable)
+                        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                         .into(binding.ivThumbnail)
                 }
             }

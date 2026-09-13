@@ -696,7 +696,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="触发方向（上下区域共用）"
+                            android:text="有效滑动方向及动作"
                             android:textSize="14sp"
                             android:textStyle="bold"
                             android:textColor="#555555" />
@@ -704,81 +704,229 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="左侧"
+                            android:text="左侧手势"
                             android:textSize="13sp"
                             android:textStyle="bold"
                             android:textColor="#444444"
                             android:layout_marginTop="8dp" />
 
+                        <!-- 左侧上滑 -->
                         <LinearLayout
+                            android:id="@+id/itemEdgeLeftUp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:layout_marginTop="4dp">
+                            android:gravity="center_vertical"
+                            android:paddingVertical="10dp"
+                            android:paddingHorizontal="4dp"
+                            android:background="?android:attr/selectableItemBackground">
 
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/swEdgeLeftUp"
+                            <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="上滑"
-                                android:textSize="14sp" />
+                                android:text="上滑动作"
+                                android:textSize="14sp"
+                                android:textColor="#333333" />
 
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/swEdgeLeftDown"
+                            <TextView
+                                android:id="@+id/tvEdgeLeftUpAction"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="切换键盘"
+                                android:textSize="13sp"
+                                android:textColor="#007AFF" />
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_about_chevron_right"
+                                android:tint="#999999" />
+                        </LinearLayout>
+
+                        <!-- 左侧下滑 -->
+                        <LinearLayout
+                            android:id="@+id/itemEdgeLeftDown"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="10dp"
+                            android:paddingHorizontal="4dp"
+                            android:background="?android:attr/selectableItemBackground">
+
+                            <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="下滑"
-                                android:textSize="14sp" />
+                                android:text="下滑动作"
+                                android:textSize="14sp"
+                                android:textColor="#333333" />
 
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/swEdgeLeftRight"
+                            <TextView
+                                android:id="@+id/tvEdgeLeftDownAction"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="切换键盘"
+                                android:textSize="13sp"
+                                android:textColor="#007AFF" />
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_about_chevron_right"
+                                android:tint="#999999" />
+                        </LinearLayout>
+
+                        <!-- 左侧向内滑(右滑) -->
+                        <LinearLayout
+                            android:id="@+id/itemEdgeLeftRight"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="10dp"
+                            android:paddingHorizontal="4dp"
+                            android:background="?android:attr/selectableItemBackground">
+
+                            <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="右滑"
-                                android:textSize="14sp" />
+                                android:text="向内滑动作 (右滑)"
+                                android:textSize="14sp"
+                                android:textColor="#333333" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeLeftRightAction"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="切换键盘"
+                                android:textSize="13sp"
+                                android:textColor="#007AFF" />
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_about_chevron_right"
+                                android:tint="#999999" />
                         </LinearLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="右侧"
+                            android:text="右侧手势"
                             android:textSize="13sp"
                             android:textStyle="bold"
                             android:textColor="#444444"
                             android:layout_marginTop="8dp" />
 
+                        <!-- 右侧上滑 -->
                         <LinearLayout
+                            android:id="@+id/itemEdgeRightUp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:layout_marginTop="4dp">
+                            android:gravity="center_vertical"
+                            android:paddingVertical="10dp"
+                            android:paddingHorizontal="4dp"
+                            android:background="?android:attr/selectableItemBackground">
 
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/swEdgeRightUp"
+                            <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="上滑"
-                                android:textSize="14sp" />
+                                android:text="上滑动作"
+                                android:textSize="14sp"
+                                android:textColor="#333333" />
 
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/swEdgeRightDown"
+                            <TextView
+                                android:id="@+id/tvEdgeRightUpAction"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="切换键盘"
+                                android:textSize="13sp"
+                                android:textColor="#007AFF" />
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_about_chevron_right"
+                                android:tint="#999999" />
+                        </LinearLayout>
+
+                        <!-- 右侧下滑 -->
+                        <LinearLayout
+                            android:id="@+id/itemEdgeRightDown"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="10dp"
+                            android:paddingHorizontal="4dp"
+                            android:background="?android:attr/selectableItemBackground">
+
+                            <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="下滑"
-                                android:textSize="14sp" />
+                                android:text="下滑动作"
+                                android:textSize="14sp"
+                                android:textColor="#333333" />
 
-                            <androidx.appcompat.widget.SwitchCompat
-                                android:id="@+id/swEdgeRightLeft"
+                            <TextView
+                                android:id="@+id/tvEdgeRightDownAction"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="切换键盘"
+                                android:textSize="13sp"
+                                android:textColor="#007AFF" />
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_about_chevron_right"
+                                android:tint="#999999" />
+                        </LinearLayout>
+
+                        <!-- 右侧向内滑(左滑) -->
+                        <LinearLayout
+                            android:id="@+id/itemEdgeRightLeft"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingVertical="10dp"
+                            android:paddingHorizontal="4dp"
+                            android:background="?android:attr/selectableItemBackground">
+
+                            <TextView
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="左滑"
-                                android:textSize="14sp" />
+                                android:text="向内滑动作 (左滑)"
+                                android:textSize="14sp"
+                                android:textColor="#333333" />
+
+                            <TextView
+                                android:id="@+id/tvEdgeRightLeftAction"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="切换键盘"
+                                android:textSize="13sp"
+                                android:textColor="#007AFF" />
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_about_chevron_right"
+                                android:tint="#999999" />
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
@@ -799,7 +947,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="悬浮球(已被悬浮窗值班)"
+                    android:text="悬浮球(外星科技)"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="#333333" />
@@ -1129,7 +1277,97 @@
 
             </LinearLayout>
 
-            <!-- ================= 区块 4：实时示意预览（独立区块，仅跟随总开关，不随悬浮球/手势折叠） ================= -->
+            <!-- ================= 区块 4：悬浮搜索框 ================= -->
+            <LinearLayout
+                android:id="@+id/layoutSectionSearchBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#FFFFFF"
+                android:padding="16dp"
+                android:elevation="1dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="悬浮搜索框"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="通过边缘手势或横向滑动悬浮球唤起的快捷表情搜索栏"
+                    android:textSize="12sp"
+                    android:textColor="#888888"
+                    android:layout_marginTop="4dp" />
+
+                <!-- 搜索框顶边距调节 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="距离屏幕顶端 (0 - 1000 dp)"
+                        android:textSize="14sp"
+                        android:textColor="#555555" />
+
+                    <TextView
+                        android:id="@+id/tvSearchBarTopMarginValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="40 dp"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="#007AFF" />
+                </LinearLayout>
+
+                <SeekBar
+                    android:id="@+id/sbSearchBarTopMargin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="1000"
+                    android:layout_marginTop="6dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="控制搜索框弹出时距离屏幕顶端的距离，支持全屏幕大范围自定义"
+                    android:textSize="11sp"
+                    android:textColor="#888888"
+                    android:layout_marginTop="4dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+
+                    <Button
+                        android:id="@+id/btnResetSearchBarTopMargin"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="恢复默认顶边距" />
+
+                    <Button
+                        android:id="@+id/btnTestSearchBar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="12dp"
+                        android:text="预览测试搜索框" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ================= 区块 5：实时示意预览（独立区块，仅跟随总开关，不随悬浮球/手势折叠） ================= -->
             <LinearLayout
                 android:id="@+id/layoutPreviewBlock"
                 android:layout_width="match_parent"

@@ -35,14 +35,18 @@ class KeyboardTabBar(
     companion object {
         private const val SP_NAME = "ime_prefs"
         private const val KEY_LAST_TAB = "last_selected_tab"
+        private const val TAB_ICON_SCALE = 0.72f
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-    var currentTab: String = prefs.getString(KEY_LAST_TAB, "RECENT") ?: "RECENT"
+    var currentTab: String = (prefs.getString(KEY_LAST_TAB, "RECENT") ?: "RECENT").let {
+        if (it == "SEARCH") "RECENT" else it
+    }
         private set
 
     private var lastNotifiedTab: String = currentTab
     private var observeJob: Job? = null
+    private var searchJob: Job? = null
     private var cachedCategories: List<CategoryEntity>? = null
     private var lastStructureKey: String? = null
     private val tabViewMap = mutableMapOf<String, View>()
@@ -62,7 +66,9 @@ class KeyboardTabBar(
                     val newEffectiveTab = getEffectiveTab()
                     if (newEffectiveTab != lastNotifiedTab) {
                         currentTab = newEffectiveTab
-                        prefs.edit().putString(KEY_LAST_TAB, newEffectiveTab).apply()
+                        if (newEffectiveTab != "SEARCH") {
+                            prefs.edit().putString(KEY_LAST_TAB, newEffectiveTab).apply()
+                        }
                         lastNotifiedTab = newEffectiveTab
                         onTabSelected(newEffectiveTab)
                     }
@@ -76,11 +82,39 @@ class KeyboardTabBar(
                 }
             }
         }
+
+        searchJob?.cancel()
+        searchJob = scope.launch {
+            com.suzu.test.floating.ImeSearchStateHolder.searchQuery.collectLatest { query ->
+                withContext(Dispatchers.Main) {
+                    if (!query.isNullOrBlank()) {
+                        currentTab = "SEARCH"
+                        render()
+                        onTabSelected("SEARCH")
+                    } else {
+                        if (currentTab == "SEARCH") {
+                            val fallback = getEffectiveTab()
+                            currentTab = fallback
+                            lastNotifiedTab = fallback
+                            if (fallback != "SEARCH") {
+                                prefs.edit().putString(KEY_LAST_TAB, fallback).apply()
+                            }
+                            render()
+                            onTabSelected(fallback)
+                        } else {
+                            render()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun buildStructureKey(categories: List<CategoryEntity>): String {
         val showRecent = KeyboardConfig.isRecentTabEnabled(context)
-        val sb = StringBuilder("r:$showRecent|")
+        val showAll = KeyboardConfig.isAllTabEnabled(context)
+        val searchQuery = com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value ?: ""
+        val sb = StringBuilder("s:$searchQuery|r:$showRecent|a:$showAll|")
         for (cat in categories) {
             sb.append("${cat.id}_${cat.name}_${cat.sortOrder}_${cat.iconPath}|")
         }
@@ -94,18 +128,35 @@ class KeyboardTabBar(
     fun getEffectiveTab(): String {
         val categories = cachedCategories
         val showRecent = KeyboardConfig.isRecentTabEnabled(context)
+        val showAll = KeyboardConfig.isAllTabEnabled(context)
+        val hasSearch = !com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value.isNullOrBlank()
 
-        // 未加载完成时：直接返回 currentTab 保留用户意图，若为 RECENT 但 showRecent=false 则回退 "ALL"
+        // 未加载完成时：直接返回 currentTab 保留用户意图，若为非法但配置了开关则根据开关回退
         if (categories == null) {
-            return if (!showRecent && currentTab == "RECENT") "ALL" else currentTab
+            if (hasSearch && currentTab == "SEARCH") return "SEARCH"
+            if (!showRecent && currentTab == "RECENT") {
+                return if (showAll) "ALL" else currentTab
+            }
+            if (!showAll && currentTab == "ALL") {
+                return if (showRecent) "RECENT" else currentTab
+            }
+            if (!hasSearch && currentTab == "SEARCH") {
+                return if (showRecent) "RECENT" else "ALL"
+            }
+            return currentTab
         }
 
         // 加载完成后：严格校验合法性
         val availableTabs = mutableListOf<String>()
+        if (hasSearch) {
+            availableTabs.add("SEARCH")
+        }
         if (showRecent) {
             availableTabs.add("RECENT")
         }
-        availableTabs.add("ALL")
+        if (showAll) {
+            availableTabs.add("ALL")
+        }
         for (cat in categories) {
             availableTabs.add("cat:${cat.id}")
         }
@@ -113,7 +164,7 @@ class KeyboardTabBar(
         return if (currentTab in availableTabs) {
             currentTab
         } else {
-            "ALL"
+            availableTabs.firstOrNull() ?: "ALL"
         }
     }
 
@@ -126,7 +177,18 @@ class KeyboardTabBar(
 
         val theme = KeyboardTheme.current(context)
         val showRecent = KeyboardConfig.isRecentTabEnabled(context)
+        val showAll = KeyboardConfig.isAllTabEnabled(context)
+        val hasSearch = !com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value.isNullOrBlank()
         val effectiveTab = getEffectiveTab()
+
+        // 0. [搜索结果]（若存在，新开出一个收藏夹在第一个）
+        if (hasSearch) {
+            val searchView = createSpecialTabView(R.drawable.ic_search_24, effectiveTab == "SEARCH", theme) {
+                selectTab("SEARCH")
+            }
+            tabViewMap["SEARCH"] = searchView
+            container.addView(searchView)
+        }
 
         // 1. [常用]
         if (showRecent) {
@@ -138,11 +200,13 @@ class KeyboardTabBar(
         }
 
         // 2. [全部]
-        val allView = createSpecialTabView(R.drawable.ic_tab_all, effectiveTab == "ALL", theme) {
-            selectTab("ALL")
+        if (showAll) {
+            val allView = createSpecialTabView(R.drawable.ic_tab_all, effectiveTab == "ALL", theme) {
+                selectTab("ALL")
+            }
+            tabViewMap["ALL"] = allView
+            container.addView(allView)
         }
-        tabViewMap["ALL"] = allView
-        container.addView(allView)
 
         // 3. 真实分类
         val categories = cachedCategories ?: emptyList()
@@ -187,7 +251,9 @@ class KeyboardTabBar(
         }
         currentTab = tabKey
         lastNotifiedTab = tabKey
-        prefs.edit().putString(KEY_LAST_TAB, tabKey).apply()
+        if (tabKey != "SEARCH") {
+            prefs.edit().putString(KEY_LAST_TAB, tabKey).apply()
+        }
         updateSelectionState(tabKey)
         scrollTabToSelection(tabKey)
         onTabSelected(tabKey)
@@ -273,7 +339,7 @@ class KeyboardTabBar(
         lp.height = tabSizePx
         view.layoutParams = lp
 
-        val iconSizePx = (tabSizePx * 0.5f).toInt()
+        val iconSizePx = (tabSizePx * TAB_ICON_SCALE).toInt()
         val ivIcon = view.findViewById<ImageView?>(R.id.ivTabIcon)
         ivIcon?.let {
             val iconLp = it.layoutParams
@@ -317,5 +383,7 @@ class KeyboardTabBar(
     fun destroy() {
         observeJob?.cancel()
         observeJob = null
+        searchJob?.cancel()
+        searchJob = null
     }
 }

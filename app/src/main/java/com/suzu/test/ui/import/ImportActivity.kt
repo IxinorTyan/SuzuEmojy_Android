@@ -47,6 +47,7 @@ class ImportActivity : AppCompatActivity() {
         const val EXTRA_TARGET_CATEGORY_ID = "extra_target_category_id"
         private const val PREFS_NAME = "import_prefs"
         private const val KEY_CLEAN_ORIGINALS_CHECKED = "clean_originals_checked"
+        private const val WEB_SHARE_URL = "https://suzuemojy-share.pages.dev/"
     }
 
     private var presetCategoryId: Long? = null
@@ -194,6 +195,14 @@ class ImportActivity : AppCompatActivity() {
             loadPresetCategoryInfo(targetCatId)
         }
 
+        binding.btnBack.setOnClickListener {
+            finish()
+        }
+
+        binding.btnOpenWebShare.setOnClickListener {
+            openUrl(WEB_SHARE_URL)
+        }
+
         binding.btnPickImages.setOnClickListener {
             checkAndLaunchPicker()
         }
@@ -223,6 +232,14 @@ class ImportActivity : AppCompatActivity() {
                 viewModel.unhandledCount,
                 pendingSummary
             )
+        }
+    }
+
+    private fun openUrl(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (_: Exception) {
+            Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show()
         }
     }
 

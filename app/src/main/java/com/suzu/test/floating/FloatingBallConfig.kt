@@ -49,6 +49,25 @@ object FloatingBallConfig {
     const val KEY_EDGE_RIGHT_UP_ENABLED = "edge_gesture_right_up_enabled"
     const val KEY_EDGE_RIGHT_DOWN_ENABLED = "edge_gesture_right_down_enabled"
     const val KEY_EDGE_RIGHT_LEFT_ENABLED = "edge_gesture_right_left_enabled"
+
+    // 边缘手势动作自定义
+    const val KEY_EDGE_LEFT_UP_ACTION = "edge_gesture_left_up_action"
+    const val KEY_EDGE_LEFT_DOWN_ACTION = "edge_gesture_left_down_action"
+    const val KEY_EDGE_LEFT_RIGHT_ACTION = "edge_gesture_left_right_action"
+    const val KEY_EDGE_RIGHT_UP_ACTION = "edge_gesture_right_up_action"
+    const val KEY_EDGE_RIGHT_DOWN_ACTION = "edge_gesture_right_down_action"
+    const val KEY_EDGE_RIGHT_LEFT_ACTION = "edge_gesture_right_left_action"
+
+    enum class EdgeGestureAction(val id: Int, val title: String) {
+        NONE(0, "关闭"),
+        SWITCH_KEYBOARD(1, "切换键盘"),
+        OPEN_SEARCH(2, "唤起搜索框");
+
+        companion object {
+            fun fromId(id: Int): EdgeGestureAction =
+                entries.firstOrNull { it.id == id } ?: SWITCH_KEYBOARD
+        }
+    }
     const val KEY_EDGE_WIDTH_DP = "edge_gesture_width_dp"
     const val KEY_EDGE_TRIGGER_DISTANCE_DP = "edge_gesture_trigger_distance_dp"
     const val KEY_EDGE_KEYBOARD_SAFETY_DISTANCE_PX = "edge_gesture_keyboard_safety_distance_px"
@@ -78,6 +97,10 @@ object FloatingBallConfig {
     const val DEFAULT_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX = 150
     const val MIN_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX = 0
     const val MAX_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX = 1000
+    const val KEY_SEARCH_BAR_TOP_MARGIN_DP = "floating_search_bar_top_margin_dp"
+    const val MIN_SEARCH_BAR_TOP_MARGIN_DP = 0
+    const val MAX_SEARCH_BAR_TOP_MARGIN_DP = 1000
+    const val DEFAULT_SEARCH_BAR_TOP_MARGIN_FALLBACK_DP = 40
 
     const val SHAPE_CIRCLE = 0
     const val SHAPE_ROUNDED_RECT = 1
@@ -323,13 +346,77 @@ object FloatingBallConfig {
             .edit().putBoolean(KEY_SHOW_EDGE_REGION, enabled).apply()
     }
 
-    fun isEdgeGestureDirectionEnabled(context: Context, key: String): Boolean =
-        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-            .getBoolean(key, true)
+    fun getLegacyEnableKey(actionKey: String): String = when (actionKey) {
+        KEY_EDGE_LEFT_UP_ACTION -> KEY_EDGE_LEFT_UP_ENABLED
+        KEY_EDGE_LEFT_DOWN_ACTION -> KEY_EDGE_LEFT_DOWN_ENABLED
+        KEY_EDGE_LEFT_RIGHT_ACTION -> KEY_EDGE_LEFT_RIGHT_ENABLED
+        KEY_EDGE_RIGHT_UP_ACTION -> KEY_EDGE_RIGHT_UP_ENABLED
+        KEY_EDGE_RIGHT_DOWN_ACTION -> KEY_EDGE_RIGHT_DOWN_ENABLED
+        KEY_EDGE_RIGHT_LEFT_ACTION -> KEY_EDGE_RIGHT_LEFT_ENABLED
+        else -> actionKey
+    }
+
+    fun getActionKeyFromLegacy(legacyKey: String): String = when (legacyKey) {
+        KEY_EDGE_LEFT_UP_ENABLED -> KEY_EDGE_LEFT_UP_ACTION
+        KEY_EDGE_LEFT_DOWN_ENABLED -> KEY_EDGE_LEFT_DOWN_ACTION
+        KEY_EDGE_LEFT_RIGHT_ENABLED -> KEY_EDGE_LEFT_RIGHT_ACTION
+        KEY_EDGE_RIGHT_UP_ENABLED -> KEY_EDGE_RIGHT_UP_ACTION
+        KEY_EDGE_RIGHT_DOWN_ENABLED -> KEY_EDGE_RIGHT_DOWN_ACTION
+        KEY_EDGE_RIGHT_LEFT_ENABLED -> KEY_EDGE_RIGHT_LEFT_ACTION
+        else -> legacyKey
+    }
+
+    fun getEdgeGestureAction(context: Context, actionKey: String): EdgeGestureAction {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        if (sp.contains(actionKey)) {
+            val id = sp.getInt(actionKey, EdgeGestureAction.SWITCH_KEYBOARD.id)
+            return EdgeGestureAction.fromId(id)
+        }
+        val legacyKey = getLegacyEnableKey(actionKey)
+        val legacyEnabled = sp.getBoolean(legacyKey, true)
+        return if (legacyEnabled) EdgeGestureAction.SWITCH_KEYBOARD else EdgeGestureAction.NONE
+    }
+
+    fun setEdgeGestureAction(context: Context, actionKey: String, action: EdgeGestureAction) {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        val legacyKey = getLegacyEnableKey(actionKey)
+        sp.edit()
+            .putInt(actionKey, action.id)
+            .putBoolean(legacyKey, action != EdgeGestureAction.NONE)
+            .apply()
+    }
+
+    fun getEdgeGestureAction(
+        context: Context,
+        side: EdgeGestureController.Side,
+        direction: EdgeGestureController.Direction
+    ): EdgeGestureAction {
+        val actionKey = when (side) {
+            EdgeGestureController.Side.LEFT -> when (direction) {
+                EdgeGestureController.Direction.UP -> KEY_EDGE_LEFT_UP_ACTION
+                EdgeGestureController.Direction.DOWN -> KEY_EDGE_LEFT_DOWN_ACTION
+                EdgeGestureController.Direction.RIGHT,
+                EdgeGestureController.Direction.LEFT -> KEY_EDGE_LEFT_RIGHT_ACTION
+            }
+            EdgeGestureController.Side.RIGHT -> when (direction) {
+                EdgeGestureController.Direction.UP -> KEY_EDGE_RIGHT_UP_ACTION
+                EdgeGestureController.Direction.DOWN -> KEY_EDGE_RIGHT_DOWN_ACTION
+                EdgeGestureController.Direction.LEFT,
+                EdgeGestureController.Direction.RIGHT -> KEY_EDGE_RIGHT_LEFT_ACTION
+            }
+        }
+        return getEdgeGestureAction(context, actionKey)
+    }
+
+    fun isEdgeGestureDirectionEnabled(context: Context, key: String): Boolean {
+        val actionKey = if (key.endsWith("_action")) key else getActionKeyFromLegacy(key)
+        return getEdgeGestureAction(context, actionKey) != EdgeGestureAction.NONE
+    }
 
     fun setEdgeGestureDirectionEnabled(context: Context, key: String, enabled: Boolean) {
-        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-            .edit().putBoolean(key, enabled).apply()
+        val actionKey = if (key.endsWith("_action")) key else getActionKeyFromLegacy(key)
+        val action = if (enabled) EdgeGestureAction.SWITCH_KEYBOARD else EdgeGestureAction.NONE
+        setEdgeGestureAction(context, actionKey, action)
     }
 
     fun getEdgeWidthDp(context: Context): Int =
@@ -420,5 +507,28 @@ object FloatingBallConfig {
                 key,
                 value.coerceIn(MIN_EDGE_TRIGGER_DISTANCE_DP, MAX_EDGE_TRIGGER_DISTANCE_DP)
             ).apply()
+    }
+
+    fun getDefaultSearchBarTopMarginDp(context: Context): Int {
+        val resourceId = context.resources.getIdentifier("status_bar_height", "dimen", "android")
+        val statusBarHeightPx = if (resourceId > 0) context.resources.getDimensionPixelSize(resourceId) else 0
+        val density = context.resources.displayMetrics.density
+        val statusBarDp = if (density > 0f) (statusBarHeightPx / density).toInt() else 24
+        return (statusBarDp + 6).coerceIn(MIN_SEARCH_BAR_TOP_MARGIN_DP, MAX_SEARCH_BAR_TOP_MARGIN_DP)
+    }
+
+    fun getSearchBarTopMarginDp(context: Context): Int {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        val defaultMargin = getDefaultSearchBarTopMarginDp(context)
+        return sp.getInt(KEY_SEARCH_BAR_TOP_MARGIN_DP, defaultMargin)
+            .coerceIn(MIN_SEARCH_BAR_TOP_MARGIN_DP, MAX_SEARCH_BAR_TOP_MARGIN_DP)
+    }
+
+    fun setSearchBarTopMarginDp(context: Context, valueDp: Int) {
+        val clamped = valueDp.coerceIn(MIN_SEARCH_BAR_TOP_MARGIN_DP, MAX_SEARCH_BAR_TOP_MARGIN_DP)
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_SEARCH_BAR_TOP_MARGIN_DP, clamped)
+            .apply()
     }
 }

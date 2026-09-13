@@ -168,6 +168,10 @@ class TestAccessibilityService : AccessibilityService() {
         }
     }
 
+    fun showSearchBar() {
+        ballController?.showSearchBar()
+    }
+
     private fun getScreenHeight(): Int {
         val wm = getSystemService(Context.WINDOW_SERVICE) as? android.view.WindowManager ?: return 0
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -339,7 +343,7 @@ class TestAccessibilityService : AccessibilityService() {
         var current: AccessibilityNodeInfo? = node
         repeat(6) {
             val candidate = current ?: return@repeat
-            if (candidate.isClickable && candidate.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+            if (candidate.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
                 return true
             }
             current = candidate.parent
@@ -433,6 +437,14 @@ class TestAccessibilityService : AccessibilityService() {
         return enabledList.any { it.id == imeId }
     }
 
+    fun isSelfIme(imeId: String?): Boolean {
+        if (imeId.isNullOrEmpty()) return false
+        val ownImeId = findTestImeId()
+        val fullId = packageName + "/" + TestImageIME::class.java.name
+        val shortId = ComponentName(packageName, TestImageIME::class.java.name).flattenToShortString()
+        return imeId == ownImeId || imeId == fullId || imeId == shortId || imeId.startsWith("$packageName/")
+    }
+
     /**
      * 静默切换到 TestImageIME
      */
@@ -444,10 +456,12 @@ class TestAccessibilityService : AccessibilityService() {
         val testImeId = findTestImeId()
         TestLog.i(MODULE, "解析出本App的真实 IME ID = $testImeId")
 
-        if (currentIme != testImeId) {
+        if (!currentIme.isNullOrEmpty() && !isSelfIme(currentIme)) {
             val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
             sp.edit().putString(KEY_PREV_IME, currentIme).apply()
             TestLog.i(MODULE, "记录原输入法 previous_ime_id = $currentIme 到 SharedPreferences")
+        } else if (isSelfIme(currentIme)) {
+            TestLog.i(MODULE, "当前系统默认输入法已是自研 IME ($currentIme)，跳过覆盖 previous_ime_id")
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -477,15 +491,110 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     /**
+     * 静默切换到 TestImageIME 并确保键盘成功拉起展示
+     */
+    fun switchToTestImeAndEnsureShown(): Boolean {
+        TestLog.i(MODULE, ">>> 执行 switchToTestImeAndEnsureShown")
+        lastImeVisible = false
+        val result = switchToTestIme()
+
+        mainHandler.postDelayed({
+            if (lastImeVisible != true) {
+                TestLog.i(MODULE, "切换 IME 后+120ms 检测到键盘尚未可见，尝试触发输入框点击拉起")
+                focusAndClickActiveInputNode()
+            } else {
+                TestLog.i(MODULE, "切换 IME 后+120ms 检测到键盘已成功可见")
+            }
+        }, 120L)
+
+        // [实验 A] 禁用 +300ms 兜底点击，隔离其对 IME 动画的干扰
+        // mainHandler.postDelayed({
+        //     if (lastImeVisible != true) {
+        //         TestLog.i(MODULE, "切换 IME 后+300ms 检测到键盘仍未可见，执行兜底点击拉起")
+        //         focusAndClickActiveInputNode()
+        //     }
+        // }, 300L)
+
+        return result
+    }
+
+    fun focusAndClickActiveInputNode(): Boolean {
+        try {
+            val root = rootInActiveWindow ?: return false
+            TestLog.i(MODULE, "focusAndClickActiveInputNode: 查找前台输入节点 (pkg=${root.packageName})")
+
+            val focusedNode = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            if (focusedNode != null) {
+                TestLog.i(MODULE, "命中已有输入焦点的节点 [${focusedNode.className}], 执行点击拉起键盘")
+                val clicked = focusedNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    || clickNodeOrClickableParent(focusedNode)
+                focusedNode.recycle()
+                root.recycle()
+                return clicked
+            }
+
+            val editableNode = findFirstEditableNode(root)
+            if (editableNode != null) {
+                TestLog.i(MODULE, "命中前台可编辑节点 [${editableNode.className}], 执行聚焦与点击拉起键盘")
+                editableNode.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+                val clicked = editableNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    || clickNodeOrClickableParent(editableNode)
+                if (editableNode !== root) {
+                    editableNode.recycle()
+                }
+                root.recycle()
+                return clicked
+            }
+
+            root.recycle()
+            TestLog.w(MODULE, "focusAndClickActiveInputNode: 前台活动窗口未找到可点击的输入节点")
+        } catch (e: Exception) {
+            TestLog.w(MODULE, "focusAndClickActiveInputNode 异常: ${e.message}")
+        }
+        return false
+    }
+
+    private fun findFirstEditableNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        if (node.isEditable || node.className?.contains("EditText", ignoreCase = true) == true) {
+            return node
+        }
+        val childCount = node.childCount
+        for (i in 0 until childCount) {
+            val child = try { node.getChild(i) } catch (_: Exception) { null } ?: continue
+            val found = findFirstEditableNode(child)
+            if (found != null) {
+                return found
+            }
+            child.recycle()
+        }
+        return null
+    }
+
+    /**
      * 静默恢复到原输入法 (previous_ime_id)
      */
     fun restorePreviousIme(): Boolean {
         TestLog.i(MODULE, "<<< 开始执行 restorePreviousIme")
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        val enabledList = imm?.enabledInputMethodList ?: emptyList()
         val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-        val prevImeId = sp.getString(KEY_PREV_IME, null)
+        var prevImeId = sp.getString(KEY_PREV_IME, null)
+
+        val isInvalid = prevImeId.isNullOrEmpty() ||
+                isSelfIme(prevImeId) ||
+                enabledList.none { it.id == prevImeId }
+
+        if (isInvalid) {
+            val candidate = enabledList.firstOrNull { !isSelfIme(it.id) }
+            prevImeId = candidate?.id
+            if (!prevImeId.isNullOrEmpty()) {
+                sp.edit().putString(KEY_PREV_IME, prevImeId).apply()
+                TestLog.i(MODULE, "原记录无效或为自身，自动纠偏选定恢复目标 IME: $prevImeId")
+            }
+        }
 
         if (prevImeId.isNullOrEmpty()) {
-            TestLog.e(MODULE, "无法切回：SharedPreferences 中未找到 previous_ime_id")
+            TestLog.e(MODULE, "无法切回：未找到可用的非自研输入法")
             return false
         }
 
@@ -497,7 +606,6 @@ class TestAccessibilityService : AccessibilityService() {
             switchResult = softKeyboardController.switchToInputMethod(prevImeId)
             TestLog.i(MODULE, "softKeyboardController.switchToInputMethod 返回值 = $switchResult")
         } else {
-            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             imm?.showInputMethodPicker()
         }
 

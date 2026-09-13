@@ -1,5 +1,8 @@
 package com.suzu.test.floating
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -19,6 +22,8 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.gif.GifDrawable
@@ -55,6 +60,8 @@ class FloatingBallController(private val context: Context) {
     private var ballBinding: LayoutFloatingBallBinding? = null
     private var controllerScope: CoroutineScope? = null
     private var edgeGestureController: EdgeGestureController? = null
+    private var searchBarController: FloatingSearchBarController? = null
+    private var springReturnAnimator: ValueAnimator? = null
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var imeVisible: Boolean = true
@@ -99,12 +106,28 @@ class FloatingBallController(private val context: Context) {
         lastForegroundPackage = TestAccessibilityService.instance?.foregroundAppPackage
         // 旧版行为：挂载时默认 IME 可见，交由后续真实信号修正，避免初始化期误隐藏
         imeVisible = true
-        edgeGestureController = EdgeGestureController(context) { _, _ ->
-            onFloatingBallActionTriggered()
+        edgeGestureController = EdgeGestureController(context) { side, direction ->
+            val action = FloatingBallConfig.getEdgeGestureAction(context, side, direction)
+            when (action) {
+                FloatingBallConfig.EdgeGestureAction.SWITCH_KEYBOARD -> {
+                    onFloatingBallActionTriggered()
+                }
+                FloatingBallConfig.EdgeGestureAction.OPEN_SEARCH -> {
+                    TestLog.i(MODULE, "边缘手势触发唤起搜索框: side=$side, direction=$direction")
+                    imeSwitchGuardUntil = System.currentTimeMillis() + 1200L
+                    searchBarController?.show()
+                }
+                FloatingBallConfig.EdgeGestureAction.NONE -> {
+                    TestLog.i(MODULE, "边缘手势配置为关闭: side=$side, direction=$direction")
+                }
+            }
         }.also {
             it.attach()
             it.onForegroundAppChanged(lastForegroundPackage)
             it.onImeVisibilityChanged(imeVisible)
+        }
+        searchBarController = FloatingSearchBarController(context).also {
+            it.attach()
         }
         cleanLegacyFilterConfigOnce()
         applyBallImage()
@@ -127,8 +150,12 @@ class FloatingBallController(private val context: Context) {
         controllerScope?.cancel()
         controllerScope = null
         mainHandler.removeCallbacksAndMessages(null)
+        springReturnAnimator?.cancel()
+        springReturnAnimator = null
         edgeGestureController?.detach()
         edgeGestureController = null
+        searchBarController?.detach()
+        searchBarController = null
 
         releaseHitTestBitmap()
 
@@ -149,6 +176,10 @@ class FloatingBallController(private val context: Context) {
         ballBinding = null
         layoutParams = null
         windowManager = null
+    }
+
+    fun showSearchBar() {
+        searchBarController?.show()
     }
 
     private fun releaseHitTestBitmap() {
@@ -193,6 +224,9 @@ class FloatingBallController(private val context: Context) {
                 FloatingBallConfig.KEY_BALL_SIZE_DP, FloatingBallConfig.KEY_BALL_ALPHA -> {
                     applyConfigToView()
                 }
+                FloatingBallConfig.KEY_SEARCH_BAR_TOP_MARGIN_DP -> {
+                    searchBarController?.updatePosition()
+                }
                 FloatingBallConfig.KEY_BALL_SHAPE -> {
                     // 形状变更触发完整样式与贴图刷新
                     applyBallImage()
@@ -222,6 +256,7 @@ class FloatingBallController(private val context: Context) {
         mainHandler.post {
             imeVisible = visible
             edgeGestureController?.onImeVisibilityChanged(visible)
+            searchBarController?.onImeVisibilityChanged(visible)
             evaluateVisibility()
         }
     }
@@ -229,6 +264,7 @@ class FloatingBallController(private val context: Context) {
     fun onImeBoundsChanged(topPx: Int?) {
         mainHandler.post {
             edgeGestureController?.onImeBoundsChanged(topPx)
+            searchBarController?.onImeBoundsChanged(topPx)
         }
     }
 
@@ -626,14 +662,84 @@ class FloatingBallController(private val context: Context) {
         return alpha >= ALPHA_THRESHOLD
     }
 
+    private fun animateSpringBack(params: WindowManager.LayoutParams, targetX: Int) {
+        springReturnAnimator?.cancel()
+        val fView = floatingView ?: return
+        val wm = windowManager ?: return
+
+        val startX = params.x
+        if (startX == targetX) return
+
+        springReturnAnimator = ValueAnimator.ofInt(startX, targetX).apply {
+            duration = 150L
+            interpolator = DecelerateInterpolator(2.0f)
+            addUpdateListener { animator ->
+                val newX = animator.animatedValue as Int
+                params.x = newX
+                clampPosition(params)
+                try {
+                    wm.updateViewLayout(fView, params)
+                } catch (e: Exception) {
+                    TestLog.w(MODULE, "animateSpringBack updateViewLayout 异常: ${e.message}")
+                }
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    params.x = targetX
+                    clampPosition(params)
+                    try {
+                        wm.updateViewLayout(fView, params)
+                    } catch (_: Exception) {}
+                    springReturnAnimator = null
+                }
+            })
+        }
+        springReturnAnimator?.start()
+    }
+
     private fun setupTouchListener(view: View) {
-        val clickThreshold = 10 * context.resources.displayMetrics.density
+        val density = context.resources.displayMetrics.density
+        val clickThreshold = 10 * density
+        val swipeThreshold = 25 * density
+        val maxDisplacementPx = 16f * density
+        val travelLimitPx = 80f * density
         var initialX = 0
         var initialY = 0
         var initialTouchX = 0f
         var initialTouchY = 0f
+        var lastTouchX = 0f
+        var lastTouchY = 0f
         var isClick = true
         var isDownConsumed = false
+        var isLongPressed = false
+        var isSwiped = false
+
+        val longPressRunnable = Runnable {
+            if (isDownConsumed && !isSwiped && !isLongPressed) {
+                isLongPressed = true
+                isClick = false
+
+                // 长按触发：视觉“浮起/激活”反馈
+                view.animate().cancel()
+                view.animate()
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .alpha(1.0f)
+                    .setDuration(160L)
+                    .setInterpolator(OvershootInterpolator(2.0f))
+                    .start()
+
+                // 平滑衔接拖拽坐标，消除手指微移产生的突跳
+                val p = layoutParams
+                if (p != null) {
+                    initialX = p.x
+                    initialY = p.y
+                    initialTouchX = lastTouchX
+                    initialTouchY = lastTouchY
+                }
+                TestLog.i(MODULE, "悬浮球长按 300ms 触发，进入移动模式")
+            }
+        }
 
         view.setOnTouchListener { _, event ->
             val params = layoutParams ?: return@setOnTouchListener false
@@ -648,51 +754,187 @@ class FloatingBallController(private val context: Context) {
                         }
                     }
 
+                    // 若上一次回弹仍在进行，立即停止并恢复初始坐标，确保 initialX 准确无误
+                    if (springReturnAnimator?.isRunning == true) {
+                        springReturnAnimator?.cancel()
+                        springReturnAnimator = null
+                        params.x = initialX
+                        clampPosition(params)
+                        try {
+                            windowManager?.updateViewLayout(floatingView, params)
+                        } catch (_: Exception) {}
+                    }
+                    view.animate().cancel()
+
                     isDownConsumed = true
                     initialX = params.x
                     initialY = params.y
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
+                    lastTouchX = event.rawX
+                    lastTouchY = event.rawY
                     isClick = true
+                    isLongPressed = false
+                    isSwiped = false
+
+                    // 按下即时动效：微缩下陷，透明度略增亮提供物理按压反馈
+                    val baseAlpha = FloatingBallConfig.getAlphaPercent(context) / 100f
+                    val pressedAlpha = (baseAlpha + 0.2f).coerceAtMost(1.0f)
+                    view.animate()
+                        .scaleX(0.90f)
+                        .scaleY(0.90f)
+                        .alpha(pressedAlpha)
+                        .setDuration(120L)
+                        .setInterpolator(DecelerateInterpolator())
+                        .start()
+
+                    // 启动 300ms 长按检测定时器
+                    mainHandler.removeCallbacks(longPressRunnable)
+                    mainHandler.postDelayed(longPressRunnable, 300L)
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     if (!isDownConsumed) return@setOnTouchListener false
+                    lastTouchX = event.rawX
+                    lastTouchY = event.rawY
+
                     val dx = event.rawX - initialTouchX
                     val dy = event.rawY - initialTouchY
-                    if (abs(dx) > clickThreshold || abs(dy) > clickThreshold) {
-                        isClick = false
+                    val absDx = abs(dx)
+                    val absDy = abs(dy)
+
+                    if (isLongPressed) {
+                        // 拖拽移动模式：1:1 流畅跟手
+                        params.x = initialX + dx.toInt()
+                        params.y = initialY + dy.toInt()
+                        clampPosition(params)
+                        windowManager?.updateViewLayout(floatingView, params)
+                    } else {
+                        val isHorizontalMotion = absDx > swipeThreshold && absDx > absDy * 1.3f
+                        val isPullingHorizontal = absDx > clickThreshold && absDx > absDy * 1.2f
+
+                        if (isHorizontalMotion) {
+                            if (!isSwiped) {
+                                isSwiped = true
+                                isClick = false
+                                mainHandler.removeCallbacks(longPressRunnable)
+                            }
+                        } else if (isSwiped && absDx < swipeThreshold * 0.5f) {
+                            // 往回滑回起点附近，撤销横向滑动意图
+                            isSwiped = false
+                        }
+
+                        // 实时计算受限的阻尼位移（限制位移最大值不超过 16dp）
+                        val dampDx = if (isPullingHorizontal) {
+                            val ratio = (absDx / travelLimitPx).coerceIn(0f, 1f)
+                            val easedOffset = maxDisplacementPx * (ratio * (2f - ratio))
+                            val sign = if (dx > 0f) 1f else -1f
+                            (sign * easedOffset).toInt()
+                        } else {
+                            0
+                        }
+
+                        val targetX = initialX + dampDx
+                        if (params.x != targetX) {
+                            params.x = targetX
+                            clampPosition(params)
+                            windowManager?.updateViewLayout(floatingView, params)
+                        }
+
+                        // 伴随微弱的水平压扁拉伸形变（限制在 5% 以内）
+                        val stretchFactor = (abs(dampDx) / maxDisplacementPx) * 0.05f
+                        view.scaleX = 0.90f + stretchFactor
+                        view.scaleY = 0.90f - stretchFactor
+
+                        if (absDx > clickThreshold || absDy > clickThreshold) {
+                            isClick = false
+                        }
                     }
-                    params.x = initialX + dx.toInt()
-                    params.y = initialY + dy.toInt()
-                    clampPosition(params)
-                    windowManager?.updateViewLayout(floatingView, params)
                     true
                 }
                 MotionEvent.ACTION_UP -> {
                     if (!isDownConsumed) return@setOnTouchListener false
+                    mainHandler.removeCallbacks(longPressRunnable)
                     isDownConsumed = false
-                    if (isClick) {
+
+                    val baseAlpha = FloatingBallConfig.getAlphaPercent(context) / 100f
+
+                    if (isLongPressed) {
+                        // 拖拽完成：着陆反馈
+                        view.animate().cancel()
+                        view.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .alpha(baseAlpha)
+                            .setDuration(180L)
+                            .setInterpolator(DecelerateInterpolator())
+                            .start()
+
+                        FloatingBallConfig.saveBallPosition(context, params.x, params.y)
+                        TestLog.i(MODULE, "长按拖拽结束已持久化坐标: (${params.x}, ${params.y})")
+                    } else if (isSwiped) {
+                        // 横向滑动松手：快速平滑回弹 + 唤起搜索框
+                        animateSpringBack(params, initialX)
+
+                        view.animate().cancel()
+                        view.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .alpha(baseAlpha)
+                            .setDuration(160L)
+                            .setInterpolator(DecelerateInterpolator())
+                            .start()
+
+                        TestLog.i(MODULE, "横向滑动悬浮球触发，启用顶部搜索框")
+                        imeSwitchGuardUntil = System.currentTimeMillis() + 1200L
+                        searchBarController?.show()
+                    } else if (isClick) {
+                        // 点击：弹性冲量回弹 + 动作执行
+                        view.animate().cancel()
+                        view.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .alpha(baseAlpha)
+                            .setDuration(200L)
+                            .setInterpolator(OvershootInterpolator(2.5f))
+                            .start()
+
                         onFloatingBallActionTriggered()
                     } else {
-                        FloatingBallConfig.saveBallPosition(context, params.x, params.y)
-                        TestLog.i(MODULE, "拖拽结束已持久化坐标: (${params.x}, ${params.y})")
+                        // 未完成手势（中途松手）：平滑归位
+                        if (params.x != initialX) {
+                            animateSpringBack(params, initialX)
+                        }
+                        view.animate().cancel()
+                        view.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .alpha(baseAlpha)
+                            .setDuration(160L)
+                            .setInterpolator(DecelerateInterpolator())
+                            .start()
                     }
                     true
                 }
                 MotionEvent.ACTION_CANCEL -> {
+                    mainHandler.removeCallbacks(longPressRunnable)
                     isDownConsumed = false
+                    val baseAlpha = FloatingBallConfig.getAlphaPercent(context) / 100f
+                    if (params.x != initialX && !isLongPressed) {
+                        animateSpringBack(params, initialX)
+                    }
+                    view.animate().cancel()
+                    view.animate()
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .alpha(baseAlpha)
+                        .setDuration(160L)
+                        .setInterpolator(DecelerateInterpolator())
+                        .start()
                     false
                 }
                 else -> false
             }
-        }
-
-        view.setOnLongClickListener {
-            if (!isDownConsumed) return@setOnLongClickListener false
-            TestLog.i(MODULE, "长按悬浮球，隐藏悬浮球并关闭配置开关")
-            FloatingBallConfig.setBallEnabled(context, false)
-            true
         }
     }
 
@@ -725,7 +967,7 @@ class FloatingBallController(private val context: Context) {
             accessibility.restorePreviousIme()
         } else {
             TestLog.i(MODULE, "当前非 SuzuEmojy，静默切换到 SuzuEmojy...")
-            accessibility.switchToTestIme()
+            accessibility.switchToTestImeAndEnsureShown()
         }
     }
 }

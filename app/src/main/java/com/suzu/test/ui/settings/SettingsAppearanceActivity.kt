@@ -31,6 +31,8 @@ class SettingsAppearanceActivity : AppCompatActivity() {
         setupThemeSelector()
         setupKeyboardAdjusters()
         setupRecentTabSwitch()
+        setupAllTabSwitch()
+        setupDropdownSettings()
         setupPreview()
     }
 
@@ -39,6 +41,48 @@ class SettingsAppearanceActivity : AppCompatActivity() {
         binding.swShowRecentTab.setOnCheckedChangeListener { _, isChecked ->
             KeyboardConfig.setRecentTabEnabled(this, isChecked)
             TestLog.i(MODULE, "切换显示「常用」开关: $isChecked")
+        }
+    }
+
+    private fun setupAllTabSwitch() {
+        binding.swShowAllTab.isChecked = KeyboardConfig.isAllTabEnabled(this)
+        binding.swShowAllTab.setOnCheckedChangeListener { _, isChecked ->
+            KeyboardConfig.setAllTabEnabled(this, isChecked)
+            TestLog.i(MODULE, "切换显示「全部表情」开关: $isChecked")
+        }
+    }
+
+    private fun setupDropdownSettings() {
+        when (KeyboardConfig.getDropdownIconStyle(this)) {
+            KeyboardConfig.DROPDOWN_ICON_MENU -> binding.rbDropdownIconMenu.isChecked = true
+            KeyboardConfig.DROPDOWN_ICON_MORE -> binding.rbDropdownIconMore.isChecked = true
+            else -> binding.rbDropdownIconArrow.isChecked = true
+        }
+
+        binding.rgDropdownIcon.setOnCheckedChangeListener { _, checkedId ->
+            val style = when (checkedId) {
+                binding.rbDropdownIconMenu.id -> KeyboardConfig.DROPDOWN_ICON_MENU
+                binding.rbDropdownIconMore.id -> KeyboardConfig.DROPDOWN_ICON_MORE
+                else -> KeyboardConfig.DROPDOWN_ICON_ARROW
+            }
+            KeyboardConfig.setDropdownIconStyle(this, style)
+            TestLog.i(MODULE, "切换展开分类按钮图标: $style")
+        }
+
+        if (KeyboardConfig.getDropdownPosition(this) == KeyboardConfig.DROPDOWN_POSITION_RIGHT) {
+            binding.rbDropdownPosRight.isChecked = true
+        } else {
+            binding.rbDropdownPosLeft.isChecked = true
+        }
+
+        binding.rgDropdownPosition.setOnCheckedChangeListener { _, checkedId ->
+            val pos = if (checkedId == binding.rbDropdownPosRight.id) {
+                KeyboardConfig.DROPDOWN_POSITION_RIGHT
+            } else {
+                KeyboardConfig.DROPDOWN_POSITION_LEFT
+            }
+            KeyboardConfig.setDropdownPosition(this, pos)
+            TestLog.i(MODULE, "切换展开分类按钮位置: $pos")
         }
     }
 

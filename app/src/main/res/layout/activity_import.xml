@@ -17,7 +17,7 @@
             android:id="@+id/btnBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@android:color/transparent"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_arrow_back_24"
             android:tint="#111111"
             android:contentDescription="返回" />
@@ -32,9 +32,13 @@
             android:textColor="#111111"
             android:gravity="center" />
 
-        <View
+        <ImageButton
+            android:id="@+id/btnOpenWebShare"
             android:layout_width="40dp"
-            android:layout_height="40dp" />
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_suzu_share"
+            android:contentDescription="在线表情包" />
     </LinearLayout>
 
     <Button

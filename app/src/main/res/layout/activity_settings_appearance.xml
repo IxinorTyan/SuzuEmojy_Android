@@ -227,6 +227,113 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content" />
                 </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="16dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="显示「全部表情」"
+                            android:textSize="14sp"
+                            android:textColor="#333333" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="关闭后在键盘底部隐藏全部表情栏"
+                            android:textSize="12sp"
+                            android:textColor="#888888"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/swShowAllTab"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <!-- 展开分类按钮图标 -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="展开分类按钮图标"
+                    android:textSize="14sp"
+                    android:textColor="#555555"
+                    android:layout_marginTop="16dp" />
+
+                <RadioGroup
+                    android:id="@+id/rgDropdownIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp">
+
+                    <RadioButton
+                        android:id="@+id/rbDropdownIconArrow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="向下箭头"
+                        android:textSize="14sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbDropdownIconMenu"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="三横线 (≡)"
+                        android:textSize="14sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbDropdownIconMore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="竖三点 (⋮)"
+                        android:textSize="14sp" />
+                </RadioGroup>
+
+                <!-- 展开分类按钮位置 -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="展开分类按钮位置"
+                    android:textSize="14sp"
+                    android:textColor="#555555"
+                    android:layout_marginTop="16dp" />
+
+                <RadioGroup
+                    android:id="@+id/rgDropdownPosition"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp">
+
+                    <RadioButton
+                        android:id="@+id/rbDropdownPosLeft"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="左上角 (默认)"
+                        android:textSize="14sp" />
+
+                    <RadioButton
+                        android:id="@+id/rbDropdownPosRight"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:text="右上角 (收起左侧)"
+                        android:textSize="14sp" />
+                </RadioGroup>
             </LinearLayout>
 
             <!-- 键盘唤出测试与预览 -->

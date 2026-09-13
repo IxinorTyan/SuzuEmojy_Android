@@ -2,6 +2,7 @@ package com.suzu.test.ime
 
 import android.content.ClipboardManager
 import android.content.ClipData
+import android.content.ComponentName
 import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.os.Build
@@ -63,7 +64,18 @@ class TestImageIME : InputMethodService() {
     private var previewPopup: ImagePreviewPopup? = null
     private var loadImagesJob: kotlinx.coroutines.Job? = null
     private var lastLoadedTabKey: String? = null
-    private var isGridClearedOnHidden: Boolean = false
+    private var isImeShowing: Boolean = false
+
+    private fun destroySearchCategory() {
+        if (com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value != null) {
+            if (com.suzu.test.floating.ImeSearchStateHolder.isSearchLaunching()) {
+                TestLog.i(MODULE, "处于搜索拉起保护期内，跳过销毁临时搜索分类")
+                return
+            }
+            TestLog.i(MODULE, "收起自研 IME，直接销毁临时搜索分类")
+            com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -230,8 +242,22 @@ class TestImageIME : InputMethodService() {
         refresh()
     }
 
+    override fun onEvaluateFullscreenMode(): Boolean = false
+
+    override fun onEvaluateInputViewShown(): Boolean = true
+
+    override fun onShowInputRequested(flags: Int, configChange: Boolean): Boolean = true
+
+    override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
+        super.onStartInput(attribute, restarting)
+        TestLog.i(MODULE, "onStartInput: pkg=${attribute?.packageName}, inputType=${attribute?.inputType}, restarting=$restarting")
+        requestShowSelf(0)
+    }
+
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
+        isImeShowing = true
+        com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
         TestLog.i(MODULE, "==================== onStartInputView (restarting=$restarting) ====================")
 
         // 进程内直连信号：0ms 秒级通知悬浮球 IME 已可见
@@ -247,52 +273,45 @@ class TestImageIME : InputMethodService() {
         EditorInfoDumper.dump(this, info)
 
         val targetTab = tabBar?.getEffectiveTab() ?: "ALL"
-        if (isGridClearedOnHidden) {
-            isGridClearedOnHidden = false
-            imageAdapter.notifyDataSetChanged()
-        }
-        if (targetTab != lastLoadedTabKey) {
-            loadImagesForTab(targetTab)
-        }
+        loadImagesForTab(targetTab, force = true)
     }
 
     override fun onWindowShown() {
         super.onWindowShown()
+        isImeShowing = true
+        com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
 
         // 窗口生命周期信号比无障碍窗口列表更及时，避免窗口列表残留导致状态误判。
         TestAccessibilityService.notifyImeLifecycle(true)
 
-        if (isGridClearedOnHidden) {
-            isGridClearedOnHidden = false
-            imageAdapter.notifyDataSetChanged()
-        }
+        val targetTab = tabBar?.getEffectiveTab() ?: "ALL"
+        loadImagesForTab(targetTab, force = false)
     }
 
     override fun onWindowHidden() {
         super.onWindowHidden()
 
+        if (com.suzu.test.floating.ImeSearchStateHolder.isSearchLaunching()) {
+            TestLog.i(MODULE, "onWindowHidden: 处于搜索拉起保护期内，忽略瞬态隐藏信号")
+            return
+        }
+
         // 某些系统不会稳定触发 onFinishInputView，但会回调 onWindowHidden。
         TestAccessibilityService.notifyImeLifecycle(false)
 
-        clearVisibleGridViews()
-    }
+        try {
+            Glide.get(this).trimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN)
+        } catch (e: Exception) {
+            TestLog.w(MODULE, "Glide.trimMemory 异常: ${e.message}")
+        }
 
-    private fun clearVisibleGridViews() {
-        val rv = binding?.rvImageGrid ?: return
-        val glm = gridLayoutManager ?: return
-        val firstPos = glm.findFirstVisibleItemPosition()
-        val lastPos = glm.findLastVisibleItemPosition()
-        if (firstPos != RecyclerView.NO_POSITION && lastPos != RecyclerView.NO_POSITION && firstPos <= lastPos) {
-            for (pos in firstPos..lastPos) {
-                val holder = rv.findViewHolderForAdapterPosition(pos)
-                if (holder is ImageAdapter.ImageViewHolder) {
-                    val iv = holder.itemView.findViewById<android.widget.ImageView>(com.suzu.test.R.id.ivThumbnail)
-                    if (iv != null) {
-                        Glide.with(this).clear(iv)
-                    }
-                }
-            }
-            isGridClearedOnHidden = true
+        val wasShowing = isImeShowing
+        isImeShowing = false
+        destroySearchCategory()
+
+        if (wasShowing) {
+            TestLog.i(MODULE, "onWindowHidden: 触发兜底自动切回原输入法...")
+            autoRestorePreviousIme()
         }
     }
 
@@ -333,6 +352,7 @@ class TestImageIME : InputMethodService() {
         ).toInt()
 
         binding?.btnTabDropdown?.let { dropdownBtn ->
+            dropdownBtn.setImageResource(KeyboardConfig.getDropdownIconRes(this))
             configureHeaderButton(dropdownBtn, tabSizePx, buttonPaddingPx)
         }
 
@@ -340,12 +360,40 @@ class TestImageIME : InputMethodService() {
             configureHeaderButton(exitBtn, tabSizePx, buttonPaddingPx)
         }
 
+        applyDropdownPosition()
+
         binding?.llTabHeaderBar?.let { headerBar ->
             val lp = headerBar.layoutParams
             if (lp != null && lp.height != tabSizePx) {
                 lp.height = tabSizePx
                 headerBar.layoutParams = lp
                 headerBar.requestLayout()
+            }
+        }
+    }
+
+    private fun applyDropdownPosition() {
+        val currentBinding = binding ?: return
+        val headerBar = currentBinding.llTabHeaderBar
+        val dropdownBtn = currentBinding.btnTabDropdown
+        val exitBtn = currentBinding.btnExit
+
+        val currentIndex = headerBar.indexOfChild(dropdownBtn)
+        val isRight = KeyboardConfig.getDropdownPosition(this) == KeyboardConfig.DROPDOWN_POSITION_RIGHT
+
+        if (isRight) {
+            val exitIndex = headerBar.indexOfChild(exitBtn)
+            if (exitIndex != -1 && currentIndex != exitIndex - 1) {
+                headerBar.removeView(dropdownBtn)
+                val newExitIndex = headerBar.indexOfChild(exitBtn)
+                headerBar.addView(dropdownBtn, newExitIndex)
+                TestLog.i(MODULE, "调整展开收藏夹按钮位置为右上角(收起左侧)")
+            }
+        } else {
+            if (currentIndex != 0) {
+                headerBar.removeView(dropdownBtn)
+                headerBar.addView(dropdownBtn, 0)
+                TestLog.i(MODULE, "调整展开收藏夹按钮位置为左上角")
             }
         }
     }
@@ -385,16 +433,35 @@ class TestImageIME : InputMethodService() {
 
     override fun onFinishInputView(finishingInput: Boolean) {
         previewPopup?.dismiss()
+        imeTabDropdown?.close()
+
+        if (com.suzu.test.floating.ImeSearchStateHolder.isSearchLaunching()) {
+            TestLog.i(MODULE, "onFinishInputView: 处于搜索拉起保护期内，忽略瞬态完成信号 (finishingInput=$finishingInput)")
+            super.onFinishInputView(finishingInput)
+            return
+        }
+
         lastLoadedTabKey = null
         // 进程内直连信号：通知悬浮球 IME 已隐藏
         TestAccessibilityService.notifyImeLifecycle(false)
         super.onFinishInputView(finishingInput)
-        TestLog.i(MODULE, "onFinishInputView: 键盘收起，自动执行静默切回原输入法...")
+        TestLog.i(MODULE, "onFinishInputView: 键盘收起，自动执行静默切回原输入法... (finishingInput=$finishingInput)")
+        if (isImeShowing) {
+            isImeShowing = false
+            destroySearchCategory()
+        }
         autoRestorePreviousIme()
     }
 
     override fun onFinishInput() {
         previewPopup?.dismiss()
+
+        if (com.suzu.test.floating.ImeSearchStateHolder.isSearchLaunching()) {
+            TestLog.i(MODULE, "onFinishInput: 处于搜索拉起保护期内，忽略会话结束信号")
+            super.onFinishInput()
+            return
+        }
+
         lastLoadedTabKey = null
         TestAccessibilityService.notifyImeLifecycle(false)
         super.onFinishInput()
@@ -402,16 +469,23 @@ class TestImageIME : InputMethodService() {
         autoRestorePreviousIme()
     }
 
+    private fun isSelfIme(imeId: String?): Boolean {
+        if (imeId.isNullOrEmpty()) return false
+        val fullId = packageName + "/" + TestImageIME::class.java.name
+        val shortId = ComponentName(packageName, TestImageIME::class.java.name).flattenToShortString()
+        val realId = TestAccessibilityService.instance?.findTestImeId()
+        return imeId == fullId || imeId == shortId || (realId != null && imeId == realId) || imeId.startsWith("$packageName/")
+    }
+
     private fun autoRestorePreviousIme() {
-        // 防误切：若用户刚通过系统切换器主动切走（默认输入法已不是本 IME），
-        // 则尊重用户选择，不再自动拽回上一个输入法，避免二次切换造成闪烁。
+        // 防误切：若当前默认输入法已经不是自研 IME（说明已被切回或用户主动切换到第三方输入法），
+        // 则跳过自动恢复，避免重复切换或误切造成闪烁。
         val currentIme = Settings.Secure.getString(
             contentResolver,
             Settings.Secure.DEFAULT_INPUT_METHOD
         )
-        val ownImeId = packageName + "/" + TestImageIME::class.java.name
-        if (currentIme != null && currentIme != ownImeId) {
-            TestLog.i(MODULE, "autoRestorePreviousIme: 默认输入法已变更为 $currentIme (用户主动切换)，跳过自动恢复")
+        if (!currentIme.isNullOrEmpty() && !isSelfIme(currentIme)) {
+            TestLog.i(MODULE, "autoRestorePreviousIme: 默认输入法已非自研 IME ($currentIme)，跳过自动恢复")
             return
         }
 
@@ -428,17 +502,25 @@ class TestImageIME : InputMethodService() {
         }
     }
 
-    private fun loadImagesForTab(tabKey: String) {
+    private fun loadImagesForTab(tabKey: String, force: Boolean = false) {
+        if (!force && tabKey == lastLoadedTabKey && imageAdapter.itemCount > 0) {
+            return
+        }
         lastLoadedTabKey = tabKey
         loadImagesJob?.cancel()
         loadImagesJob = serviceScope.launch {
             val list = dataSource.loadResources(tabKey)
             if (!isActive) return@launch
-            imageAdapter.submitList(list)
+            imageAdapter.submitList(list) {
+                binding?.rvImageGrid?.post {
+                    gridLayoutManager?.scrollToPositionWithOffset(0, 0)
+                }
+            }
             val hintView = binding?.tvEmptyLibraryHint
             if (list.isEmpty()) {
                 hintView?.visibility = View.VISIBLE
                 hintView?.text = when {
+                    tabKey == "SEARCH" -> "未找到相关表情"
                     tabKey == "RECENT" -> "还没有发送记录"
                     tabKey == "ALL" -> "资源库为空，请在 App 内导入表情"
                     else -> "该分类暂无图片"
@@ -478,19 +560,26 @@ class TestImageIME : InputMethodService() {
 
     fun exitAndRestoreIme() {
         TestLog.i(MODULE, ">>> 触发 [退出] 恢复原输入法")
+        if (isImeShowing) {
+            isImeShowing = false
+            destroySearchCategory()
+        }
         val service = TestAccessibilityService.instance
-        if (service != null && TestAccessibilityService.isAlive() && service.restorePreviousIme()) {
-            return
+        val restored = service != null && TestAccessibilityService.isAlive() && service.restorePreviousIme()
+        if (!restored) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                switchToPreviousInputMethod()
+            } else {
+                @Suppress("DEPRECATION")
+                switchToPreviousInputMethod()
+            }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            switchToPreviousInputMethod()
-        } else {
-            @Suppress("DEPRECATION")
-            switchToPreviousInputMethod()
-        }
+        requestHideSelf(0)
     }
 
     override fun onDestroy() {
+        isImeShowing = false
+        destroySearchCategory()
         previewPopup?.dismiss()
         previewPopup = null
         super.onDestroy()
