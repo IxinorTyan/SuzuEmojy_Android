@@ -229,23 +229,6 @@ class TestAccessibilityService : AccessibilityService() {
                 }
             }
 
-            if (visible) {
-                val activeWindow = winList.firstOrNull { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
-                val imePkg = try { activeWindow?.root?.packageName?.toString() } catch (_: Exception) { null }
-                if (!imePkg.isNullOrEmpty() && !isSelfIme(imePkg)) {
-                    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-                    val enabledList = imm?.enabledInputMethodList ?: emptyList()
-                    val activeId = enabledList.firstOrNull { it.packageName == imePkg }?.id
-                    if (!activeId.isNullOrEmpty()) {
-                        val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-                        if (sp.getString(KEY_PREV_IME, null) != activeId) {
-                            sp.edit().putString(KEY_PREV_IME, activeId).apply()
-                            TestLog.i(MODULE, "动态捕捉前台活跃第三方 IME 并更新 previous_ime_id = $activeId")
-                        }
-                    }
-                }
-            }
-
             // 有效 IME 边界同时供边缘手势跟随。
             val imeTop = imeRects
                 .asSequence()
@@ -467,31 +450,18 @@ class TestAccessibilityService : AccessibilityService() {
      */
     fun switchToTestIme(): Boolean {
         TestLog.i(MODULE, ">>> 开始执行 switchToTestIme")
-
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-        val enabledList = imm?.enabledInputMethodList ?: emptyList()
-
-        // 优先从当前屏幕上正在显示的 IME 窗口解析真实正在使用的输入法
-        val winList = try { windows } catch (_: Exception) { null }
-        val activeImeWindow = winList?.firstOrNull { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
-        val activeImePkg = try { activeImeWindow?.root?.packageName?.toString() } catch (_: Exception) { null }
-        val activeImeId = if (!activeImePkg.isNullOrEmpty() && !isSelfIme(activeImePkg)) {
-            enabledList.firstOrNull { it.packageName == activeImePkg }?.id
-        } else null
-
         val currentIme = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-        TestLog.i(MODULE, "当前系统 DEFAULT_INPUT_METHOD = $currentIme, activeImePkg = $activeImePkg, activeImeId = $activeImeId")
+        TestLog.i(MODULE, "当前系统 DEFAULT_INPUT_METHOD = $currentIme")
 
-        val targetPrevIme = activeImeId ?: currentIme
         val testImeId = findTestImeId()
         TestLog.i(MODULE, "解析出本App的真实 IME ID = $testImeId")
 
-        if (!targetPrevIme.isNullOrEmpty() && !isSelfIme(targetPrevIme)) {
+        if (!currentIme.isNullOrEmpty() && !isSelfIme(currentIme)) {
             val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-            sp.edit().putString(KEY_PREV_IME, targetPrevIme).apply()
-            TestLog.i(MODULE, "记录原输入法 previous_ime_id = $targetPrevIme 到 SharedPreferences")
-        } else if (isSelfIme(targetPrevIme)) {
-            TestLog.i(MODULE, "当前输入法已是自研 IME ($targetPrevIme)，跳过覆盖 previous_ime_id")
+            sp.edit().putString(KEY_PREV_IME, currentIme).apply()
+            TestLog.i(MODULE, "记录原输入法 previous_ime_id = $currentIme 到 SharedPreferences")
+        } else if (isSelfIme(currentIme)) {
+            TestLog.i(MODULE, "当前系统默认输入法已是自研 IME ($currentIme)，跳过覆盖 previous_ime_id")
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -505,6 +475,7 @@ class TestAccessibilityService : AccessibilityService() {
             switchResult = softKeyboardController.switchToInputMethod(testImeId)
             TestLog.i(MODULE, "softKeyboardController.switchToInputMethod 返回值 = $switchResult")
         } else {
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
             imm?.showInputMethodPicker()
         }
 
@@ -604,23 +575,6 @@ class TestAccessibilityService : AccessibilityService() {
      */
     fun restorePreviousIme(): Boolean {
         TestLog.i(MODULE, "<<< 开始执行 restorePreviousIme")
-
-        // 1. 若当前自研 IME 实例存活，优先尝试利用 Android 原生机制切回上一个真正使用的输入法
-        val ime = TestImageIME.instance
-        if (ime != null) {
-            val switched = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                ime.switchToPreviousInputMethod()
-            } else {
-                @Suppress("DEPRECATION")
-                ime.switchToPreviousInputMethod()
-            }
-            TestLog.i(MODULE, "restorePreviousIme: 优先尝试 TestImageIME.switchToPreviousInputMethod 返回值 = $switched")
-            if (switched) {
-                refreshDefaultImePackage()
-                return true
-            }
-        }
-
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         val enabledList = imm?.enabledInputMethodList ?: emptyList()
         val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)

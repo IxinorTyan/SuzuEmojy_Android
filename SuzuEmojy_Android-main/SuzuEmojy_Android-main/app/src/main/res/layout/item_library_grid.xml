@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.suzu.test.ime.ui.SquareFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="2dp">
+
+    <ImageView
+        android:id="@+id/ivThumbnail"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:background="#E0E0E0" />
+
+    <!-- 选中态半透明遮罩 -->
+    <View
+        android:id="@+id/viewSelectionMask"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#4D0078D4"
+        android:visibility="gone" />
+
+    <!-- 右上角多选状态圆标 -->
+    <ImageView
+        android:id="@+id/ivCheckIndicator"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:src="@drawable/ic_check_circle_unselected"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tvBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:background="#99000000"
+        android:textColor="#FFFFFF"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="1dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:visibility="gone"
+        android:text="GIF" />
+
+</com.suzu.test.ime.ui.SquareFrameLayout>

@@ -42,7 +42,7 @@ import java.util.concurrent.Executors
 class TestImageIME : InputMethodService() {
 
     companion object {
-        const val MODULE = "SuzuEmojy"
+        private const val MODULE = "SuzuEmojy"
         private const val ANDROIDX_CORE_VERSION = "1.12.0"
         private val H1B_DIRECT_FAMILY = setOf(
             "com.tencent.mobileqq",
@@ -50,10 +50,6 @@ class TestImageIME : InputMethodService() {
             "com.tencent.qqlite",
             "com.tencent.mm"
         )
-
-        @Volatile
-        var instance: TestImageIME? = null
-            private set
     }
 
     private var binding: ViewImeKeyboardBinding? = null
@@ -83,7 +79,6 @@ class TestImageIME : InputMethodService() {
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
         TestLog.init(applicationContext)
         dataSource = KeyboardDataSource(this)
         imageSender = ImageSender(this)
@@ -494,20 +489,15 @@ class TestImageIME : InputMethodService() {
             return
         }
 
-        TestLog.i(MODULE, "autoRestorePreviousIme: 优先调用 Android 原生 switchToPreviousInputMethod...")
-        val switched = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            switchToPreviousInputMethod()
+        val service = TestAccessibilityService.instance
+        if (service != null && TestAccessibilityService.isAlive()) {
+            service.restorePreviousIme()
         } else {
-            @Suppress("DEPRECATION")
-            switchToPreviousInputMethod()
-        }
-        TestLog.i(MODULE, "autoRestorePreviousIme: switchToPreviousInputMethod 返回值 = $switched")
-
-        if (!switched) {
-            val service = TestAccessibilityService.instance
-            if (service != null && TestAccessibilityService.isAlive()) {
-                val restored = service.restorePreviousIme()
-                TestLog.i(MODULE, "autoRestorePreviousIme: 无障碍兜底 restorePreviousIme 返回值 = $restored")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                switchToPreviousInputMethod()
+            } else {
+                @Suppress("DEPRECATION")
+                switchToPreviousInputMethod()
             }
         }
     }
@@ -574,29 +564,20 @@ class TestImageIME : InputMethodService() {
             isImeShowing = false
             destroySearchCategory()
         }
-        TestLog.i(MODULE, "exitAndRestoreIme: 优先调用 Android 原生 switchToPreviousInputMethod...")
-        val switched = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            switchToPreviousInputMethod()
-        } else {
-            @Suppress("DEPRECATION")
-            switchToPreviousInputMethod()
-        }
-        TestLog.i(MODULE, "exitAndRestoreIme: switchToPreviousInputMethod 返回值 = $switched")
-
-        if (!switched) {
-            val service = TestAccessibilityService.instance
-            if (service != null && TestAccessibilityService.isAlive()) {
-                val restored = service.restorePreviousIme()
-                TestLog.i(MODULE, "exitAndRestoreIme: 无障碍兜底 restorePreviousIme 返回值 = $restored")
+        val service = TestAccessibilityService.instance
+        val restored = service != null && TestAccessibilityService.isAlive() && service.restorePreviousIme()
+        if (!restored) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                switchToPreviousInputMethod()
+            } else {
+                @Suppress("DEPRECATION")
+                switchToPreviousInputMethod()
             }
         }
         requestHideSelf(0)
     }
 
     override fun onDestroy() {
-        if (instance === this) {
-            instance = null
-        }
         isImeShowing = false
         destroySearchCategory()
         previewPopup?.dismiss()

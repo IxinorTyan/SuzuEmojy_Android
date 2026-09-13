@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_home_card"
+    android:padding="16dp"
+    android:elevation="1dp"
+    android:layout_marginBottom="12dp">
+
+    <!-- 说明文案 -->
+    <TextView
+        android:id="@+id/tvDuplicateDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:text="库中已有此表情，本次导入的 2 张已全部合并" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="12dp">
+
+        <!-- 主图 (库中已有或本批入库的那张) -->
+        <FrameLayout
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="#EEEEEE">
+
+            <ImageView
+                android:id="@+id/ivMainImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="主表情" />
+
+            <TextView
+                android:id="@+id/tvMainBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:background="#CC000000"
+                android:paddingHorizontal="4dp"
+                android:paddingVertical="2dp"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:text="库中已有" />
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="← 合并"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:layout_marginHorizontal="10dp" />
+
+        <!-- 来源小图横向滚动列表 -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvSources"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_weight="1"
+            android:orientation="horizontal" />
+
+    </LinearLayout>
+
+</LinearLayout>
