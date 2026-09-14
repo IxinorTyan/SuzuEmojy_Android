@@ -81,6 +81,14 @@ class CategoryReorderAdapter(
                     binding.tvCategoryTextIcon.visibility = View.VISIBLE
                     binding.tvCategoryTextIcon.text = result.content
                 }
+                is CategoryIconResult.ImageFile -> {
+                    binding.ivCategoryIcon.visibility = View.VISIBLE
+                    binding.tvCategoryTextIcon.visibility = View.GONE
+                    binding.ivCategoryIcon.imageTintList = null
+                    Glide.with(binding.ivCategoryIcon).asBitmap()
+                        .load(File(binding.ivCategoryIcon.context.filesDir, result.relativePath))
+                        .error(R.drawable.ic_category_default).centerCrop().into(binding.ivCategoryIcon)
+                }
                 is CategoryIconResult.Resource -> {
                     binding.ivCategoryIcon.visibility = View.VISIBLE
                     binding.tvCategoryTextIcon.visibility = View.GONE

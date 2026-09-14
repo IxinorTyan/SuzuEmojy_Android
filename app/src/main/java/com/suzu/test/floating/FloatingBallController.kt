@@ -31,6 +31,7 @@ import com.google.android.material.shape.RelativeCornerSize
 import com.google.android.material.shape.ShapeAppearanceModel
 import com.suzu.test.R
 import com.suzu.test.accessibility.TestAccessibilityService
+import com.suzu.test.ime.TestImageIME
 import com.suzu.test.databinding.LayoutFloatingBallBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.log.TestLog
@@ -958,13 +959,18 @@ class FloatingBallController(private val context: Context) {
         imeSwitchGuardUntil = System.currentTimeMillis() + 100L
 
         val currentIme = Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-        val testImeId = accessibility.findTestImeId()
+        val isCurrentOwnIme = accessibility.isSelfIme(currentIme)
 
-        TestLog.i(MODULE, "当前默认 IME = $currentIme, 目标 IME = $testImeId")
+        TestLog.i(MODULE, "当前默认 IME = $currentIme, isCurrentOwnIme = $isCurrentOwnIme")
 
-        if (currentIme == testImeId) {
-            TestLog.i(MODULE, "当前已处于 SuzuEmojy，静默恢复原输入法...")
-            accessibility.restorePreviousIme()
+        if (isCurrentOwnIme) {
+            TestLog.i(MODULE, "当前已处于 SuzuEmojy，直接复用 IME 收起/退出恢复逻辑...")
+            val ime = TestImageIME.instance
+            if (ime != null) {
+                ime.exitAndRestoreIme()
+            } else {
+                accessibility.restorePreviousIme()
+            }
         } else {
             TestLog.i(MODULE, "当前非 SuzuEmojy，静默切换到 SuzuEmojy...")
             accessibility.switchToTestImeAndEnsureShown()

@@ -39,6 +39,7 @@ class FloatingSearchBarController(private val context: Context) {
     private var imeGuardUntil: Long = 0L
     private var lastImeVisible: Boolean = false
     private var currentImeTop: Int? = null
+    private var searchTarget: TestAccessibilityService.InputTarget? = null
 
     private val delayedHideRunnable = Runnable {
         if (isShowing && !lastImeVisible && System.currentTimeMillis() >= imeGuardUntil) {
@@ -204,6 +205,10 @@ class FloatingSearchBarController(private val context: Context) {
     }
 
     fun show() {
+        if (isShowing) return
+        val service = TestAccessibilityService.instance
+        service?.cancelImeSwitch("打开搜索框")
+        searchTarget = service?.captureInputTarget()
         if (!isAttached) {
             attach()
         }
@@ -220,12 +225,16 @@ class FloatingSearchBarController(private val context: Context) {
         // 检查当前输入法：如果正是我们自研的表情键盘，唤醒搜索框时切回原来的文本键盘供输入
         val accessibility = TestAccessibilityService.instance
         val currentIme = Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-        val testImeId = accessibility?.findTestImeId()
-        val isCurrentOwnIme = (currentIme != null && testImeId != null && currentIme == testImeId)
+        val isCurrentOwnIme = accessibility != null && accessibility.isSelfIme(currentIme)
 
         if (isCurrentOwnIme && accessibility != null) {
-            TestLog.i(MODULE, "当前处于自研表情键盘，唤醒搜索框时静默切回原输入法以供打字")
-            accessibility.restorePreviousIme()
+            TestLog.i(MODULE, "当前处于自研表情键盘，唤醒搜索框时直接复用 IME 收起/退出逻辑静默切回原输入法以供打字")
+            val ime = com.suzu.test.ime.TestImageIME.instance
+            if (ime != null) {
+                ime.exitAndRestoreIme()
+            } else {
+                accessibility.restorePreviousIme()
+            }
         }
 
         ImeSearchStateHolder.clearSearch()
@@ -250,6 +259,7 @@ class FloatingSearchBarController(private val context: Context) {
         binding?.etSearchInput?.let { et ->
             et.requestFocus()
             mainHandler.postDelayed({
+                if (!isShowing || !et.hasFocus()) return@postDelayed
                 val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
                 imm?.showSoftInput(et, InputMethodManager.SHOW_IMPLICIT)
             }, showSoftInputDelay)
@@ -305,15 +315,14 @@ class FloatingSearchBarController(private val context: Context) {
         // 1. 回车/点击搜索后，检索悬浮窗立即自动收起隐藏，但不主动关闭软键盘以避免输入会话中断
         hide(hideKeyboard = false)
 
-        // 2. 切回并确保拉起我们自己的自研 IME (SuzuEmojy) 表情键盘
-        mainHandler.postDelayed({
-            val accessibility = TestAccessibilityService.instance
-            if (accessibility != null) {
-                accessibility.switchToTestImeAndEnsureShown()
-            } else {
-                TestLog.w(MODULE, "无障碍服务不可用，无法自动拉起自研 IME")
-            }
-        }, 80L)
+        // Use the original chat window, and wait for its editor to regain focus.
+        val accessibility = TestAccessibilityService.instance
+        if (accessibility != null) {
+            accessibility.switchToTestImeAndEnsureShown(searchTarget)
+        } else {
+            ImeSearchStateHolder.clearSearch()
+            TestLog.w(MODULE, "无障碍服务不可用，无法自动拉起自研 IME")
+        }
     }
 
     fun onImeVisibilityChanged(visible: Boolean) {

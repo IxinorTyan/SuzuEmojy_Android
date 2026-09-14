@@ -8,6 +8,8 @@ import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.db.entity.ResourceCategoryEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.ResourceImportService
+import com.suzu.test.resource.PackageIcons
+import com.suzu.test.resource.KeywordUtils
 import com.suzu.test.storage.CacheCleanManager
 import com.suzu.test.ui.import.ImportFailReason
 import com.suzu.test.ui.import.ImportItemRecord
@@ -38,7 +40,8 @@ data class PackageImportSummary(
     val successCount: Int,
     val duplicateCount: Int,
     val failCount: Int,
-    val attachedCategoryNames: List<String>
+    val attachedCategoryNames: List<String>,
+    val warnings: List<String> = emptyList()
 )
 
 data class PackageImportExecutionResult(
@@ -62,6 +65,8 @@ class ResourcePackageImportService(
     ): PackageImportExecutionResult = withContext(Dispatchers.IO) {
         val cacheDir = context.cacheDir
         val previewTempPaths = mutableListOf<String>()
+        val createdIcons = mutableListOf<File>()
+        val warnings = mutableListOf<String>()
         var importCompleted = false
 
         // 每次导入开始前，清理上一次残留的临时文件和预览文件
@@ -132,9 +137,10 @@ class ResourcePackageImportService(
                 val catalog = JSONObject(catalogJson.decodeToString())
                 val categories = parseCategories(catalog.optJSONArray("categories"))
                 val categoryRefToName = categories.associate { it.ref to it.name }
-                val resources = parseResources(catalog.optJSONArray("resources"))
+                val includeKeywords = manifest.optString("export_scope") != "categories" && manifest.optBoolean("includes_keywords", true)
+                val resources = parseResources(catalog.optJSONArray("resources"), includeKeywords)
 
-                if (resources.isEmpty()) {
+                if (resources.isEmpty() && categories.isEmpty()) {
                     throw IllegalArgumentException("资源包中没有可导入的资源")
                 }
 
@@ -198,6 +204,14 @@ class ResourcePackageImportService(
 
                     try {
                         val result = resourceImportService.import(assetBytes)
+                        val resourceId = result.resourceId
+                        if (resource.keywords.isNotBlank()) {
+                            database.withTransaction {
+                                val dao = database.resourceDao()
+                                val existing = dao.getById(resourceId)
+                                if (existing != null) dao.updateKeywords(resourceId, KeywordUtils.mergeTags(existing.keywords, resource.keywords))
+                            }
+                        }
                         if (result.isDuplicate) {
                             duplicateCount++
                             records.add(
@@ -230,7 +244,6 @@ class ResourcePackageImportService(
                             )
                         }
 
-                        val resourceId = result.resourceId
                         val categoryNames = resource.categoryRefs
                             .mapNotNull { categoryRefToName[it] }
                             .map { it.trim() }
@@ -271,7 +284,21 @@ class ResourcePackageImportService(
                 // 导入彻底完成时，报告最后的进度 100%
                 onProgress(PackageImportStage.IMPORTING, totalCount, totalCount)
 
-                attachCategories(categoryNameToResourceIds)
+                val categoryIcons = linkedMapOf<String, String>()
+                for (category in categories) {
+                    ensureActive()
+                    categoryNameToResourceIds.getOrPut(category.name) { linkedSetOf() }
+                    touchedCategoryNames.add(category.name)
+                    val existing = database.categoryDao().getCategoryByName(category.name)
+                    if (PackageIcons.isValid(context, database, existing?.iconPath)) continue
+                    try {
+                        PackageIcons.restore(context, zipFile, category.icon, createdIcons)?.let { categoryIcons[category.name] = it }
+                    } catch (e: Exception) {
+                        if (e is CancellationException) throw e
+                        warnings.add("${category.name}: 图标已跳过 (${e.message})")
+                    }
+                }
+                attachCategories(categoryNameToResourceIds, categoryIcons)
 
                 importCompleted = true
                 PackageImportExecutionResult(
@@ -280,7 +307,8 @@ class ResourcePackageImportService(
                         successCount = successCount,
                         duplicateCount = duplicateCount,
                         failCount = failCount,
-                        attachedCategoryNames = touchedCategoryNames.toList()
+                        attachedCategoryNames = touchedCategoryNames.toList(),
+                        warnings = warnings
                     )
                 )
             }
@@ -295,6 +323,9 @@ class ResourcePackageImportService(
                     TestLog.w(MODULE, "删除临时 zip 文件失败: ${e.message}")
                 }
                 if (!importCompleted) {
+                    // A transaction may have committed just as cancellation arrived.
+                    val referencedIcons = database.categoryDao().getAllCategories().mapNotNull { it.iconPath }.toSet()
+                    createdIcons.filter { "file:category_icons/${it.name}" !in referencedIcons }.forEach { it.delete() }
                     // 中断可能发生在文件写入完成但路径尚未登记的瞬间，
                     // 因此不能只按 previewTempPaths 清理，必须清理整个导入预览目录。
                     CacheCleanManager.cleanImportPreviewFiles(context)
@@ -319,7 +350,7 @@ class ResourcePackageImportService(
         }
     }
 
-    private suspend fun attachCategories(categoryNameToResourceIds: Map<String, Set<Long>>) {
+    private suspend fun attachCategories(categoryNameToResourceIds: Map<String, Set<Long>>, icons: Map<String, String>) {
         if (categoryNameToResourceIds.isEmpty()) return
 
         database.withTransaction {
@@ -327,15 +358,19 @@ class ResourcePackageImportService(
             val resourceCategoryDao = database.resourceCategoryDao()
 
             for ((categoryName, resourceIds) in categoryNameToResourceIds) {
-                if (resourceIds.isEmpty()) continue
                 val existing = categoryDao.getCategoryByName(categoryName)
                 val categoryId = if (existing != null) {
+                    val icon = icons[categoryName]
+                    if (icon != null && !PackageIcons.isValid(context, database, existing.iconPath)) {
+                        categoryDao.updateCategory(existing.copy(iconPath = icon))
+                    }
                     existing.id
                 } else {
                     val maxSort = categoryDao.getMaxSortOrder() ?: 0
                     categoryDao.insertCategory(
                         CategoryEntity(
                             name = categoryName,
+                            iconPath = icons[categoryName],
                             sortOrder = maxSort + 1
                         )
                     )
@@ -392,13 +427,14 @@ class ResourcePackageImportService(
             val ref = obj.optInt("ref", -1)
             val name = obj.optString("name").trim()
             if (ref > 0 && name.isNotEmpty()) {
-                result.add(CatalogCategory(ref = ref, name = name))
+                require(result.none { it.ref == ref }) { "收藏夹引用重复" }
+                result.add(CatalogCategory(ref = ref, name = name, icon = obj.optJSONObject("icon")))
             }
         }
         return result
     }
 
-    private fun parseResources(array: JSONArray?): List<CatalogResource> {
+    private fun parseResources(array: JSONArray?, includeKeywords: Boolean): List<CatalogResource> {
         if (array == null) return emptyList()
         val result = mutableListOf<CatalogResource>()
         for (i in 0 until array.length()) {
@@ -420,6 +456,7 @@ class ResourcePackageImportService(
                         syncKey = syncKey,
                         assetPath = assetPath,
                         displayName = displayName,
+                        keywords = if (includeKeywords) parseKeywords(obj) else "",
                         categoryRefs = refs
                     )
                 )
@@ -430,13 +467,25 @@ class ResourcePackageImportService(
 
     private data class CatalogCategory(
         val ref: Int,
-        val name: String
+        val name: String,
+        val icon: JSONObject?
     )
 
     private data class CatalogResource(
         val syncKey: String,
         val assetPath: String,
         val displayName: String,
+        val keywords: String,
         val categoryRefs: List<Int>
     )
+
+    private fun parseKeywords(obj: JSONObject): String {
+        if (!obj.has("keywords")) return ""
+        val array = obj.getJSONArray("keywords")
+        return KeywordUtils.normalize((0 until array.length()).joinToString(" ") {
+            val value = array.get(it)
+            require(value is String) { "keywords 必须是字符串列表" }
+            value
+        })
+    }
 }

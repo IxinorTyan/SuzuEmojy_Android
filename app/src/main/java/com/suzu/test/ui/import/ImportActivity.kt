@@ -522,6 +522,7 @@ class ImportActivity : AppCompatActivity() {
                 }
                 binding.tvProgress.text = "zip 资源包导入完成"
                 binding.tvSummary.text = "新增 ${result.summary.successCount} 张，重复 ${result.summary.duplicateCount} 张，失败 ${result.summary.failCount} 张"
+                if (result.summary.warnings.isNotEmpty()) binding.tvSummary.append("\n" + result.summary.warnings.joinToString("\n"))
                 binding.tvViewDetailAction.visibility = if (aggregateCards.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
             } catch (e: CancellationException) {
                 // 页面退出时取消导入，不能当作普通失败继续处理。

@@ -211,6 +211,14 @@ class CategoryBarController(
                         textView.text = result.content
                     }
 
+                    is CategoryIconResult.ImageFile -> {
+                        imageView.visibility = View.VISIBLE
+                        textView.visibility = View.GONE
+                        imageView.imageTintList = null
+                        Glide.with(imageView).asBitmap()
+                            .load(File(imageView.context.filesDir, result.relativePath))
+                            .error(R.drawable.ic_category_default).centerCrop().into(imageView)
+                    }
                     is CategoryIconResult.Resource -> {
                         imageView.visibility = View.VISIBLE
                         textView.visibility = View.GONE
@@ -379,6 +387,14 @@ class CategoryBarController(
                 textView.text = result.content
             }
 
+            is CategoryIconResult.ImageFile -> {
+                iconView.visibility = View.VISIBLE
+                textView.visibility = View.GONE
+                iconView.imageTintList = null
+                Glide.with(iconView).asBitmap()
+                    .load(File(iconView.context.filesDir, result.relativePath))
+                    .error(R.drawable.ic_category_default).centerCrop().into(iconView)
+            }
             is CategoryIconResult.Resource -> {
                 iconView.visibility = View.VISIBLE
                 textView.visibility = View.GONE

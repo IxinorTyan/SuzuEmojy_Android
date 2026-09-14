@@ -35,14 +35,11 @@ class ImeRestoreLogicTest {
     }
 
     @Test
-    fun testCandidateSelection_skipsSelfAndPicksThirdParty() {
-        val enabledList = listOf(
-            fullId,
-            shortId,
-            "com.sohu.inputmethod.sogou/.SogouIME",
-            "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
-        )
-        val selected = enabledList.firstOrNull { !isSelfIme(it) }
-        assertEquals("com.sohu.inputmethod.sogou/.SogouIME", selected)
+    fun testRestoreValidation_acceptsValidPreviousImeAndRejectsSelf() {
+        val validPrevIme = "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME"
+        assertFalse(isSelfIme(validPrevIme))
+
+        val invalidSelfIme = fullId
+        assertTrue(isSelfIme(invalidSelfIme))
     }
 }

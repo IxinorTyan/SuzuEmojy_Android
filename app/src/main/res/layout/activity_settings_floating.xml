@@ -290,7 +290,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="左上宽度 (12 - 64 dp)"
+                                android:text="左上宽度 (8 - 100 dp)"
                                 android:textSize="14sp"
                                 android:textColor="#555555" />
 
@@ -308,7 +308,7 @@
                             android:id="@+id/sbEdgeLeftUpperWidth"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:max="52"
+                            android:max="92"
                             android:layout_marginTop="4dp" />
 
                         <!-- 左上区域触发距离 -->
@@ -322,7 +322,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="左上触发距离 (48 - 200 dp)"
+                                android:text="左上触发距离 (20 - 300 dp)"
                                 android:textSize="14sp"
                                 android:textColor="#555555" />
 
@@ -340,7 +340,7 @@
                             android:id="@+id/sbEdgeLeftUpperDistance"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:max="152"
+                            android:max="280"
                             android:layout_marginTop="4dp" />
 
                         <!-- 右上区域宽度 -->
@@ -354,7 +354,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="右上宽度 (12 - 64 dp)"
+                                android:text="右上宽度 (8 - 100 dp)"
                                 android:textColor="#555555"
                                 android:textSize="14sp" />
 
@@ -373,7 +373,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:max="52" />
+                            android:max="92" />
 
                         <!-- 右上区域触发距离 -->
                         <LinearLayout
@@ -386,7 +386,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="右上触发距离 (48 - 200 dp)"
+                                android:text="右上触发距离 (20 - 300 dp)"
                                 android:textColor="#555555"
                                 android:textSize="14sp" />
 
@@ -405,7 +405,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:max="152" />
+                            android:max="280" />
 
                         <!-- 上半安全距离作用于左上、右上区域 -->
                         <LinearLayout
@@ -418,7 +418,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="上半区域安全距离 (0 - 1000 px)"
+                                android:text="上半区域安全距离 (0 - 2000 px)"
                                 android:textSize="14sp"
                                 android:textColor="#555555" />
 
@@ -436,7 +436,7 @@
                             android:id="@+id/sbEdgeSafetyDistance"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:max="1000"
+                            android:max="2000"
                             android:layout_marginTop="4dp" />
                     </LinearLayout>
 
@@ -534,7 +534,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="左下宽度 (12 - 64 dp)"
+                                android:text="左下宽度 (8 - 100 dp)"
                                 android:textColor="#555555"
                                 android:textSize="14sp" />
 
@@ -553,7 +553,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:max="52" />
+                            android:max="92" />
 
                         <!-- 左下区域触发距离 -->
                         <LinearLayout
@@ -566,7 +566,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="左下触发距离 (48 - 200 dp)"
+                                android:text="左下触发距离 (20 - 300 dp)"
                                 android:textColor="#555555"
                                 android:textSize="14sp" />
 
@@ -585,7 +585,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:max="152" />
+                            android:max="280" />
 
                         <!-- 右下区域宽度 -->
                         <LinearLayout
@@ -598,7 +598,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="右下宽度 (12 - 64 dp)"
+                                android:text="右下宽度 (8 - 100 dp)"
                                 android:textColor="#555555"
                                 android:textSize="14sp" />
 
@@ -617,7 +617,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:max="52" />
+                            android:max="92" />
 
                         <!-- 右下区域触发距离 -->
                         <LinearLayout
@@ -630,7 +630,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="右下触发距离 (48 - 200 dp)"
+                                android:text="右下触发距离 (20 - 300 dp)"
                                 android:textColor="#555555"
                                 android:textSize="14sp" />
 
@@ -649,7 +649,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:max="152" />
+                            android:max="280" />
 
                         <!-- 下半安全距离作用于左下、右下区域 -->
                         <LinearLayout
@@ -662,7 +662,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="下半区域安全距离 (0 - 1000 px)"
+                                android:text="下半区域安全距离 (0 - 2000 px)"
                                 android:textColor="#555555"
                                 android:textSize="14sp" />
 
@@ -681,7 +681,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:max="1000" />
+                            android:max="2000" />
                     </LinearLayout>
 
                     <!-- ========== 子区块 C：触发方向（上下区域共用） ========== -->
@@ -1082,7 +1082,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="悬浮球大小 (40 - 80 dp)"
+                            android:text="悬浮球大小 (20 - 160 dp)"
                             android:textSize="14sp"
                             android:textColor="#555555" />
 
@@ -1100,7 +1100,7 @@
                         android:id="@+id/sbBallSize"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:max="40"
+                        android:max="140"
                         android:layout_marginTop="6dp" />
 
                     <!-- 悬浮球透明度调节 -->
@@ -1114,7 +1114,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="不透明度 (30% - 100%)"
+                            android:text="不透明度 (10% - 100%)"
                             android:textSize="14sp"
                             android:textColor="#555555" />
 
@@ -1132,10 +1132,10 @@
                         android:id="@+id/sbBallAlpha"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:max="70"
+                        android:max="90"
                         android:layout_marginTop="6dp" />
 
-                    <!-- 悬浮球动画时长调节 (0 - 200 ms, 步进 20 ms, max 10) -->
+                    <!-- 悬浮球动画时长调节 (0 - 1000 ms, 步进 20 ms, max 50) -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -1146,7 +1146,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="渐显/渐隐动画时长 (0 - 200 ms)"
+                            android:text="渐显/渐隐动画时长 (0 - 1000 ms)"
                             android:textSize="14sp"
                             android:textColor="#555555" />
 
@@ -1164,7 +1164,7 @@
                         android:id="@+id/sbBallAnimDuration"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:max="10"
+                        android:max="50"
                         android:layout_marginTop="6dp" />
 
                     <View
@@ -1391,7 +1391,7 @@
                 <FrameLayout
                     android:id="@+id/flPreviewBackground"
                     android:layout_width="match_parent"
-                    android:layout_height="140dp"
+                    android:layout_height="180dp"
                     android:background="#F0F0F0">
 
                     <com.suzu.test.ui.view.EdgeGestureRegionView

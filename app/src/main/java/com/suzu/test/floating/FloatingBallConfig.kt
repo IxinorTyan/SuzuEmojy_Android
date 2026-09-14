@@ -8,17 +8,17 @@ object FloatingBallConfig {
     const val KEY_BALL_ALPHA = "floating_ball_alpha"
 
     const val DEFAULT_BALL_SIZE_DP = 56
-    const val MIN_BALL_SIZE_DP = 40
-    const val MAX_BALL_SIZE_DP = 80
+    const val MIN_BALL_SIZE_DP = 20
+    const val MAX_BALL_SIZE_DP = 160
 
     const val DEFAULT_BALL_ALPHA = 80
-    const val MIN_BALL_ALPHA = 30
+    const val MIN_BALL_ALPHA = 10
     const val MAX_BALL_ALPHA = 100
 
     const val KEY_ANIM_DURATION_MS = "floating_ball_anim_duration_ms"
     const val DEFAULT_ANIM_DURATION_MS = 100
     const val MIN_ANIM_DURATION_MS = 0
-    const val MAX_ANIM_DURATION_MS = 200
+    const val MAX_ANIM_DURATION_MS = 1000
 
     // 总开关
     const val KEY_FLOATING_MASTER_ENABLED = "floating_master_enabled"
@@ -85,18 +85,18 @@ object FloatingBallConfig {
     const val DEFAULT_EDGE_WIDTH_DP = 24
     const val DEFAULT_EDGE_UPPER_WIDTH_DP = 32
     const val DEFAULT_EDGE_LOWER_WIDTH_DP = 12
-    const val MIN_EDGE_WIDTH_DP = 12
-    const val MAX_EDGE_WIDTH_DP = 64
+    const val MIN_EDGE_WIDTH_DP = 8
+    const val MAX_EDGE_WIDTH_DP = 100
     const val DEFAULT_EDGE_TRIGGER_DISTANCE_DP = 80
-    const val MIN_EDGE_TRIGGER_DISTANCE_DP = 48
-    const val MAX_EDGE_TRIGGER_DISTANCE_DP = 200
+    const val MIN_EDGE_TRIGGER_DISTANCE_DP = 20
+    const val MAX_EDGE_TRIGGER_DISTANCE_DP = 300
 
     const val DEFAULT_EDGE_KEYBOARD_SAFETY_DISTANCE_PX = 150
     const val MIN_EDGE_KEYBOARD_SAFETY_DISTANCE_PX = 0
-    const val MAX_EDGE_KEYBOARD_SAFETY_DISTANCE_PX = 1000
+    const val MAX_EDGE_KEYBOARD_SAFETY_DISTANCE_PX = 2000
     const val DEFAULT_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX = 150
     const val MIN_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX = 0
-    const val MAX_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX = 1000
+    const val MAX_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX = 2000
     const val KEY_SEARCH_BAR_TOP_MARGIN_DP = "floating_search_bar_top_margin_dp"
     const val MIN_SEARCH_BAR_TOP_MARGIN_DP = 0
     const val MAX_SEARCH_BAR_TOP_MARGIN_DP = 1000

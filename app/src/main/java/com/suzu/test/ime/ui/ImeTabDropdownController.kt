@@ -185,6 +185,14 @@ class ImeTabDropdownController(
                 })
             }
 
+            is CategoryIconResult.ImageFile -> {
+                iconView.visibility = View.VISIBLE
+                textView.visibility = View.GONE
+                iconView.imageTintList = null
+                Glide.with(iconView).asBitmap()
+                    .load(File(iconView.context.filesDir, result.relativePath))
+                    .error(R.drawable.ic_category_default).centerCrop().into(iconView)
+            }
             is CategoryIconResult.Resource -> {
                 iconView.visibility = View.VISIBLE
                 textView.visibility = View.GONE

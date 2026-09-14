@@ -308,6 +308,14 @@ class KeyboardTabBar(
                 tvName.text = result.content
                 tvName.setTextColor(if (isSelected) theme.tabTextSelected else theme.tabTextUnselected)
             }
+            is CategoryIconResult.ImageFile -> {
+                ivIcon.visibility = View.VISIBLE
+                tvName.visibility = View.GONE
+                ivIcon.imageTintList = null
+                Glide.with(ivIcon).asBitmap()
+                    .load(File(ivIcon.context.filesDir, result.relativePath))
+                    .error(R.drawable.ic_category_default).centerCrop().into(ivIcon)
+            }
             is CategoryIconResult.Resource -> {
                 ivIcon.visibility = View.VISIBLE
                 tvName.visibility = View.GONE

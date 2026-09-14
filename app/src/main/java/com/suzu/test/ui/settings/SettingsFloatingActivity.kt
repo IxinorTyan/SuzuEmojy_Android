@@ -113,6 +113,7 @@ class SettingsFloatingActivity : AppCompatActivity() {
         checkA11yStatus()
         updateCustomImageUI()
         updateSearchBarUI()
+        updateFloatingAdjusterUI()
         updateSectionEnableStates()
         updateSectionCollapseStates()
     }
@@ -617,6 +618,9 @@ class SettingsFloatingActivity : AppCompatActivity() {
             isWidth = false
         )
 
+        binding.sbEdgeSafetyDistance.max =
+            FloatingBallConfig.MAX_EDGE_KEYBOARD_SAFETY_DISTANCE_PX -
+                FloatingBallConfig.MIN_EDGE_KEYBOARD_SAFETY_DISTANCE_PX
         val currentSafetyDistance = FloatingBallConfig.getEdgeKeyboardSafetyDistancePx(this)
         binding.sbEdgeSafetyDistance.progress = currentSafetyDistance - FloatingBallConfig.MIN_EDGE_KEYBOARD_SAFETY_DISTANCE_PX
         binding.tvEdgeSafetyDistanceValue.text = "$currentSafetyDistance px"
@@ -632,6 +636,9 @@ class SettingsFloatingActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
         })
 
+        binding.sbEdgeLowerSafetyDistance.max =
+            FloatingBallConfig.MAX_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX -
+                FloatingBallConfig.MIN_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX
         val currentLowerSafetyDistance =
             FloatingBallConfig.getEdgeLowerKeyboardSafetyDistancePx(this)
         binding.sbEdgeLowerSafetyDistance.progress =
@@ -675,6 +682,12 @@ class SettingsFloatingActivity : AppCompatActivity() {
         } else {
             FloatingBallConfig.MIN_EDGE_TRIGGER_DISTANCE_DP
         }
+        val maximum = if (isWidth) {
+            FloatingBallConfig.MAX_EDGE_WIDTH_DP
+        } else {
+            FloatingBallConfig.MAX_EDGE_TRIGGER_DISTANCE_DP
+        }
+        seekBar.max = maximum - minimum
         val current = if (isWidth) {
             FloatingBallConfig.getEdgeRegionWidthDp(this, key)
         } else {
@@ -722,6 +735,12 @@ class SettingsFloatingActivity : AppCompatActivity() {
         } else {
             FloatingBallConfig.MIN_EDGE_TRIGGER_DISTANCE_DP
         }
+        val maximum = if (isWidth) {
+            FloatingBallConfig.MAX_EDGE_WIDTH_DP
+        } else {
+            FloatingBallConfig.MAX_EDGE_TRIGGER_DISTANCE_DP
+        }
+        seekBar.max = maximum - minimum
         val value = if (isWidth) {
             FloatingBallConfig.getEdgeRegionWidthDp(this, key)
         } else {
@@ -846,11 +865,17 @@ class SettingsFloatingActivity : AppCompatActivity() {
             isWidth = false
         )
 
+        binding.sbEdgeSafetyDistance.max =
+            FloatingBallConfig.MAX_EDGE_KEYBOARD_SAFETY_DISTANCE_PX -
+                FloatingBallConfig.MIN_EDGE_KEYBOARD_SAFETY_DISTANCE_PX
         val safetyDistance = FloatingBallConfig.getEdgeKeyboardSafetyDistancePx(this)
         binding.sbEdgeSafetyDistance.progress =
             safetyDistance - FloatingBallConfig.MIN_EDGE_KEYBOARD_SAFETY_DISTANCE_PX
         binding.tvEdgeSafetyDistanceValue.text = "$safetyDistance px"
 
+        binding.sbEdgeLowerSafetyDistance.max =
+            FloatingBallConfig.MAX_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX -
+                FloatingBallConfig.MIN_EDGE_LOWER_KEYBOARD_SAFETY_DISTANCE_PX
         val lowerSafetyDistance =
             FloatingBallConfig.getEdgeLowerKeyboardSafetyDistancePx(this)
         binding.sbEdgeLowerSafetyDistance.progress =
@@ -928,20 +953,34 @@ class SettingsFloatingActivity : AppCompatActivity() {
         )
     }
 
-    private fun setupFloatingAdjusters() {
+    private fun updateFloatingAdjusterUI() {
+        val minSize = FloatingBallConfig.MIN_BALL_SIZE_DP
+        val maxSize = FloatingBallConfig.MAX_BALL_SIZE_DP
+        binding.sbBallSize.max = maxSize - minSize
         val currentSize = FloatingBallConfig.getSizeDp(this)
-        binding.sbBallSize.progress = currentSize - FloatingBallConfig.MIN_BALL_SIZE_DP
+        binding.sbBallSize.progress = currentSize - minSize
         binding.tvSizeValue.text = "$currentSize dp"
 
+        val minAlpha = FloatingBallConfig.MIN_BALL_ALPHA
+        val maxAlpha = FloatingBallConfig.MAX_BALL_ALPHA
+        binding.sbBallAlpha.max = maxAlpha - minAlpha
         val currentAlpha = FloatingBallConfig.getAlphaPercent(this)
-        binding.sbBallAlpha.progress = currentAlpha - FloatingBallConfig.MIN_BALL_ALPHA
+        binding.sbBallAlpha.progress = currentAlpha - minAlpha
         binding.tvAlphaValue.text = "$currentAlpha %"
 
+        val minDuration = FloatingBallConfig.MIN_ANIM_DURATION_MS
+        val maxDuration = FloatingBallConfig.MAX_ANIM_DURATION_MS
+        val maxDurationSteps = (maxDuration - minDuration) / 20
+        binding.sbBallAnimDuration.max = maxDurationSteps
         val currentDuration = FloatingBallConfig.getAnimDurationMs(this)
-        binding.sbBallAnimDuration.progress = (currentDuration / 20).coerceIn(0, 10)
+        binding.sbBallAnimDuration.progress = (currentDuration / 20).coerceIn(0, maxDurationSteps)
         binding.tvAnimDurationValue.text = if (currentDuration == 0) "0 ms (关闭动画)" else "$currentDuration ms"
 
         updatePreview(currentSize, currentAlpha)
+    }
+
+    private fun setupFloatingAdjusters() {
+        updateFloatingAdjusterUI()
 
         binding.sbBallSize.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -969,7 +1008,10 @@ class SettingsFloatingActivity : AppCompatActivity() {
 
         binding.sbBallAnimDuration.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val durationMs = (progress * 20).coerceIn(0, 200)
+                val durationMs = (progress * 20).coerceIn(
+                    FloatingBallConfig.MIN_ANIM_DURATION_MS,
+                    FloatingBallConfig.MAX_ANIM_DURATION_MS
+                )
                 binding.tvAnimDurationValue.text = if (durationMs == 0) "0 ms (关闭动画)" else "$durationMs ms"
                 FloatingBallConfig.setAnimDurationMs(this@SettingsFloatingActivity, durationMs)
                 TestLog.i(MODULE, "修改悬浮球动画时长: $durationMs ms")

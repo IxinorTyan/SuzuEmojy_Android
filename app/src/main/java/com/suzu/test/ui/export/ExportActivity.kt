@@ -20,6 +20,7 @@ import com.suzu.test.databinding.ActivityExportBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.resource.exportpkg.PackageExportStage
+import com.suzu.test.resource.exportpkg.PackageExportScope
 import com.suzu.test.resource.exportpkg.ResourcePackageExportService
 import com.suzu.test.log.TestLog
 import android.widget.ProgressBar
@@ -35,6 +36,7 @@ class ExportActivity : AppCompatActivity() {
 
     private var pendingPackageName: String = ""
     private var pendingSelectedCategoryIds: List<Long> = emptyList()
+    private var pendingExportScope = PackageExportScope.ALL
     private var progressDialog: AlertDialog? = null
 
     private val openDocumentTreeLauncher = registerForActivityResult(
@@ -55,6 +57,7 @@ class ExportActivity : AppCompatActivity() {
         exportService = ResourcePackageExportService(this, DatabaseProvider.getDatabase(this))
 
         binding.btnExportAll.setOnClickListener {
+            pendingExportScope = PackageExportScope.ALL
             pendingSelectedCategoryIds = emptyList()
             binding.layoutSelectedCategoriesCard.visibility = android.view.View.GONE
             binding.tvSelectedCategoriesSummary.text = ""
@@ -132,6 +135,7 @@ class ExportActivity : AppCompatActivity() {
                     return@setPositiveButton
                 }
                 pendingSelectedCategoryIds = selected
+                pendingExportScope = PackageExportScope.CATEGORIES
                 val selectedNames = categories.filter { it.id in pendingSelectedCategoryIds }.joinToString("、") { it.name }
                 binding.layoutSelectedCategoriesCard.visibility = android.view.View.VISIBLE
                 binding.tvSelectedCategoriesSummary.text = selectedNames
@@ -220,7 +224,8 @@ class ExportActivity : AppCompatActivity() {
                     exportService.exportToZip(
                         targetUri = uri,
                         packageName = pendingPackageName,
-                        selectedCategoryIds = pendingSelectedCategoryIds
+                        selectedCategoryIds = pendingSelectedCategoryIds,
+                        exportScope = pendingExportScope
                     ) { stage, progress, total ->
                         runOnUiThread {
                             if (isFinishing || isDestroyed) return@runOnUiThread
@@ -239,6 +244,8 @@ class ExportActivity : AppCompatActivity() {
                 }
                 binding.tvProgress.text = "导出完成"
                 binding.tvSummary.text = "导出 ${result.exportedCount} 张，跳过 ${result.skippedCount} 张"
+                val warningCount = result.manifest.optJSONArray("warnings")?.length() ?: 0
+                if (warningCount > 0) binding.tvSummary.append("，$warningCount 个图标未导出")
                 Toast.makeText(
                     this@ExportActivity,
                     "已导出资源包：${result.packageName}.zip",

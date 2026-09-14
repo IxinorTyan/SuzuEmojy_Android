@@ -7,6 +7,7 @@ import com.suzu.test.db.SuzuDatabase
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.db.entity.ResourceEntity
 import com.suzu.test.log.TestLog
+import com.suzu.test.resource.PackageIcons
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import org.json.JSONArray
@@ -21,6 +22,8 @@ enum class PackageExportStage {
     PACKING,
     WRITING
 }
+
+enum class PackageExportScope { ALL, CATEGORIES }
 
 data class PackageExportSummary(
     val manifest: JSONObject,
@@ -42,16 +45,19 @@ class ResourcePackageExportService(
         targetUri: Uri,
         packageName: String,
         selectedCategoryIds: List<Long> = emptyList(),
+        exportScope: PackageExportScope = if (selectedCategoryIds.isEmpty()) PackageExportScope.ALL else PackageExportScope.CATEGORIES,
         onProgress: ((stage: PackageExportStage, progress: Int, total: Int) -> Unit)? = null
     ): PackageExportSummary {
         val packageBaseName = normalizePackageName(packageName)
+        val exportAll = exportScope == PackageExportScope.ALL
+        require(exportAll || selectedCategoryIds.isNotEmpty()) { "请至少选择一个收藏夹" }
         val resourcesDir = File(context.filesDir, "resources")
         val resourceDao = database.resourceDao()
         val categoryDao = database.categoryDao()
         val relationDao = database.resourceCategoryDao()
 
         val allCategories = categoryDao.getAllCategories()
-        val exportCategories = if (selectedCategoryIds.isEmpty()) {
+        val exportCategories = if (exportAll) {
             allCategories
         } else {
             val selected = selectedCategoryIds.toSet()
@@ -66,7 +72,7 @@ class ResourcePackageExportService(
         var totalAssetBytes = 0L
         var relationsCount = 0
 
-        val resources = if (selectedCategoryIds.isEmpty()) {
+        val resources = if (exportAll) {
             resourceDao.getAllResourcesOrderedList()
         } else {
             val dedup = linkedMapOf<Long, ResourceEntity>()
@@ -101,12 +107,24 @@ class ResourcePackageExportService(
             onProgress?.invoke(PackageExportStage.PACKING, index + 1, totalResourcesCount)
         }
 
+        val iconAssets = linkedMapOf<String, ByteArray>()
+        val warnings = JSONArray()
         val categoriesJson = JSONArray().apply {
             exportCategories.forEachIndexed { index, category ->
+                currentCoroutineContext().ensureActive()
+                val icon = try {
+                    PackageIcons.pack(context, database, category.iconPath, iconAssets)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    warnings.put(JSONObject().put("type", "icon_skipped").put("name", category.name).put("reason", e.message))
+                    null
+                }
                 put(
                     JSONObject()
                         .put("ref", index + 1)
                         .put("name", category.name)
+                        .put("icon", icon)
                 )
             }
         }
@@ -128,7 +146,7 @@ class ResourcePackageExportService(
                             .put("width", item.width)
                             .put("height", item.height)
                             .put("quality_score", item.qualityScore)
-                            .put("keywords", JSONArray(item.keywords))
+                            .apply { if (exportAll) put("keywords", JSONArray(item.keywords)) }
                             .put("created_at", item.createdAt)
                             .put("display_name", item.displayName)
                             .put("category_refs", JSONArray(item.categoryRefs))
@@ -138,6 +156,11 @@ class ResourcePackageExportService(
 
         val manifest = JSONObject()
             .put("format_version", 1)
+            .put("export_scope", if (exportAll) "all" else "categories")
+            .put("includes_keywords", exportAll)
+            .put("icon_assets", iconAssets.size)
+            .put("total_icon_bytes", iconAssets.values.sumOf { it.size.toLong() })
+            .put("warnings", warnings)
             .put("package_id", UUID.randomUUID().toString())
             .put("exporter", "pe")
             .put("app_version", getAppVersion())
@@ -163,7 +186,7 @@ class ResourcePackageExportService(
             .put("categories", categoriesJson)
             .put("resources", resourcesJson)
 
-        writeZip(targetUri, manifest, catalog, exportedResources) { progress, total ->
+        writeZip(targetUri, manifest, catalog, exportedResources, iconAssets) { progress, total ->
             onProgress?.invoke(PackageExportStage.WRITING, progress, total)
         }
 
@@ -231,6 +254,7 @@ class ResourcePackageExportService(
         manifest: JSONObject,
         catalog: JSONObject,
         resources: List<ExportedResource>,
+        iconAssets: Map<String, ByteArray>,
         onWriteProgress: ((progress: Int, total: Int) -> Unit)? = null
     ) {
         val resolver = context.contentResolver
@@ -238,6 +262,10 @@ class ResourcePackageExportService(
             ZipOutputStream(output).use { zip ->
                 putEntry(zip, "manifest.json", manifest.toString(2).toByteArray(Charsets.UTF_8))
                 putEntry(zip, "catalog.json", catalog.toString(2).toByteArray(Charsets.UTF_8))
+                iconAssets.forEach { (path, bytes) ->
+                    currentCoroutineContext().ensureActive()
+                    putEntry(zip, path, bytes)
+                }
                 
                 val resourcesDir = File(context.filesDir, "resources")
                 val total = resources.size
