@@ -12,8 +12,8 @@ android {
         applicationId = "com.tencent.qqpinyin.suzu"
         minSdk = 26
         targetSdk = 34
-        versionCode = 100013
-        versionName = "1.5.1"
+        versionCode = 100014
+        versionName = "1.5.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "FILE_PROVIDER_AUTHORITY", "\"com.tencent.qqpinyin.suzu.provider\"")

@@ -105,7 +105,7 @@
                     android:background="@drawable/bg_about_version_pill"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="4dp"
-                    android:text="版本 1.5.1"
+                    android:text="版本 1.5.2"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:textColor="#1976D2" />
