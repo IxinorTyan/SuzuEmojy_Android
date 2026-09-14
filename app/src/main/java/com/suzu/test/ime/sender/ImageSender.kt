@@ -374,10 +374,13 @@ class ImageSender(private val context: Context) {
         ImageSendDiagnostics.add(record)
 
         val sp = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        // 默认值必须与 SettingsOtherActivity.DEFAULT_CONVERT_PNG_TO_GIF 保持 true，
+        // 保证新用户未手动改动设置时，本页开关显示与实际发送行为一致。
         val convertEnabled = sp.getBoolean("convert_png_to_gif_on_send", true)
         val isOriginalGif = item.mimeType == "image/gif" ||
             (item is ImageItem.SuzuResource && item.format.equals("gif", ignoreCase = true))
         var actualFile: File? = null
+        TestLog.i(MODULE, "[${record.eventId}] GIF preparation: enabled=$convertEnabled, originalGif=$isOriginalGif")
 
         if (convertEnabled && !isOriginalGif) {
             val deterministicKey = when (item) {
@@ -385,7 +388,7 @@ class ImageSender(private val context: Context) {
                 is ImageItem.AssetSample -> "asset_${item.assetFileName.substringBeforeLast(".")}"
                 is ImageItem.MediaStoreImage -> "media_${item.id}_${item.dateModified}"
             }
-            val cachedGifFile = File(sendDir, "png2gif_${deterministicKey}.gif")
+            val cachedGifFile = File(sendDir, "png2gif_v2_${deterministicKey}.gif")
             if (PngToGifConverter.isValidGif(cachedGifFile)) {
                 actualFile = cachedGifFile
             } else {
@@ -403,6 +406,9 @@ class ImageSender(private val context: Context) {
             }
         }
 
+        if (convertEnabled && !isOriginalGif && actualFile == null) {
+            TestLog.w(MODULE, "[${record.eventId}] GIF 转换失败，回退发送原图: ${item.displayName}")
+        }
         val finalFile: File
         val isCachedGif: Boolean
         val deleteFileOnCleanup: Boolean

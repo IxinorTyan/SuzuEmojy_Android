@@ -72,36 +72,9 @@ class TestImageIME : InputMethodService() {
     private var lastLoadedTabKey: String? = null
     private var isImeShowing: Boolean = false
     private var imeWindowVisible = false
-    private val restoreHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    private var pendingRestore: Runnable? = null
 
     fun isShowingFor(targetPackage: String): Boolean =
         imeWindowVisible && isInputViewShown && currentInputEditorInfo?.packageName == targetPackage
-
-    private fun cancelAutomaticRestore() {
-        pendingRestore?.let { restoreHandler.removeCallbacks(it) }
-        pendingRestore = null
-    }
-
-    private fun scheduleAutomaticRestore(reason: String) {
-        cancelAutomaticRestore()
-        val check = object : Runnable {
-            override fun run() {
-                if (pendingRestore !== this) return
-                if (TestAccessibilityService.instance?.isImeSwitchPending() == true ||
-                    com.suzu.test.floating.ImeSearchStateHolder.isSearchLaunching()) {
-                    restoreHandler.postDelayed(this, 100L)
-                    return
-                }
-                pendingRestore = null
-                if (imeWindowVisible && isInputViewShown) return
-                restorePreviousKeyboard(reason)
-            }
-        }
-        pendingRestore = check
-        restoreHandler.postDelayed(check, 150L)
-    }
-
 
     private fun destroySearchCategory() {
         if (com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value != null) {
@@ -280,22 +253,14 @@ class TestImageIME : InputMethodService() {
         refresh()
     }
 
-    override fun onEvaluateFullscreenMode(): Boolean = false
-
-    override fun onEvaluateInputViewShown(): Boolean = true
-
-    override fun onShowInputRequested(flags: Int, configChange: Boolean): Boolean = true
-
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
         super.onStartInput(attribute, restarting)
         TestLog.i(MODULE, "onStartInput: pkg=${attribute?.packageName}, inputType=${attribute?.inputType}, restarting=$restarting")
-        requestShowSelf(0)
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         isImeShowing = true
-        cancelAutomaticRestore()
         if (TestAccessibilityService.instance?.isImeSwitchPending() != true) {
             com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
         }
@@ -307,6 +272,8 @@ class TestImageIME : InputMethodService() {
         applyKeyboardConfigLayout()
         applyTheme()
 
+
+        // 保留旧版仅在输入视图启动后请求显示的行为。
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             requestShowSelf(0)
         }
@@ -314,14 +281,13 @@ class TestImageIME : InputMethodService() {
         EditorInfoDumper.dump(this, info)
 
         val targetTab = tabBar?.getEffectiveTab() ?: "ALL"
-        loadImagesForTab(targetTab, force = true)
+        loadImagesForTab(targetTab, force = false)
     }
 
     override fun onWindowShown() {
         super.onWindowShown()
         imeWindowVisible = true
         isImeShowing = true
-        cancelAutomaticRestore()
         if (TestAccessibilityService.instance?.isImeSwitchPending() != true) {
             com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
         }
@@ -339,13 +305,8 @@ class TestImageIME : InputMethodService() {
         imeWindowVisible = false
         isImeShowing = false
         TestAccessibilityService.notifyImeLifecycle(false)
-        scheduleAutomaticRestore("onWindowHidden 延迟复核")
+        // 与旧版一致：这里只通知窗口隐藏，恢复由 finish 回调负责。
 
-        try {
-            Glide.get(this).trimMemory(android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN)
-        } catch (e: Exception) {
-            TestLog.w(MODULE, "Glide.trimMemory 异常: ${e.message}")
-        }
     }
 
     private fun applyKeyboardConfigLayout() {
@@ -472,7 +433,7 @@ class TestImageIME : InputMethodService() {
         imeWindowVisible = false
         TestAccessibilityService.notifyImeLifecycle(false)
         super.onFinishInputView(finishingInput)
-        scheduleAutomaticRestore("onFinishInputView 延迟复核")
+        restorePreviousKeyboard("onFinishInputView(finishing=$finishingInput)")
     }
 
     override fun onFinishInput() {
@@ -482,7 +443,7 @@ class TestImageIME : InputMethodService() {
         imeWindowVisible = false
         TestAccessibilityService.notifyImeLifecycle(false)
         super.onFinishInput()
-        scheduleAutomaticRestore("onFinishInput 延迟复核")
+        restorePreviousKeyboard("onFinishInput")
     }
 
     private fun isSelfIme(imeId: String?): Boolean {
@@ -497,7 +458,6 @@ class TestImageIME : InputMethodService() {
      * 统一恢复先前输入法入口
      */
     fun restorePreviousKeyboard(reason: String = ""): Boolean {
-        cancelAutomaticRestore()
         TestAccessibilityService.instance?.cancelImeSwitch("恢复原输入法: $reason")
         TestLog.i(MODULE, ">>> 执行恢复原输入法 ($reason)")
         isImeShowing = false
@@ -592,7 +552,6 @@ class TestImageIME : InputMethodService() {
     }
 
     override fun onDestroy() {
-        cancelAutomaticRestore()
         imeWindowVisible = false
         if (instance === this) {
             instance = null

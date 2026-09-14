@@ -30,21 +30,18 @@ object PngToGifConverter {
         0xFFFFFF  // White
     )
 
-    /**
-     * 校验文件是否存在、非空且头部是否为标准 GIF8
-     */
+    /** 检查完整 GIF89a 结构、单帧和尺寸；编码后还会执行 Bitmap 解码。 */
     fun isValidGif(file: File?): Boolean {
-        if (file == null || !file.exists() || file.length() < 6) return false
+        if (file == null || !file.isFile || file.length() < 14) return false
         return try {
-            file.inputStream().use { input ->
-                val header = ByteArray(4)
-                val read = input.read(header)
-                read == 4 &&
-                        header[0] == 'G'.code.toByte() &&
-                        header[1] == 'I'.code.toByte() &&
-                        header[2] == 'F'.code.toByte() &&
-                        header[3] == '8'.code.toByte()
-            }
+            val bytes = file.readBytes()
+            if (String(bytes, 0, 6, Charsets.US_ASCII) != "GIF89a" ||
+                bytes.last() != 0x3b.toByte()) return false
+            val parser = com.bumptech.glide.gifdecoder.GifHeaderParser()
+            val header = try { parser.setData(bytes).parseHeader() } finally { parser.clear() }
+            header.status == 0 && header.numFrames == 1 &&
+                header.width > 0 && header.height > 0 &&
+                header.width.toLong() * header.height <= MAX_PIXEL_COUNT
         } catch (e: Exception) {
             false
         }
@@ -57,13 +54,17 @@ object PngToGifConverter {
      * @return 转换成功且校验通过返回 true，否则返回 false（调用方可降级发原图）
      */
     fun convertPngToGif(inputStreamProvider: () -> InputStream?, outputFile: File): Boolean {
+        val startedAt = System.nanoTime()
         try {
             // 1. inJustDecodeBounds 预检尺寸
             val options = BitmapFactory.Options().apply {
                 inJustDecodeBounds = true
             }
             inputStreamProvider()?.use { input ->
+                // Bounds-only decoding deliberately returns null on success.
+                // Return Unit from use so only a missing input stream triggers failure.
                 BitmapFactory.decodeStream(input, null, options)
+                Unit
             } ?: return false
 
             val width = options.outWidth
@@ -102,7 +103,7 @@ object PngToGifConverter {
                 val a = (c ushr 24) and 0xff
                 if (a < 128) {
                     // alpha < 128: 写入保留色，作为透明标记
-                    pixels[i] = (0xFF shl 24) or (chosenReserveColor and 0x00FFFFFF)
+                    pixels[i] = chosenReserveColor and 0x00FFFFFF
                     hasTransparent = true
                 } else {
                     // alpha >= 128: 强制将 alpha 置为 255
@@ -124,9 +125,7 @@ object PngToGifConverter {
                 }
                 encoder.setDelay(0)
                 if (encoder.start(fos, w, h)) {
-                    val frameBitmap = Bitmap.createBitmap(pixels, w, h, Bitmap.Config.ARGB_8888)
-                    val frameAdded = encoder.addFrame(frameBitmap)
-                    frameBitmap.recycle()
+                    val frameAdded = encoder.addFrame(pixels)
                     encoder.finish() && frameAdded
                 } else {
                     false
@@ -140,13 +139,16 @@ object PngToGifConverter {
             }
 
             // 5. 产物校验
-            if (isValidGif(tempOutFile)) {
+            val decoded = if (isValidGif(tempOutFile)) BitmapFactory.decodeFile(tempOutFile.absolutePath) else null
+            val decodedCorrectly = decoded != null && decoded.width == w && decoded.height == h
+            decoded?.recycle()
+            if (decodedCorrectly) {
                 if (outputFile.exists()) {
                     outputFile.delete()
                 }
                 val renameOk = tempOutFile.renameTo(outputFile)
                 if (renameOk && isValidGif(outputFile)) {
-                    TestLog.i(MODULE, "PNG 成功转换为单帧 GIF: ${outputFile.name}, size=${outputFile.length()} bytes")
+                    TestLog.i(MODULE, "PNG 成功转换为单帧 GIF: ${outputFile.name}, size=${outputFile.length()} bytes, elapsedMs=${(System.nanoTime() - startedAt) / 1_000_000}")
                     return true
                 } else {
                     tempOutFile.delete()
@@ -155,7 +157,7 @@ object PngToGifConverter {
                 }
             } else {
                 tempOutFile.delete()
-                TestLog.w(MODULE, "生成的 GIF 文件校验失败 (空文件或非 GIF8 头部)")
+                TestLog.w(MODULE, "生成的 GIF 文件校验失败 (结构、帧数或解码尺寸异常)")
                 return false
             }
 
@@ -222,7 +224,7 @@ object PngToGifConverter {
     }
 
     // --- 单帧轻量 GIF89a 编码器 ---
-    private class SingleFrameGifEncoder {
+    internal class SingleFrameGifEncoder {
         private var width = 0
         private var height = 0
         private var transparentColor: Int? = null
@@ -257,11 +259,10 @@ object PngToGifConverter {
             }
         }
 
-        fun addFrame(im: Bitmap): Boolean {
+        fun addFrame(rgb: IntArray): Boolean {
             if (!started || out == null) return false
             return try {
-                val rgb = IntArray(width * height)
-                im.getPixels(rgb, 0, width, 0, 0, width, height)
+                require(rgb.size == width * height)
                 val rawRgb = ByteArray(rgb.size * 3)
                 var count = 0
                 for (c in rgb) {
@@ -290,6 +291,13 @@ object PngToGifConverter {
 
                 if (transparentColor != null) {
                     transIndex = findClosest(tab, transparentColor!!)
+                    for (i in rgb.indices) {
+                        if ((rgb[i] ushr 24) < 128) {
+                            indexed[i] = transIndex.toByte()
+                        } else if ((indexed[i].toInt() and 0xff) == transIndex) {
+                            indexed[i] = findClosest(tab, rgb[i], transIndex).toByte()
+                        }
+                    }
                 }
 
                 // 写入头部与首帧描述（无 Netscape 扩展）
@@ -316,7 +324,7 @@ object PngToGifConverter {
             }
         }
 
-        private fun findClosest(colorTab: ByteArray, color: Int): Int {
+        private fun findClosest(colorTab: ByteArray, color: Int, excluded: Int = -1): Int {
             val r = (color ushr 16) and 0xff
             val g = (color ushr 8) and 0xff
             val b = color and 0xff
@@ -330,7 +338,7 @@ object PngToGifConverter {
                 val db = b - (colorTab[i++].toInt() and 0xff)
                 val d = dr * dr + dg * dg + db * db
                 val index = i / 3 - 1
-                if (usedEntry[index] && d < dmin) {
+                if (index != excluded && d < dmin) {
                     dmin = d
                     minpos = index
                 }
@@ -435,7 +443,7 @@ object PngToGifConverter {
             private const val alpharadbias = 1 shl alpharadbshift
         }
 
-        private val samplefac = sample
+        private val samplefac = if (lengthcount < 3 * 503) 1 else sample
         private val network = Array(netsize) { IntArray(4) }
         private val netindex = IntArray(256)
         private val bias = IntArray(netsize)
@@ -461,9 +469,9 @@ object PngToGifConverter {
             var k = 0
             for (i in 0 until netsize) {
                 val j = index[i]
-                map[k++] = (network[j][0] shr netbiasshift).toByte()
-                map[k++] = (network[j][1] shr netbiasshift).toByte()
-                map[k++] = (network[j][2] shr netbiasshift).toByte()
+                map[k++] = network[j][0].toByte()
+                map[k++] = network[j][1].toByte()
+                map[k++] = network[j][2].toByte()
             }
             return map
         }
@@ -529,8 +537,7 @@ object PngToGifConverter {
                 altersingle(alpha, j, b, g, r)
                 if (rad != 0) alterneigh(rad, j, b, g, r)
 
-                pix += step
-                if (pix >= lengthcount) pix -= lengthcount
+                pix = (pix + step) % lengthcount
 
                 if ((idx + 1) % delta == 0) {
                     alpha -= alpha / alphadec

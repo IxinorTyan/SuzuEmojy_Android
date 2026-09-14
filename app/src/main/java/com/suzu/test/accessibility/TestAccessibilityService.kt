@@ -534,7 +534,13 @@ class TestAccessibilityService : AccessibilityService() {
         val attempt = com.suzu.test.ime.ImeSwitchAttempt(android.os.SystemClock.uptimeMillis())
         switchAttempt = attempt
         val initialIme = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-        var switched = false
+        // 系统切换必须立即发起；微信的无障碍输入框节点可能暂时不可见，不能阻塞切换请求。
+        var switched = switchToTestIme()
+        if (!switched) {
+            cancelImeSwitch("系统未接受切换请求")
+            com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+            return false
+        }
         var ownImeObserved = false
         val check = object : Runnable {
             override fun run() {
@@ -555,22 +561,9 @@ class TestAccessibilityService : AccessibilityService() {
                     val matches = root != null && root.windowId == target.windowId &&
                         root.packageName?.toString() == target.packageName
                     // A focused application window other than our overlay means the user left.
-                    if (!matches && root != null &&
-                        focusedWindow?.type == AccessibilityWindowInfo.TYPE_APPLICATION) {
-                        cancelImeSwitch("目标应用已离开")
-                        com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
-                        return
-                    }
+                    // 微信等应用在切换输入法时会短暂重建窗口，不能因 windowId/focus 瞬态变化取消请求。
                     if (matches) focused = root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
                     val ready = matches && focused?.isEditable == true && focused?.isVisibleToUser == true
-                    if (!switched && ready && !attempt.expired(now)) {
-                        switched = switchToTestIme()
-                        if (!switched) {
-                            cancelImeSwitch("系统未接受切换请求")
-                            com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
-                            return
-                        }
-                    }
                     val visible = own && ready && TestImageIME.instance?.isShowingFor(target.packageName) == true
                     if (attempt.stable(now, visible)) {
                         cancelImeSwitch("目标 IME 已稳定显示")

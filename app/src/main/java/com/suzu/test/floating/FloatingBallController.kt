@@ -63,6 +63,16 @@ class FloatingBallController(private val context: Context) {
     private var edgeGestureController: EdgeGestureController? = null
     private var searchBarController: FloatingSearchBarController? = null
     private var springReturnAnimator: ValueAnimator? = null
+    private var positionOrientation = context.resources.configuration.orientation
+    private var finishTouchGesture: (() -> Unit)? = null
+
+    private fun cancelSpringReturn() {
+        // cancel() 也会触发 onAnimationEnd，先移除监听，避免旧动画覆盖新坐标。
+        springReturnAnimator?.removeAllListeners()
+        springReturnAnimator?.removeAllUpdateListeners()
+        springReturnAnimator?.cancel()
+        springReturnAnimator = null
+    }
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private var imeVisible: Boolean = true
@@ -147,12 +157,13 @@ class FloatingBallController(private val context: Context) {
     fun detach() {
         if (!isAttached) return
         TestLog.i(MODULE, "detach: 移除悬浮球并清理资源")
+        finishTouchGesture?.invoke()
+        finishTouchGesture = null
         isAttached = false
         controllerScope?.cancel()
         controllerScope = null
         mainHandler.removeCallbacksAndMessages(null)
-        springReturnAnimator?.cancel()
-        springReturnAnimator = null
+        cancelSpringReturn()
         edgeGestureController?.detach()
         edgeGestureController = null
         searchBarController?.detach()
@@ -273,8 +284,14 @@ class FloatingBallController(private val context: Context) {
         val fView = floatingView ?: return
         val params = layoutParams ?: return
         val wm = windowManager ?: return
+        // 手势仍属于旋转前的方向；必须先结束，再切换读取的存储槽。
+        finishTouchGesture?.invoke()
+        cancelSpringReturn()
+        positionOrientation = context.resources.configuration.orientation
+        val (savedX, savedY) = FloatingBallConfig.getBallPosition(context, positionOrientation)
+        params.x = savedX
+        params.y = savedY
         clampPosition(params)
-        FloatingBallConfig.saveBallPosition(context, params.x, params.y)
         try {
             wm.updateViewLayout(fView, params)
             TestLog.i(MODULE, "屏幕旋转后已重新限制悬浮球坐标: (${params.x}, ${params.y})")
@@ -325,6 +342,7 @@ class FloatingBallController(private val context: Context) {
             return
         }
 
+        if (!shouldShow) finishTouchGesture?.invoke()
         isBallVisible = shouldShow
         updateGifPlayback()
 
@@ -421,6 +439,7 @@ class FloatingBallController(private val context: Context) {
         }
 
         if (params.width != targetSizePx || params.height != targetSizePx) {
+            finishTouchGesture?.invoke()
             params.width = targetSizePx
             params.height = targetSizePx
             clampPosition(params)
@@ -580,13 +599,15 @@ class FloatingBallController(private val context: Context) {
         }
 
         val flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
 
         val density = context.resources.displayMetrics.density
         val sizeDp = FloatingBallConfig.getSizeDp(context)
         val sizePx = (sizeDp * density).toInt()
 
-        val (savedX, savedY) = FloatingBallConfig.getBallPosition(context)
+        positionOrientation = context.resources.configuration.orientation
+        val (savedX, savedY) = FloatingBallConfig.getBallPosition(context, positionOrientation)
         val params = WindowManager.LayoutParams(
             sizePx,
             sizePx,
@@ -594,7 +615,15 @@ class FloatingBallController(private val context: Context) {
             flags,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP or Gravity.START
+            // 与 rawX/rawY 统一使用屏幕左上角，避免 RTL、系统栏、IME 改变坐标原点。
+            gravity = Gravity.TOP or Gravity.LEFT
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                setFitInsetsTypes(0)
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
             x = savedX
             y = savedY
         }
@@ -607,9 +636,7 @@ class FloatingBallController(private val context: Context) {
 
         try {
             clampPosition(params)
-            if (params.x != savedX || params.y != savedY) {
-                FloatingBallConfig.saveBallPosition(context, params.x, params.y)
-            }
+            // 临时屏幕尺寸只影响显示，不覆盖用户保存的位置。
             // 初始状态下根据是否仅在键盘弹出时显示，决定初始 alpha 与 touchable flag
             val initialShow = determineShouldShow()
             isBallVisible = initialShow
@@ -664,7 +691,7 @@ class FloatingBallController(private val context: Context) {
     }
 
     private fun animateSpringBack(params: WindowManager.LayoutParams, targetX: Int) {
-        springReturnAnimator?.cancel()
+        cancelSpringReturn()
         val fView = floatingView ?: return
         val wm = windowManager ?: return
 
@@ -742,9 +769,38 @@ class FloatingBallController(private val context: Context) {
             }
         }
 
+        finishTouchGesture = {
+            mainHandler.removeCallbacks(longPressRunnable)
+            val p = layoutParams
+            if (p != null) {
+                if (isDownConsumed && isLongPressed) {
+                    FloatingBallConfig.saveBallPosition(context, p.x, p.y, positionOrientation)
+                } else if (isDownConsumed || springReturnAnimator != null) {
+                    p.x = initialX
+                    p.y = initialY
+                }
+            }
+            cancelSpringReturn()
+            isDownConsumed = false
+            isLongPressed = false
+            isSwiped = false
+            isClick = false
+            view.animate().cancel()
+            view.scaleX = 1f
+            view.scaleY = 1f
+            view.alpha = if (isBallVisible) FloatingBallConfig.getAlphaPercent(context) / 100f else 0f
+            if (p != null && view.isAttachedToWindow) {
+                try {
+                    windowManager?.updateViewLayout(view, p)
+                } catch (e: Exception) {
+                    TestLog.w(MODULE, "结束悬浮球手势失败: ${e.message}")
+                }
+            }
+        }
+
         view.setOnTouchListener { _, event ->
             val params = layoutParams ?: return@setOnTouchListener false
-            when (event.action) {
+            when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     val ballShape = FloatingBallConfig.getBallShape(context)
                     if (ballShape == FloatingBallConfig.SHAPE_BORDERLESS && FloatingBallConfig.getImageResourceId(context) != null) {
@@ -755,15 +811,9 @@ class FloatingBallController(private val context: Context) {
                         }
                     }
 
-                    // 若上一次回弹仍在进行，立即停止并恢复初始坐标，确保 initialX 准确无误
+                    // 从当前可见位置接管回弹，不能跳回上次手势的起点。
                     if (springReturnAnimator?.isRunning == true) {
-                        springReturnAnimator?.cancel()
-                        springReturnAnimator = null
-                        params.x = initialX
-                        clampPosition(params)
-                        try {
-                            windowManager?.updateViewLayout(floatingView, params)
-                        } catch (_: Exception) {}
+                        cancelSpringReturn()
                     }
                     view.animate().cancel()
 
@@ -861,6 +911,11 @@ class FloatingBallController(private val context: Context) {
                     val baseAlpha = FloatingBallConfig.getAlphaPercent(context) / 100f
 
                     if (isLongPressed) {
+                        // UP 可能带有最后一段位移，不能只保存最后一次 MOVE 的位置。
+                        params.x = initialX + (event.rawX - initialTouchX).toInt()
+                        params.y = initialY + (event.rawY - initialTouchY).toInt()
+                        clampPosition(params)
+                        windowManager?.updateViewLayout(floatingView, params)
                         // 拖拽完成：着陆反馈
                         view.animate().cancel()
                         view.animate()
@@ -871,7 +926,7 @@ class FloatingBallController(private val context: Context) {
                             .setInterpolator(DecelerateInterpolator())
                             .start()
 
-                        FloatingBallConfig.saveBallPosition(context, params.x, params.y)
+                        FloatingBallConfig.saveBallPosition(context, params.x, params.y, positionOrientation)
                         TestLog.i(MODULE, "长按拖拽结束已持久化坐标: (${params.x}, ${params.y})")
                     } else if (isSwiped) {
                         // 横向滑动松手：快速平滑回弹 + 唤起搜索框
@@ -917,22 +972,11 @@ class FloatingBallController(private val context: Context) {
                     }
                     true
                 }
-                MotionEvent.ACTION_CANCEL -> {
-                    mainHandler.removeCallbacks(longPressRunnable)
-                    isDownConsumed = false
-                    val baseAlpha = FloatingBallConfig.getAlphaPercent(context) / 100f
-                    if (params.x != initialX && !isLongPressed) {
-                        animateSpringBack(params, initialX)
-                    }
-                    view.animate().cancel()
-                    view.animate()
-                        .scaleX(1.0f)
-                        .scaleY(1.0f)
-                        .alpha(baseAlpha)
-                        .setDuration(160L)
-                        .setInterpolator(DecelerateInterpolator())
-                        .start()
-                    false
+                MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_POINTER_DOWN -> {
+                    // 第二根手指加入时结束本次手势，避免 pointer 索引切换造成坐标跳变。
+                    val consumed = isDownConsumed
+                    finishTouchGesture?.invoke()
+                    consumed
                 }
                 else -> false
             }
@@ -973,7 +1017,8 @@ class FloatingBallController(private val context: Context) {
             }
         } else {
             TestLog.i(MODULE, "当前非 SuzuEmojy，静默切换到 SuzuEmojy...")
-            accessibility.switchToTestImeAndEnsureShown()
+            accessibility.cancelImeSwitch("用户主动切换键盘")
+            accessibility.switchToTestIme()
         }
     }
 }

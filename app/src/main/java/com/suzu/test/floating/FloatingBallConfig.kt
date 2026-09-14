@@ -1,6 +1,8 @@
 package com.suzu.test.floating
 
 import android.content.Context
+import android.content.SharedPreferences
+import android.content.res.Configuration
 
 object FloatingBallConfig {
     const val SP_NAME = "app_settings"
@@ -322,19 +324,33 @@ object FloatingBallConfig {
             .apply()
     }
 
-    fun getBallPosition(context: Context): Pair<Int, Int> {
-        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-        val x = sp.getInt(KEY_BALL_POS_X, DEFAULT_BALL_POS_X)
-        val y = sp.getInt(KEY_BALL_POS_Y, DEFAULT_BALL_POS_Y)
-        return Pair(x, y)
+    fun getBallPosition(
+        context: Context,
+        orientation: Int = context.resources.configuration.orientation
+    ): Pair<Int, Int> = getBallPosition(
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE), orientation
+    )
+
+    internal fun getBallPosition(sp: SharedPreferences, orientation: Int): Pair<Int, Int> {
+        val (xKey, yKey) = ballPositionKeys(orientation)
+        // 旧坐标只作为尚未设置的方向的初值；新坐标不再回写旧键。
+        return sp.getInt(xKey, sp.getInt(KEY_BALL_POS_X, DEFAULT_BALL_POS_X)) to
+            sp.getInt(yKey, sp.getInt(KEY_BALL_POS_Y, DEFAULT_BALL_POS_Y))
     }
 
-    fun saveBallPosition(context: Context, x: Int, y: Int) {
-        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putInt(KEY_BALL_POS_X, x)
-            .putInt(KEY_BALL_POS_Y, y)
-            .apply()
+    fun saveBallPosition(
+        context: Context, x: Int, y: Int,
+        orientation: Int = context.resources.configuration.orientation
+    ) = saveBallPosition(context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE), x, y, orientation)
+
+    internal fun saveBallPosition(sp: SharedPreferences, x: Int, y: Int, orientation: Int) {
+        val (xKey, yKey) = ballPositionKeys(orientation)
+        sp.edit().putInt(xKey, x).putInt(yKey, y).apply()
+    }
+
+    private fun ballPositionKeys(orientation: Int): Pair<String, String> {
+        val suffix = if (orientation == Configuration.ORIENTATION_LANDSCAPE) "landscape" else "portrait"
+        return "${KEY_BALL_POS_X}_$suffix" to "${KEY_BALL_POS_Y}_$suffix"
     }
 
     fun isShowEdgeRegionEnabled(context: Context): Boolean =

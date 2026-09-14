@@ -9,7 +9,7 @@ internal class ImeSwitchAttempt(val startedAt: Long) {
         private set
 
     fun cancel() { cancelled = true }
-    fun expired(now: Long): Boolean = now - startedAt >= 1000L
+    fun expired(now: Long): Boolean = now - startedAt >= 2500L
     fun stable(now: Long, targetVisible: Boolean): Boolean {
         if (cancelled) return false
         if (!targetVisible) { visibleSince = null; return false }

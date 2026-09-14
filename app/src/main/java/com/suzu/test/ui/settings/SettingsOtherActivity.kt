@@ -20,6 +20,7 @@ class SettingsOtherActivity : AppCompatActivity() {
         private const val KEY_RECENT_LIMIT = "recent_history_limit"
         private const val DEFAULT_LIMIT = 40
         private const val KEY_CONVERT_PNG_TO_GIF = "convert_png_to_gif_on_send"
+        private const val DEFAULT_CONVERT_PNG_TO_GIF = true
     }
 
     private lateinit var binding: ActivitySettingsOtherBinding
@@ -33,7 +34,7 @@ class SettingsOtherActivity : AppCompatActivity() {
         val currentLimit = sp.getInt(KEY_RECENT_LIMIT, DEFAULT_LIMIT)
         binding.etRecentLimit.setText(currentLimit.toString())
 
-        val isConvertPngToGif = sp.getBoolean(KEY_CONVERT_PNG_TO_GIF, false)
+        val isConvertPngToGif = sp.getBoolean(KEY_CONVERT_PNG_TO_GIF, DEFAULT_CONVERT_PNG_TO_GIF)
         binding.switchConvertPngToGif.isChecked = isConvertPngToGif
         binding.switchConvertPngToGif.setOnCheckedChangeListener { _, isChecked ->
             sp.edit().putBoolean(KEY_CONVERT_PNG_TO_GIF, isChecked).apply()

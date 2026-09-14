@@ -18,8 +18,9 @@ class ImeSwitchAttemptTest {
         assertFalse(attempt.takeClick(1349, true, false))
         assertTrue(attempt.takeClick(1350, true, false))
         assertFalse(attempt.takeClick(1700, true, false))
-        assertTrue(attempt.expired(2000))
-        assertFalse(ImeSwitchAttempt(1000).takeClick(2000, true, false))
+        assertFalse(attempt.expired(3499))
+        assertTrue(attempt.expired(3500))
+        assertFalse(ImeSwitchAttempt(1000).takeClick(3500, true, false))
     }
 
     @Test fun transientVisibilityDoesNotCompleteAttempt() {
