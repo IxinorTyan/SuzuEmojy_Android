@@ -32,6 +32,17 @@ class FloatingBallPickerActivity : AppCompatActivity() {
         binding = ActivityFloatingBallPickerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val navBar = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            val baseBottom = (12 * resources.displayMetrics.density).toInt()
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, baseBottom + navBar.bottom)
+            insets
+        }
+
+        binding.btnBack.setOnClickListener {
+            finish()
+        }
+
         val resourcesDir = File(filesDir, "resources")
         adapter = PickerAdapter(resourcesDir, items) { selectedItem ->
             val resultIntent = Intent().apply {

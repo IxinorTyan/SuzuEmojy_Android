@@ -1,12 +1,9 @@
 package com.suzu.test.ui.export
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
-import android.view.Gravity
 import android.widget.CheckBox
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Toast
@@ -26,6 +23,7 @@ import com.suzu.test.log.TestLog
 import android.widget.ProgressBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -39,13 +37,13 @@ class ExportActivity : AppCompatActivity() {
     private var pendingExportScope = PackageExportScope.ALL
     private var progressDialog: AlertDialog? = null
 
-    private val openDocumentTreeLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenDocumentTree()
-    ) { treeUri ->
-        if (treeUri != null) {
-            handleFolderSelected(treeUri)
+    private val createDocumentLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { documentUri ->
+        if (documentUri != null) {
+            exportToDocument(documentUri)
         } else {
-            binding.tvProgress.text = "已取消选择文件夹"
+            binding.tvProgress.text = "已取消导出"
         }
     }
 
@@ -53,6 +51,22 @@ class ExportActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityExportBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        savedInstanceState?.let { state ->
+            pendingPackageName = state.getString("pendingPackageName").orEmpty()
+            pendingSelectedCategoryIds = state.getLongArray("pendingSelectedCategoryIds")?.toList().orEmpty()
+            pendingExportScope = if (state.getBoolean("exportCategories")) {
+                PackageExportScope.CATEGORIES
+            } else {
+                PackageExportScope.ALL
+            }
+            binding.tvSelectedCategoriesSummary.text = state.getString("selectedCategoriesSummary").orEmpty()
+            binding.layoutSelectedCategoriesCard.visibility = if (pendingExportScope == PackageExportScope.CATEGORIES) {
+                android.view.View.VISIBLE
+            } else {
+                android.view.View.GONE
+            }
+        }
 
         exportService = ResourcePackageExportService(this, DatabaseProvider.getDatabase(this))
 
@@ -62,7 +76,7 @@ class ExportActivity : AppCompatActivity() {
             binding.layoutSelectedCategoriesCard.visibility = android.view.View.GONE
             binding.tvSelectedCategoriesSummary.text = ""
             binding.tvProgress.text = "已选择：导出全部表情"
-            showRenameDialog()
+            openFileCreator()
         }
 
         binding.btnExportSelected.setOnClickListener {
@@ -140,54 +154,19 @@ class ExportActivity : AppCompatActivity() {
                 binding.layoutSelectedCategoriesCard.visibility = android.view.View.VISIBLE
                 binding.tvSelectedCategoriesSummary.text = selectedNames
                 binding.tvProgress.text = "已选择 ${pendingSelectedCategoryIds.size} 个收藏夹"
-                showRenameDialog()
+                openFileCreator()
             }
             .setNegativeButton("取消", null)
             .show()
     }
 
-    private fun showRenameDialog() {
-        val input = EditText(this).apply {
-            setText(pendingPackageName.ifBlank { "suzuemojy_${System.currentTimeMillis()}" })
-            setSelectAllOnFocus(true)
-            hint = "资源包名称"
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("自定义资源包名称")
-            .setMessage("请输入导出文件名（不含扩展名）")
-            .setView(input)
-            .setPositiveButton("继续") { _, _ ->
-                val raw = input.text?.toString().orEmpty().trim()
-                pendingPackageName = if (raw.isBlank()) {
-                    "suzuemojy_${System.currentTimeMillis()}"
-                } else {
-                    raw
-                }
-                binding.tvProgress.text = "名称已设置：$pendingPackageName"
-                openFolderPicker()
-            }
-            .setNegativeButton("取消", null)
-            .show()
+    private fun openFileCreator() {
+        pendingPackageName = "suzuemojy_${System.currentTimeMillis()}"
+        binding.tvProgress.text = "请选择保存位置和文件名"
+        createDocumentLauncher.launch("$pendingPackageName.zip")
     }
 
-    private fun openFolderPicker() {
-        binding.tvProgress.text = "请选择导出文件夹"
-        openDocumentTreeLauncher.launch(null)
-    }
-
-    private fun handleFolderSelected(treeUri: Uri) {
-        try {
-            contentResolver.takePersistableUriPermission(
-                treeUri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            )
-        } catch (_: SecurityException) {
-        }
-
-        val folderName = queryFolderName(treeUri)
-        binding.tvProgress.text = "正在导出到：${folderName ?: "所选文件夹"}"
-
+    private fun exportToDocument(targetUri: Uri) {
         lifecycleScope.launch {
             binding.btnExportAll.isEnabled = false
             binding.btnExportSelected.isEnabled = false
@@ -214,15 +193,18 @@ class ExportActivity : AppCompatActivity() {
             progressDialog = dialog
             dialog.show()
 
-            var targetUri: Uri? = null
+            var displayName = "$pendingPackageName.zip"
             try {
                 val result = withContext(Dispatchers.IO) {
-                    val zipName = sanitizeZipName(pendingPackageName) + ".zip"
-                    val uri = createTargetDocument(treeUri, zipName)
-                    targetUri = uri
+                    displayName = queryDocumentName(targetUri)?.takeIf { it.isNotBlank() } ?: displayName
+                    pendingPackageName = if (displayName.endsWith(".zip", ignoreCase = true)) {
+                        displayName.dropLast(4)
+                    } else {
+                        displayName
+                    }
 
                     exportService.exportToZip(
-                        targetUri = uri,
+                        targetUri = targetUri,
                         packageName = pendingPackageName,
                         selectedCategoryIds = pendingSelectedCategoryIds,
                         exportScope = pendingExportScope
@@ -248,15 +230,15 @@ class ExportActivity : AppCompatActivity() {
                 if (warningCount > 0) binding.tvSummary.append("，$warningCount 个图标未导出")
                 Toast.makeText(
                     this@ExportActivity,
-                    "已导出资源包：${result.packageName}.zip",
+                    "已导出资源包：$displayName",
                     Toast.LENGTH_LONG
                 ).show()
             } catch (e: kotlinx.coroutines.CancellationException) {
                 binding.tvProgress.text = "导出被取消"
                 binding.tvSummary.text = ""
                 Toast.makeText(this@ExportActivity, "导出已被取消", Toast.LENGTH_SHORT).show()
-                targetUri?.let { uri ->
-                    withContext(Dispatchers.IO) {
+                targetUri.let { uri ->
+                    withContext(NonCancellable + Dispatchers.IO) {
                         try {
                             DocumentsContract.deleteDocument(contentResolver, uri)
                         } catch (ex: Exception) {
@@ -269,8 +251,8 @@ class ExportActivity : AppCompatActivity() {
                 binding.tvProgress.text = "导出失败"
                 binding.tvSummary.text = ""
                 Toast.makeText(this@ExportActivity, e.message ?: "导出失败", Toast.LENGTH_LONG).show()
-                targetUri?.let { uri ->
-                    withContext(Dispatchers.IO) {
+                targetUri.let { uri ->
+                    withContext(NonCancellable + Dispatchers.IO) {
                         try {
                             DocumentsContract.deleteDocument(contentResolver, uri)
                         } catch (ex: Exception) {
@@ -295,54 +277,10 @@ class ExportActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    private fun createTargetDocument(treeUri: Uri, displayName: String): Uri {
-        val docId = DocumentsContract.getTreeDocumentId(treeUri)
-        val dirUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
-        val mimeType = "application/zip"
-
-        val existing = findExistingDocument(treeUri, displayName)
-        if (existing != null) {
-            try {
-                DocumentsContract.deleteDocument(contentResolver, existing)
-            } catch (_: Exception) {
-            }
-        }
-
-        return DocumentsContract.createDocument(contentResolver, dirUri, mimeType, displayName)
-            ?: throw IllegalStateException("无法在所选文件夹中创建导出文件")
-    }
-
-    private fun findExistingDocument(treeUri: Uri, displayName: String): Uri? {
+    private fun queryDocumentName(documentUri: Uri): String? {
         return try {
-            val docId = DocumentsContract.getTreeDocumentId(treeUri)
-            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, docId)
-            val projection = arrayOf(
-                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                DocumentsContract.Document.COLUMN_DISPLAY_NAME
-            )
-            contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
-                val idIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
-                val nameIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-                while (cursor.moveToNext()) {
-                    val name = if (nameIndex != -1) cursor.getString(nameIndex) else null
-                    if (name == displayName && idIndex != -1) {
-                        val childDocId = cursor.getString(idIndex)
-                        return DocumentsContract.buildDocumentUriUsingTree(treeUri, childDocId)
-                    }
-                }
-            }
-            null
-        } catch (_: Exception) {
-            null
-        }
-    }
-
-    private fun queryFolderName(treeUri: Uri): String? {
-        return try {
-            val treeDocId = DocumentsContract.getTreeDocumentId(treeUri)
-            val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocId)
             val projection = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-            contentResolver.query(docUri, projection, null, null, null)?.use {
+            contentResolver.query(documentUri, projection, null, null, null)?.use {
                 if (it.moveToFirst()) {
                     val idx = it.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
                     if (idx != -1) it.getString(idx) else null
@@ -353,11 +291,11 @@ class ExportActivity : AppCompatActivity() {
         }
     }
 
-    private fun sanitizeZipName(input: String): String {
-        return input.trim()
-            .replace(Regex("""[\\/:*?"<>|]"""), "_")
-            .replace(Regex("""\s+"""), "_")
-            .trim('_', '.', ' ')
-            .ifBlank { "suzuemojy_${System.currentTimeMillis()}" }
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString("pendingPackageName", pendingPackageName)
+        outState.putLongArray("pendingSelectedCategoryIds", pendingSelectedCategoryIds.toLongArray())
+        outState.putBoolean("exportCategories", pendingExportScope == PackageExportScope.CATEGORIES)
+        outState.putString("selectedCategoriesSummary", binding.tvSelectedCategoriesSummary.text.toString())
+        super.onSaveInstanceState(outState)
     }
 }

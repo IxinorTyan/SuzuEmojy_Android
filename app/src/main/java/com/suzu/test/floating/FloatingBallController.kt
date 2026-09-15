@@ -128,6 +128,9 @@ class FloatingBallController(private val context: Context) {
                     imeSwitchGuardUntil = System.currentTimeMillis() + 1200L
                     searchBarController?.show()
                 }
+                FloatingBallConfig.EdgeGestureAction.TOGGLE_FAVORITES -> {
+                    TestImageIME.instance?.toggleFavoritesIfShowing()
+                }
                 FloatingBallConfig.EdgeGestureAction.NONE -> {
                     TestLog.i(MODULE, "边缘手势配置为关闭: side=$side, direction=$direction")
                 }
@@ -690,20 +693,22 @@ class FloatingBallController(private val context: Context) {
         return alpha >= ALPHA_THRESHOLD
     }
 
-    private fun animateSpringBack(params: WindowManager.LayoutParams, targetX: Int) {
+    private fun animateSpringBack(params: WindowManager.LayoutParams, targetX: Int, targetY: Int) {
         cancelSpringReturn()
         val fView = floatingView ?: return
         val wm = windowManager ?: return
 
         val startX = params.x
-        if (startX == targetX) return
+        val startY = params.y
+        if (startX == targetX && startY == targetY) return
 
-        springReturnAnimator = ValueAnimator.ofInt(startX, targetX).apply {
+        springReturnAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 150L
             interpolator = DecelerateInterpolator(2.0f)
             addUpdateListener { animator ->
-                val newX = animator.animatedValue as Int
-                params.x = newX
+                val fraction = animator.animatedValue as Float
+                params.x = (startX + (targetX - startX) * fraction).toInt()
+                params.y = (startY + (targetY - startY) * fraction).toInt()
                 clampPosition(params)
                 try {
                     wm.updateViewLayout(fView, params)
@@ -714,6 +719,7 @@ class FloatingBallController(private val context: Context) {
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     params.x = targetX
+                    params.y = targetY
                     clampPosition(params)
                     try {
                         wm.updateViewLayout(fView, params)
@@ -741,9 +747,11 @@ class FloatingBallController(private val context: Context) {
         var isDownConsumed = false
         var isLongPressed = false
         var isSwiped = false
+        var isSwipedDown = false
+        var isSwipedUp = false
 
         val longPressRunnable = Runnable {
-            if (isDownConsumed && !isSwiped && !isLongPressed) {
+            if (isDownConsumed && !isSwiped && !isSwipedDown && !isSwipedUp && !isLongPressed) {
                 isLongPressed = true
                 isClick = false
 
@@ -784,6 +792,8 @@ class FloatingBallController(private val context: Context) {
             isDownConsumed = false
             isLongPressed = false
             isSwiped = false
+            isSwipedDown = false
+            isSwipedUp = false
             isClick = false
             view.animate().cancel()
             view.scaleX = 1f
@@ -827,6 +837,8 @@ class FloatingBallController(private val context: Context) {
                     isClick = true
                     isLongPressed = false
                     isSwiped = false
+                    isSwipedDown = false
+                    isSwipedUp = false
 
                     // 按下即时动效：微缩下陷，透明度略增亮提供物理按压反馈
                     val baseAlpha = FloatingBallConfig.getAlphaPercent(context) / 100f
@@ -864,7 +876,27 @@ class FloatingBallController(private val context: Context) {
                         val isHorizontalMotion = absDx > swipeThreshold && absDx > absDy * 1.3f
                         val isPullingHorizontal = absDx > clickThreshold && absDx > absDy * 1.2f
 
-                        if (isHorizontalMotion) {
+                        val isDownwardMotion = dy > swipeThreshold && absDy > absDx * 1.3f
+                        val isUpwardMotion = dy < -swipeThreshold && absDy > absDx * 1.3f
+                        val isPullingVertical = absDy > clickThreshold && absDy > absDx * 1.2f
+
+                        if (!isSwiped && !isSwipedUp && isDownwardMotion) {
+                            isSwipedDown = true
+                            isClick = false
+                            mainHandler.removeCallbacks(longPressRunnable)
+                        } else if (isSwipedDown && dy < swipeThreshold * 0.5f) {
+                            isSwipedDown = false
+                        }
+
+                        if (!isSwiped && !isSwipedDown && isUpwardMotion) {
+                            isSwipedUp = true
+                            isClick = false
+                            mainHandler.removeCallbacks(longPressRunnable)
+                        } else if (isSwipedUp && dy > -swipeThreshold * 0.5f) {
+                            isSwipedUp = false
+                        }
+
+                        if (isHorizontalMotion && !isSwipedDown && !isSwipedUp) {
                             if (!isSwiped) {
                                 isSwiped = true
                                 isClick = false
@@ -885,17 +917,37 @@ class FloatingBallController(private val context: Context) {
                             0
                         }
 
+                        val dampDy = if (isPullingVertical) {
+                            val ratio = (absDy / travelLimitPx).coerceIn(0f, 1f)
+                            val easedOffset = maxDisplacementPx * (ratio * (2f - ratio))
+                            val sign = if (dy > 0f) 1f else -1f
+                            (sign * easedOffset).toInt()
+                        } else {
+                            0
+                        }
+
                         val targetX = initialX + dampDx
-                        if (params.x != targetX) {
+                        val targetY = initialY + dampDy
+                        if (params.x != targetX || params.y != targetY) {
                             params.x = targetX
+                            params.y = targetY
                             clampPosition(params)
                             windowManager?.updateViewLayout(floatingView, params)
                         }
 
-                        // 伴随微弱的水平压扁拉伸形变（限制在 5% 以内）
-                        val stretchFactor = (abs(dampDx) / maxDisplacementPx) * 0.05f
-                        view.scaleX = 0.90f + stretchFactor
-                        view.scaleY = 0.90f - stretchFactor
+                        // 伴随微弱的压扁拉伸形变（限制在 5% 以内）
+                        if (isPullingHorizontal) {
+                            val stretchFactor = (abs(dampDx) / maxDisplacementPx) * 0.05f
+                            view.scaleX = 0.90f + stretchFactor
+                            view.scaleY = 0.90f - stretchFactor
+                        } else if (isPullingVertical) {
+                            val stretchFactor = (abs(dampDy) / maxDisplacementPx) * 0.05f
+                            view.scaleX = 0.90f - stretchFactor
+                            view.scaleY = 0.90f + stretchFactor
+                        } else {
+                            view.scaleX = 0.90f
+                            view.scaleY = 0.90f
+                        }
 
                         if (absDx > clickThreshold || absDy > clickThreshold) {
                             isClick = false
@@ -928,9 +980,9 @@ class FloatingBallController(private val context: Context) {
 
                         FloatingBallConfig.saveBallPosition(context, params.x, params.y, positionOrientation)
                         TestLog.i(MODULE, "长按拖拽结束已持久化坐标: (${params.x}, ${params.y})")
-                    } else if (isSwiped) {
-                        // 横向滑动松手：快速平滑回弹 + 唤起搜索框
-                        animateSpringBack(params, initialX)
+                    } else if (isSwiped || isSwipedDown || isSwipedUp) {
+                        // 滑动松手：回弹并执行对应动作。
+                        animateSpringBack(params, initialX, initialY)
 
                         view.animate().cancel()
                         view.animate()
@@ -941,9 +993,25 @@ class FloatingBallController(private val context: Context) {
                             .setInterpolator(DecelerateInterpolator())
                             .start()
 
-                        TestLog.i(MODULE, "横向滑动悬浮球触发，启用顶部搜索框")
-                        imeSwitchGuardUntil = System.currentTimeMillis() + 1200L
-                        searchBarController?.show()
+                        if (isSwipedDown) {
+                            val dx = event.rawX - initialTouchX
+                            val dy = event.rawY - initialTouchY
+                            if (dy > swipeThreshold && abs(dy) > abs(dx) * 1.3f) {
+                                TestLog.i(MODULE, "下滑悬浮球触发，切换常用/收藏夹")
+                                TestImageIME.instance?.toggleFavoritesIfShowing()
+                            }
+                        } else if (isSwipedUp) {
+                            val dx = event.rawX - initialTouchX
+                            val dy = event.rawY - initialTouchY
+                            if (dy < -swipeThreshold && abs(dy) > abs(dx) * 1.3f) {
+                                TestLog.i(MODULE, "上滑悬浮球触发，切换常用/收藏夹")
+                                TestImageIME.instance?.toggleFavoritesIfShowing()
+                            }
+                        } else {
+                            TestLog.i(MODULE, "横向滑动悬浮球触发，启用顶部搜索框")
+                            imeSwitchGuardUntil = System.currentTimeMillis() + 1200L
+                            searchBarController?.show()
+                        }
                     } else if (isClick) {
                         // 点击：弹性冲量回弹 + 动作执行
                         view.animate().cancel()
@@ -958,8 +1026,8 @@ class FloatingBallController(private val context: Context) {
                         onFloatingBallActionTriggered()
                     } else {
                         // 未完成手势（中途松手）：平滑归位
-                        if (params.x != initialX) {
-                            animateSpringBack(params, initialX)
+                        if (params.x != initialX || params.y != initialY) {
+                            animateSpringBack(params, initialX, initialY)
                         }
                         view.animate().cancel()
                         view.animate()

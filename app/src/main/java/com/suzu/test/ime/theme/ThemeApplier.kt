@@ -22,7 +22,6 @@ object ThemeApplier {
         binding.flGridContainer.setBackgroundColor(theme.gridBg)
         binding.svImeTabDropdown.background = createPopupBackground(theme)
         binding.glImeTabDropdown.setBackgroundColor(theme.popupBg)
-        binding.tvEmptyLibraryHint.setTextColor(theme.emptyHintText)
 
         binding.llSendDiagnostic.setBackgroundColor(theme.rootBg)
         binding.tvSendDiagnosticTitle.setTextColor(theme.tabTextSelected)

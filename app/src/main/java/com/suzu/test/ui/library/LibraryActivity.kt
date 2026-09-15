@@ -5,16 +5,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.EditText
 import android.widget.PopupMenu
 import android.widget.Toast
-import androidx.core.content.ContextCompat
-import androidx.core.widget.ImageViewCompat
 import androidx.activity.OnBackPressedCallback
-import com.suzu.test.resource.export.ResourceExportHelper
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -24,8 +20,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import androidx.room.withTransaction
 import com.suzu.test.databinding.ActivityLibraryBinding
 import com.suzu.test.db.DatabaseProvider
@@ -36,6 +31,7 @@ import com.suzu.test.db.entity.ResourceEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.KeywordUtils
 import com.suzu.test.resource.delete.ResourceDeleteHelper
+import com.suzu.test.resource.export.ResourceExportHelper
 import com.suzu.test.ui.picker.SlideSelectionHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,7 +40,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import kotlin.math.min
 
 class LibraryActivity : AppCompatActivity() {
 
@@ -66,10 +61,9 @@ class LibraryActivity : AppCompatActivity() {
             }
         }
     }
-    private lateinit var adapter: LibraryAdapter
-    private lateinit var gridLayoutManager: GridLayoutManager
+    private lateinit var libraryPagerAdapter: LibraryPagerAdapter
     private lateinit var categoryController: CategoryBarController
-    private lateinit var dragHelper: LibraryDragHelper
+    private var dragHelper: LibraryDragHelper? = null
     private lateinit var resourcesDir: File
     private var searchDebounceJob: Job? = null
 
@@ -77,7 +71,7 @@ class LibraryActivity : AppCompatActivity() {
     private var isSortingMode: Boolean = false
     private val selectedIds: MutableSet<Long> = mutableSetOf()
     private var currentDisplayedItems: List<ResourceEntity> = emptyList()
-    private lateinit var slideHelper: SlideSelectionHelper
+    private var slideHelper: SlideSelectionHelper? = null
     private lateinit var dragTouchListener: LibraryDragTouchListener
 
     private val detailLauncher = registerForActivityResult(
@@ -93,12 +87,13 @@ class LibraryActivity : AppCompatActivity() {
                 false
             )
 
+            val currentHolder = libraryPagerAdapter.getViewHolderForPosition(binding.vpLibraryPager.currentItem)
             if (isDeleted && deletedIdx >= 0) {
-                val currentCount = adapter.itemCount
+                val currentCount = currentHolder?.adapter?.itemCount ?: currentDisplayedItems.size
                 val safePos = deletedIdx.coerceIn(0, (currentCount - 1).coerceAtLeast(0))
-                gridLayoutManager.scrollToPositionWithOffset(safePos, 0)
+                currentHolder?.gridLayoutManager?.scrollToPositionWithOffset(safePos, 0)
             } else if (shouldReposition) {
-                gridLayoutManager.scrollToPositionWithOffset(targetPos, 0)
+                currentHolder?.gridLayoutManager?.scrollToPositionWithOffset(targetPos, 0)
             }
         }
     }
@@ -115,10 +110,10 @@ class LibraryActivity : AppCompatActivity() {
         val savedSpan = sp.getInt(KEY_LIBRARY_SPAN_COUNT, DEFAULT_SPAN_COUNT)
             .coerceIn(MIN_SPAN_COUNT, MAX_SPAN_COUNT)
 
-        gridLayoutManager = GridLayoutManager(this, savedSpan)
-        binding.rvLibraryGrid.layoutManager = gridLayoutManager
-
-        adapter = LibraryAdapter(
+        libraryPagerAdapter = LibraryPagerAdapter(
+            context = this,
+            scope = lifecycleScope,
+            viewModel = viewModel,
             resourcesDir = resourcesDir,
             onItemClick = { resource ->
                 if (!isSelectionMode && !isSortingMode) {
@@ -134,9 +129,32 @@ class LibraryActivity : AppCompatActivity() {
                 if (!isSelectionMode && !isSortingMode) {
                     showResourceActionDialog(resource)
                 }
+            },
+            onPageListUpdated = { selection, list ->
+                if (selection == categoryController.currentSelection) {
+                    currentDisplayedItems = list
+                    updateTitleAndCount(selection, list)
+                    dragHelper?.updateItems(list)
+                }
             }
         )
-        binding.rvLibraryGrid.adapter = adapter
+        libraryPagerAdapter.updateSpanCount(savedSpan)
+
+        binding.vpLibraryPager.adapter = libraryPagerAdapter
+        binding.vpLibraryPager.offscreenPageLimit = 1
+        binding.vpLibraryPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                val selection = libraryPagerAdapter.getSelection(position) ?: return
+                if (categoryController.currentSelection != selection) {
+                    categoryController.selectCategory(selection, notify = false)
+                }
+                viewModel.selectCategory(selection)
+                val currentHolder = libraryPagerAdapter.getViewHolderForPosition(position)
+                val list = currentHolder?.displayedItems ?: emptyList()
+                currentDisplayedItems = list
+                updateTitleAndCount(selection, list)
+            }
+        })
 
         categoryController = CategoryBarController(
             context = this,
@@ -161,24 +179,13 @@ class LibraryActivity : AppCompatActivity() {
             }
         )
 
-        dragHelper = LibraryDragHelper(
-            scope = lifecycleScope,
-            adapter = adapter,
-            isDragAllowed = { isSortingMode && viewModel.searchQuery.value.isBlank() && !viewModel.filterState.value.isActive },
-            isAllSelected = { categoryController.currentSelection == "ALL" },
-            getSelectedCategoryId = { categoryController.currentSelection.toLongOrNull() }
-        )
-        dragHelper.attachToRecyclerView(binding.rvLibraryGrid)
-
         dragTouchListener = LibraryDragTouchListener(
             context = this,
             isSortingMode = { isSortingMode && viewModel.searchQuery.value.isBlank() && !viewModel.filterState.value.isActive }
         ) { viewHolder ->
-            dragHelper.startDrag(viewHolder)
+            dragHelper?.startDrag(viewHolder)
         }
-        binding.rvLibraryGrid.addOnItemTouchListener(dragTouchListener)
 
-        setupSlideSelection()
         setupScaleGesture()
         setupTopBar()
         setupImportButton()
@@ -188,7 +195,6 @@ class LibraryActivity : AppCompatActivity() {
         setupBackPressedHandler()
         observeCategories()
         observeViewModel()
-        switchCategoryView("ALL")
     }
 
     private fun setupImportButton() {
@@ -254,6 +260,9 @@ class LibraryActivity : AppCompatActivity() {
         if (isSortingMode == enabled) return
         isSortingMode = enabled
 
+        // 关键：在排序模式下禁用 ViewPager2 横向滑动，避免左右滑动与拖拽排斥
+        binding.vpLibraryPager.isUserInputEnabled = !enabled
+
         if (enabled) {
             categoryController.closeDropdown()
             if (isSelectionMode) {
@@ -264,8 +273,25 @@ class LibraryActivity : AppCompatActivity() {
             binding.btnImport.visibility = View.GONE
             binding.btnToggleSelectMode.visibility = View.GONE
             binding.tvSortingModeHint.visibility = View.VISIBLE
+
+            val currentHolder = libraryPagerAdapter.getViewHolderForPosition(binding.vpLibraryPager.currentItem)
+            currentHolder?.let { holder ->
+                val helper = LibraryDragHelper(
+                    scope = lifecycleScope,
+                    adapter = holder.adapter,
+                    isDragAllowed = { isSortingMode && viewModel.searchQuery.value.isBlank() && !viewModel.filterState.value.isActive },
+                    isAllSelected = { categoryController.currentSelection == "ALL" },
+                    getSelectedCategoryId = { categoryController.currentSelection.toLongOrNull() }
+                )
+                helper.updateItems(holder.displayedItems)
+                helper.attachToRecyclerView(holder.binding.rvPageGrid)
+                dragHelper = helper
+                holder.binding.rvPageGrid.addOnItemTouchListener(dragTouchListener)
+            }
         } else {
             dragTouchListener.cancelTimer()
+            dragHelper?.detach()
+            dragHelper = null
             binding.flFilterContainer.visibility = View.VISIBLE
             binding.btnImport.visibility = if (!isSelectionMode) View.VISIBLE else View.GONE
             binding.btnToggleSelectMode.visibility = View.VISIBLE
@@ -285,7 +311,7 @@ class LibraryActivity : AppCompatActivity() {
                 if (spanChangedInThisGesture) return false
 
                 val factor = detector.scaleFactor
-                val currentSpan = gridLayoutManager.spanCount
+                val currentSpan = libraryPagerAdapter.spanCount
 
                 if (factor > 1.15f && currentSpan > MIN_SPAN_COUNT) {
                     changeSpanCount(currentSpan - 1)
@@ -300,43 +326,25 @@ class LibraryActivity : AppCompatActivity() {
             }
         })
 
-        binding.rvLibraryGrid.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
-            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                if (isSortingMode) {
-                    // 排序模式：在事件入口层直接放行，完全不交给 scaleDetector 处理
-                    return false
-                }
-                if (e.pointerCount > 1) {
-                    scaleDetector.onTouchEvent(e)
-                }
-                return false
+        binding.vpLibraryPager.setOnTouchListener { _, event ->
+            if (isSortingMode) return@setOnTouchListener false
+            if (event.pointerCount > 1) {
+                scaleDetector.onTouchEvent(event)
             }
-
-            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
-                if (isSortingMode) {
-                    return
-                }
-                if (e.pointerCount > 1) {
-                    scaleDetector.onTouchEvent(e)
-                }
-            }
-        })
+            false
+        }
     }
 
     private fun changeSpanCount(newSpan: Int) {
         val clampedSpan = newSpan.coerceIn(MIN_SPAN_COUNT, MAX_SPAN_COUNT)
-        if (clampedSpan == gridLayoutManager.spanCount) return
+        if (clampedSpan == libraryPagerAdapter.spanCount) return
 
-        val firstPos = gridLayoutManager.findFirstVisibleItemPosition()
-        gridLayoutManager.spanCount = clampedSpan
+        libraryPagerAdapter.updateSpanCount(clampedSpan)
         getSharedPreferences("app_settings", Context.MODE_PRIVATE)
             .edit()
             .putInt(KEY_LIBRARY_SPAN_COUNT, clampedSpan)
             .apply()
 
-        if (firstPos >= 0) {
-            gridLayoutManager.scrollToPositionWithOffset(firstPos, 0)
-        }
         TestLog.i(MODULE, "已缩放网格列数: spanCount=$clampedSpan")
     }
 
@@ -389,36 +397,6 @@ class LibraryActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupSlideSelection() {
-        slideHelper = SlideSelectionHelper(
-            context = this,
-            recyclerView = binding.rvLibraryGrid,
-            isEnabled = { isSelectionMode && !isSortingMode }
-        ) { start, end, isSelecting ->
-            for (pos in start..end) {
-                if (pos in 0 until currentDisplayedItems.size) {
-                    val item = currentDisplayedItems[pos]
-                    if (isSelecting) {
-                        selectedIds.add(item.id)
-                    } else {
-                        selectedIds.remove(item.id)
-                    }
-                }
-            }
-            adapter.setSelectionState(isSelectionMode, selectedIds)
-            updateBatchActionBar()
-        }
-
-        slideHelper.setItemStateProvider { pos ->
-            if (pos in 0 until currentDisplayedItems.size) {
-                selectedIds.contains(currentDisplayedItems[pos].id)
-            } else {
-                false
-            }
-        }
-        binding.rvLibraryGrid.addOnItemTouchListener(slideHelper)
-    }
-
     private fun setSelectionMode(enabled: Boolean) {
         if (isSelectionMode == enabled) return
         isSelectionMode = enabled
@@ -427,19 +405,53 @@ class LibraryActivity : AppCompatActivity() {
             setSortingMode(false)
         }
 
+        // 关键：在多选模式下锁定 ViewPager2 横向滑动，确保滑动连续多选绝不与切页冲突
+        binding.vpLibraryPager.isUserInputEnabled = !enabled
+
         if (!enabled) {
-            if (::slideHelper.isInitialized) {
-                slideHelper.cleanup()
-            }
+            slideHelper?.cleanup()
+            slideHelper = null
             selectedIds.clear()
+        } else {
+            val currentHolder = libraryPagerAdapter.getViewHolderForPosition(binding.vpLibraryPager.currentItem)
+            currentHolder?.let { holder ->
+                val helper = SlideSelectionHelper(
+                    context = this,
+                    recyclerView = holder.binding.rvPageGrid,
+                    isEnabled = { isSelectionMode && !isSortingMode }
+                ) { start, end, isSelecting ->
+                    val items = holder.displayedItems
+                    for (pos in start..end) {
+                        if (pos in items.indices) {
+                            val item = items[pos]
+                            if (isSelecting) {
+                                selectedIds.add(item.id)
+                            } else {
+                                selectedIds.remove(item.id)
+                            }
+                        }
+                    }
+                    libraryPagerAdapter.setSelectionState(isSelectionMode, selectedIds)
+                    updateBatchActionBar()
+                }
+                helper.setItemStateProvider { pos ->
+                    val items = holder.displayedItems
+                    if (pos in items.indices) {
+                        selectedIds.contains(items[pos].id)
+                    } else {
+                        false
+                    }
+                }
+                slideHelper = helper
+                holder.binding.rvPageGrid.addOnItemTouchListener(helper)
+            }
         }
 
         binding.btnToggleSelectMode.isSelected = enabled
-
         binding.btnImport.visibility = if (!enabled && !isSortingMode) View.VISIBLE else View.GONE
         binding.llBatchActionBar.visibility = if (enabled) View.VISIBLE else View.GONE
 
-        adapter.setSelectionState(isSelectionMode, selectedIds)
+        libraryPagerAdapter.setSelectionState(isSelectionMode, selectedIds)
         updateBatchActionBar()
     }
 
@@ -449,7 +461,7 @@ class LibraryActivity : AppCompatActivity() {
         } else {
             selectedIds.add(resourceId)
         }
-        adapter.setSelectionState(isSelectionMode, selectedIds)
+        libraryPagerAdapter.setSelectionState(isSelectionMode, selectedIds)
         updateBatchActionBar()
     }
 
@@ -477,7 +489,7 @@ class LibraryActivity : AppCompatActivity() {
             } else {
                 selectedIds.addAll(visibleIds)
             }
-            adapter.setSelectionState(isSelectionMode, selectedIds)
+            libraryPagerAdapter.setSelectionState(isSelectionMode, selectedIds)
             updateBatchActionBar()
         }
 
@@ -731,6 +743,13 @@ class LibraryActivity : AppCompatActivity() {
         lifecycleScope.launch {
             database.categoryDao().getAllCategoriesFlow().collectLatest { categories ->
                 categoryController.render(categories)
+                val selections = categoryController.getOrderedSelections()
+                libraryPagerAdapter.setSelections(selections)
+                val currentSelection = categoryController.currentSelection
+                val pos = libraryPagerAdapter.getPositionForSelection(currentSelection)
+                if (pos >= 0 && binding.vpLibraryPager.currentItem != pos) {
+                    binding.vpLibraryPager.setCurrentItem(pos, false)
+                }
             }
         }
     }
@@ -749,49 +768,33 @@ class LibraryActivity : AppCompatActivity() {
                         }
                     }
                 }
-
-                launch {
-                    viewModel.displayedItems.collectLatest { list ->
-                        currentDisplayedItems = list
-                        adapter.submitList(list)
-                        dragHelper.updateItems(list)
-
-                        val selection = viewModel.categorySelection.value
-                        val query = viewModel.searchQuery.value
-                        val filter = viewModel.filterState.value
-
-                        val title = if (selection == "ALL") {
-                            "资源库"
-                        } else {
-                            val catId = selection.toLongOrNull()
-                            if (catId != null) {
-                                categoryController.getCategoryName(catId) ?: "分类"
-                            } else {
-                                "分类"
-                            }
-                        }
-                        binding.tvTitle.text = title
-                        binding.tvCount.text = "共 ${list.size} 张"
-
-                        binding.tvEmptyHint.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
-                        binding.tvEmptyHint.text = when {
-                            list.isNotEmpty() -> ""
-                            filter.isActive -> "没有符合筛选条件的表情"
-                            query.isNotBlank() -> "没有找到匹配「$query」的表情"
-                            selection == "ALL" -> "资源库为空，请先导入"
-                            else -> "该分类暂无图片"
-                        }
-                        if (isSelectionMode) {
-                            updateBatchActionBar()
-                        }
-                    }
-                }
             }
         }
     }
 
+    private fun updateTitleAndCount(selection: String, list: List<ResourceEntity>) {
+        val title = if (selection == "ALL") {
+            "资源库"
+        } else {
+            val catId = selection.toLongOrNull()
+            if (catId != null) {
+                categoryController.getCategoryName(catId) ?: "分类"
+            } else {
+                "分类"
+            }
+        }
+        binding.tvTitle.text = title
+        binding.tvCount.text = "共 ${list.size} 张"
+        if (isSelectionMode) {
+            updateBatchActionBar()
+        }
+    }
+
     private fun switchCategoryView(selection: String) {
-        viewModel.selectCategory(selection)
+        val pos = libraryPagerAdapter.getPositionForSelection(selection)
+        if (pos >= 0 && binding.vpLibraryPager.currentItem != pos) {
+            binding.vpLibraryPager.setCurrentItem(pos, true)
+        }
     }
 
     private fun showResourceActionDialog(resource: ResourceEntity) {
@@ -977,15 +980,13 @@ class LibraryActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (::slideHelper.isInitialized) {
-            slideHelper.cleanup()
-        }
+        slideHelper?.cleanup()
     }
 
     override fun onDestroy() {
+        if (::categoryController.isInitialized) categoryController.destroy()
+        if (::libraryPagerAdapter.isInitialized) libraryPagerAdapter.clear()
         super.onDestroy()
-        if (::slideHelper.isInitialized) {
-            slideHelper.cleanup()
-        }
+        slideHelper?.cleanup()
     }
 }

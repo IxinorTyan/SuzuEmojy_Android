@@ -1,12 +1,14 @@
 package com.suzu.test.ui.settings
 
 import android.os.Bundle
+import android.view.View
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.suzu.test.databinding.ActivitySettingsAppearanceBinding
 import com.suzu.test.ime.ImageAdapter
+import com.suzu.test.ime.TestImageIME
 import com.suzu.test.ime.config.KeyboardConfig
 import com.suzu.test.ime.data.KeyboardDataSource
 import com.suzu.test.ime.theme.KeyboardTheme
@@ -28,11 +30,22 @@ class SettingsAppearanceActivity : AppCompatActivity() {
         binding = ActivitySettingsAppearanceBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val navBar = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            val baseBottom = (12 * resources.displayMetrics.density).toInt()
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, baseBottom + navBar.bottom)
+            insets
+        }
+
+        binding.btnBack.setOnClickListener { finish() }
+
         setupThemeSelector()
         setupKeyboardAdjusters()
         setupRecentTabSwitch()
         setupAllTabSwitch()
+        setupTabDropdownSwitch()
         setupDropdownSettings()
+        setupExitButtonSwitch()
         setupPreview()
     }
 
@@ -52,6 +65,27 @@ class SettingsAppearanceActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupTabDropdownSwitch() {
+        val enabled = KeyboardConfig.isTabDropdownEnabled(this)
+        binding.swShowTabDropdown.isChecked = enabled
+        binding.layoutDropdownOptions.visibility = if (enabled) View.VISIBLE else View.GONE
+        binding.swShowTabDropdown.setOnCheckedChangeListener { _, isChecked ->
+            KeyboardConfig.setTabDropdownEnabled(this, isChecked)
+            binding.layoutDropdownOptions.visibility = if (isChecked) View.VISIBLE else View.GONE
+            TestImageIME.instance?.applyKeyboardConfigLayout()
+            TestLog.i(MODULE, "切换显示「展开收藏夹」开关: $isChecked")
+        }
+    }
+
+    private fun setupExitButtonSwitch() {
+        binding.swShowExitButton.isChecked = KeyboardConfig.isExitButtonEnabled(this)
+        binding.swShowExitButton.setOnCheckedChangeListener { _, isChecked ->
+            KeyboardConfig.setExitButtonEnabled(this, isChecked)
+            TestImageIME.instance?.applyKeyboardConfigLayout()
+            TestLog.i(MODULE, "切换显示「收起键盘」开关: $isChecked")
+        }
+    }
+
     private fun setupDropdownSettings() {
         when (KeyboardConfig.getDropdownIconStyle(this)) {
             KeyboardConfig.DROPDOWN_ICON_MENU -> binding.rbDropdownIconMenu.isChecked = true
@@ -66,6 +100,7 @@ class SettingsAppearanceActivity : AppCompatActivity() {
                 else -> KeyboardConfig.DROPDOWN_ICON_ARROW
             }
             KeyboardConfig.setDropdownIconStyle(this, style)
+            TestImageIME.instance?.applyKeyboardConfigLayout()
             TestLog.i(MODULE, "切换展开分类按钮图标: $style")
         }
 
@@ -82,6 +117,7 @@ class SettingsAppearanceActivity : AppCompatActivity() {
                 KeyboardConfig.DROPDOWN_POSITION_LEFT
             }
             KeyboardConfig.setDropdownPosition(this, pos)
+            TestImageIME.instance?.applyKeyboardConfigLayout()
             TestLog.i(MODULE, "切换展开分类按钮位置: $pos")
         }
     }

@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ResourceDao {
 
+    @Query("SELECT * FROM resources ORDER BY sort_order ASC, id ASC LIMIT :limit")
+    suspend fun getThumbnailPreloadResources(limit: Int): List<ResourceEntity>
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(resource: ResourceEntity): Long
 

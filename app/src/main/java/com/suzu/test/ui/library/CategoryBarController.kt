@@ -49,6 +49,20 @@ class CategoryBarController(
         private set
 
     private var currentCategories: List<CategoryEntity> = emptyList()
+    private val thumbnailPreloader = com.suzu.test.ui.view.CategoryThumbnailPreloader(
+        context, scope, com.bumptech.glide.load.engine.DiskCacheStrategy.NONE
+    )
+
+    fun getOrderedSelections(): List<String> = listOf(ALL_SELECTION) + currentCategories.map { it.id.toString() }
+
+    private fun orderedSelections() = getOrderedSelections()
+
+    fun selectAdjacent(step: Int) {
+        val next = com.suzu.test.ui.view.adjacentCategory(orderedSelections(), currentSelection, step) ?: return
+        closeDropdown()
+        selectCategory(next)
+    }
+
     private var dropdownColumnCount = DEFAULT_DROPDOWN_COLUMN_COUNT
     private val categoryChipViews = mutableMapOf<String, View>()
     var isDropdownExpanded: Boolean = false
@@ -75,6 +89,9 @@ class CategoryBarController(
         val categoriesChanged = currentCategories != categories
         currentCategories = categories
 
+        if (currentSelection !in orderedSelections()) selectCategory(ALL_SELECTION)
+        thumbnailPreloader.warm(orderedSelections(), currentSelection)
+
         if (categoriesChanged || categoryChipViews.isEmpty()) {
             renderCategoryBar()
             renderDropdownGrid()
@@ -88,6 +105,10 @@ class CategoryBarController(
         if (isDropdownExpanded) {
             setDropdownExpanded(false)
         }
+    }
+
+    fun destroy() {
+        thumbnailPreloader.cancel()
     }
 
     private fun renderCategoryBar() {
@@ -229,8 +250,9 @@ class CategoryBarController(
         }
     }
 
-    private fun selectCategory(selection: String) {
+    fun selectCategory(selection: String, notify: Boolean = true) {
         if (currentSelection == selection) {
+            scrollCategoryBarToSelection(selection)
             return
         }
 
@@ -238,7 +260,10 @@ class CategoryBarController(
         updateCategoryBarSelection()
         updateDropdownGridSelection()
         scrollCategoryBarToSelection(selection)
-        onCategorySelected(selection)
+        if (notify) {
+            onCategorySelected(selection)
+        }
+        thumbnailPreloader.warm(orderedSelections(), selection)
     }
 
     private fun updateCategoryBarSelection() {

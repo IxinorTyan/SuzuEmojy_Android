@@ -27,6 +27,12 @@ object KeyboardConfig {
     const val KEY_SHOW_ALL_TAB = "keyboard_show_all_tab"
     const val DEFAULT_SHOW_ALL_TAB = true
 
+    const val KEY_SHOW_TAB_DROPDOWN = "keyboard_show_tab_dropdown"
+    const val DEFAULT_SHOW_TAB_DROPDOWN = true
+
+    const val KEY_SHOW_EXIT_BUTTON = "keyboard_show_exit_button"
+    const val DEFAULT_SHOW_EXIT_BUTTON = true
+
     const val KEY_DROPDOWN_ICON_STYLE = "keyboard_dropdown_icon_style"
     const val DROPDOWN_ICON_ARROW = "arrow"
     const val DROPDOWN_ICON_MENU = "menu"
@@ -101,6 +107,30 @@ object KeyboardConfig {
         context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_SHOW_ALL_TAB, enabled)
+            .apply()
+    }
+
+    fun isTabDropdownEnabled(context: Context): Boolean {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getBoolean(KEY_SHOW_TAB_DROPDOWN, DEFAULT_SHOW_TAB_DROPDOWN)
+    }
+
+    fun setTabDropdownEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_SHOW_TAB_DROPDOWN, enabled)
+            .apply()
+    }
+
+    fun isExitButtonEnabled(context: Context): Boolean {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getBoolean(KEY_SHOW_EXIT_BUTTON, DEFAULT_SHOW_EXIT_BUTTON)
+    }
+
+    fun setExitButtonEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_SHOW_EXIT_BUTTON, enabled)
             .apply()
     }
 

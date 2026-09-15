@@ -63,7 +63,8 @@ object FloatingBallConfig {
     enum class EdgeGestureAction(val id: Int, val title: String) {
         NONE(0, "关闭"),
         SWITCH_KEYBOARD(1, "切换键盘"),
-        OPEN_SEARCH(2, "唤起搜索框");
+        OPEN_SEARCH(2, "唤起搜索框"),
+        TOGGLE_FAVORITES(3, "展开收藏夹");
 
         companion object {
             fun fromId(id: Int): EdgeGestureAction =

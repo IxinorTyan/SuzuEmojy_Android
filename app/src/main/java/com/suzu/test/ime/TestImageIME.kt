@@ -9,32 +9,30 @@ import android.os.Build
 import android.provider.Settings
 import android.view.View
 import android.view.inputmethod.EditorInfo
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
+import androidx.viewpager2.widget.ViewPager2
 import com.suzu.test.BuildConfig
 import com.suzu.test.accessibility.TestAccessibilityService
 import com.suzu.test.databinding.ViewImeKeyboardBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.entity.RecentHistoryEntity
+import com.suzu.test.ime.config.KeyboardConfig
+import com.suzu.test.ime.config.ShareWhitelistConfig
 import com.suzu.test.ime.data.KeyboardDataSource
 import com.suzu.test.ime.diag.DebugSendTestConfig
 import com.suzu.test.ime.diag.EditorInfoDumper
 import com.suzu.test.ime.diag.ImageSendDiagnostics
 import com.suzu.test.ime.sender.ImageSender
-import com.suzu.test.ime.ui.KeyboardTabBar
-import com.suzu.test.ime.ui.ImeTabDropdownController
-import com.suzu.test.ime.config.KeyboardConfig
-import com.suzu.test.ime.config.ShareWhitelistConfig
 import com.suzu.test.ime.theme.KeyboardTheme
 import com.suzu.test.ime.theme.ThemeApplier
+import com.suzu.test.ime.ui.CategoryPagerAdapter
+import com.suzu.test.ime.ui.ImeTabDropdownController
+import com.suzu.test.ime.ui.KeyboardTabBar
 import com.suzu.test.ime.ui.preview.ImagePreviewPopup
 import com.suzu.test.log.TestLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
@@ -65,16 +63,18 @@ class TestImageIME : InputMethodService() {
     private var tabBar: KeyboardTabBar? = null
     private var imeTabDropdown: ImeTabDropdownController? = null
     private val dbExecutor = Executors.newSingleThreadExecutor()
-    private lateinit var imageAdapter: ImageAdapter
-    private var gridLayoutManager: GridLayoutManager? = null
+    private var categoryPagerAdapter: CategoryPagerAdapter? = null
     private var previewPopup: ImagePreviewPopup? = null
-    private var loadImagesJob: kotlinx.coroutines.Job? = null
-    private var lastLoadedTabKey: String? = null
     private var isImeShowing: Boolean = false
     private var imeWindowVisible = false
 
     fun isShowingFor(targetPackage: String): Boolean =
         imeWindowVisible && isInputViewShown && currentInputEditorInfo?.packageName == targetPackage
+
+    fun toggleFavoritesIfShowing() {
+        if (!isImeShowing || !imeWindowVisible || !isInputViewShown) return
+        binding?.btnTabDropdown?.performClick()
+    }
 
     private fun destroySearchCategory() {
         if (com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value != null) {
@@ -115,21 +115,35 @@ class TestImageIME : InputMethodService() {
         previewPopup?.dismiss()
         previewPopup = ImagePreviewPopup(this)
 
-        imageAdapter = ImageAdapter(
+        val pagerAdapter = CategoryPagerAdapter(
+            context = this,
+            scope = serviceScope,
+            dataSource = dataSource,
             onItemClick = { item -> onDirectSendClick(item) },
             onItemLongClick = { item, anchor ->
                 previewPopup?.show(anchor, item)
+            },
+            onGridScrolled = {
+                previewPopup?.dismiss()
             }
         )
-        val initialSpanCount = KeyboardConfig.getSpanCount(this)
-        val glm = GridLayoutManager(this, initialSpanCount)
-        gridLayoutManager = glm
-        viewBinding.rvImageGrid.layoutManager = glm
-        viewBinding.rvImageGrid.adapter = imageAdapter
-        viewBinding.rvImageGrid.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                if (newState != RecyclerView.SCROLL_STATE_IDLE) {
+        categoryPagerAdapter = pagerAdapter
+
+        viewBinding.vpCategoryPager.adapter = pagerAdapter
+        // 关键：预加载前后各 1 页，拖动时 0ms 顺畅露边，绝不白屏
+        viewBinding.vpCategoryPager.offscreenPageLimit = 1
+        viewBinding.vpCategoryPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageScrollStateChanged(state: Int) {
+                if (state == ViewPager2.SCROLL_STATE_DRAGGING) {
                     previewPopup?.dismiss()
+                }
+            }
+
+            override fun onPageSelected(position: Int) {
+                val tabKey = pagerAdapter.getTabKey(position) ?: return
+                if (tabBar?.currentTab != tabKey) {
+                    tabBar?.selectTab(tabKey, notify = false)
+                    imeTabDropdown?.setSelectedTab(tabKey)
                 }
             }
         })
@@ -148,10 +162,21 @@ class TestImageIME : InputMethodService() {
             container = viewBinding.llTabBarContainer,
             scope = serviceScope,
             onTabSelected = { tabKey ->
-                loadImagesForTab(tabKey)
                 imeTabDropdown?.setSelectedTab(tabKey)
+                val pos = pagerAdapter.getPositionForTab(tabKey)
+                if (pos >= 0 && viewBinding.vpCategoryPager.currentItem != pos) {
+                    // 点击 Tab 时平滑横向滚动至对应分类
+                    viewBinding.vpCategoryPager.setCurrentItem(pos, true)
+                }
             }
         )
+        tb.onTabsStructureChanged = { tabs, selectedTab ->
+            pagerAdapter.setTabs(tabs)
+            val pos = pagerAdapter.getPositionForTab(selectedTab)
+            if (pos >= 0 && viewBinding.vpCategoryPager.currentItem != pos) {
+                viewBinding.vpCategoryPager.setCurrentItem(pos, false)
+            }
+        }
         tabBar = tb
 
         val dropdown = ImeTabDropdownController(
@@ -166,12 +191,19 @@ class TestImageIME : InputMethodService() {
         imeTabDropdown = dropdown
         dropdown.refreshTheme()
 
+        val initialTabs = tb.orderedTabs()
+        pagerAdapter.setTabs(initialTabs)
+
         val initialEffectiveTab = tb.getEffectiveTab()
         dropdown.setSelectedTab(initialEffectiveTab)
         tb.start()
         dropdown.start()
 
-        loadImagesForTab(initialEffectiveTab)
+        val initialPos = pagerAdapter.getPositionForTab(initialEffectiveTab)
+        if (initialPos >= 0) {
+            viewBinding.vpCategoryPager.setCurrentItem(initialPos, false)
+        }
+
         return viewBinding.root
     }
 
@@ -272,7 +304,6 @@ class TestImageIME : InputMethodService() {
         applyKeyboardConfigLayout()
         applyTheme()
 
-
         // 保留旧版仅在输入视图启动后请求显示的行为。
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             requestShowSelf(0)
@@ -280,8 +311,7 @@ class TestImageIME : InputMethodService() {
 
         EditorInfoDumper.dump(this, info)
 
-        val targetTab = tabBar?.getEffectiveTab() ?: "ALL"
-        loadImagesForTab(targetTab, force = false)
+        syncCurrentTabPosition()
     }
 
     override fun onWindowShown() {
@@ -295,26 +325,29 @@ class TestImageIME : InputMethodService() {
         // 窗口生命周期信号比无障碍窗口列表更及时，避免窗口列表残留导致状态误判。
         TestAccessibilityService.notifyImeLifecycle(true)
 
+        syncCurrentTabPosition()
+    }
+
+    private fun syncCurrentTabPosition() {
         val targetTab = tabBar?.getEffectiveTab() ?: "ALL"
-        loadImagesForTab(targetTab, force = false)
+        val adapter = categoryPagerAdapter ?: return
+        val pos = adapter.getPositionForTab(targetTab)
+        if (pos >= 0 && binding?.vpCategoryPager?.currentItem != pos) {
+            binding?.vpCategoryPager?.setCurrentItem(pos, false)
+        }
     }
 
     override fun onWindowHidden() {
         super.onWindowHidden()
-
         imeWindowVisible = false
         isImeShowing = false
         TestAccessibilityService.notifyImeLifecycle(false)
-        // 与旧版一致：这里只通知窗口隐藏，恢复由 finish 回调负责。
-
     }
 
-    private fun applyKeyboardConfigLayout() {
+    fun applyKeyboardConfigLayout() {
         val targetSpanCount = KeyboardConfig.getSpanCount(this)
-        if (gridLayoutManager?.spanCount != targetSpanCount) {
-            gridLayoutManager?.spanCount = targetSpanCount
-            TestLog.i(MODULE, "应用键盘列数配置: spanCount=$targetSpanCount")
-        }
+        categoryPagerAdapter?.updateSpanCount(targetSpanCount)
+        TestLog.i(MODULE, "应用键盘列数配置: spanCount=$targetSpanCount")
 
         val heightDp = KeyboardConfig.getGridHeightDp(this)
         val heightPx = android.util.TypedValue.applyDimension(
@@ -345,12 +378,19 @@ class TestImageIME : InputMethodService() {
             resources.displayMetrics
         ).toInt()
 
+        val showTabDropdown = KeyboardConfig.isTabDropdownEnabled(this)
         binding?.btnTabDropdown?.let { dropdownBtn ->
+            dropdownBtn.visibility = if (showTabDropdown) View.VISIBLE else View.GONE
             dropdownBtn.setImageResource(KeyboardConfig.getDropdownIconRes(this))
             configureHeaderButton(dropdownBtn, tabSizePx, buttonPaddingPx)
         }
+        if (!showTabDropdown) {
+            imeTabDropdown?.close()
+        }
 
+        val showExitBtn = KeyboardConfig.isExitButtonEnabled(this)
         binding?.btnExit?.let { exitBtn ->
+            exitBtn.visibility = if (showExitBtn) View.VISIBLE else View.GONE
             configureHeaderButton(exitBtn, tabSizePx, buttonPaddingPx)
         }
 
@@ -420,7 +460,7 @@ class TestImageIME : InputMethodService() {
             ThemeApplier.applyTo(b, theme)
             tabBar?.refreshTheme()
             imeTabDropdown?.refreshTheme()
-            imageAdapter.notifyDataSetChanged()
+            categoryPagerAdapter?.notifyThemeChanged()
             TestLog.i(MODULE, "应用键盘主题配置: isDark=${theme.isDark}")
         }
     }
@@ -428,7 +468,6 @@ class TestImageIME : InputMethodService() {
     override fun onFinishInputView(finishingInput: Boolean) {
         previewPopup?.dismiss()
         imeTabDropdown?.close()
-        lastLoadedTabKey = null
         isImeShowing = false
         imeWindowVisible = false
         TestAccessibilityService.notifyImeLifecycle(false)
@@ -438,7 +477,6 @@ class TestImageIME : InputMethodService() {
 
     override fun onFinishInput() {
         previewPopup?.dismiss()
-        lastLoadedTabKey = null
         isImeShowing = false
         imeWindowVisible = false
         TestAccessibilityService.notifyImeLifecycle(false)
@@ -490,35 +528,6 @@ class TestImageIME : InputMethodService() {
         return switched
     }
 
-    private fun loadImagesForTab(tabKey: String, force: Boolean = false) {
-        if (!force && tabKey == lastLoadedTabKey && imageAdapter.itemCount > 0) {
-            return
-        }
-        lastLoadedTabKey = tabKey
-        loadImagesJob?.cancel()
-        loadImagesJob = serviceScope.launch {
-            val list = dataSource.loadResources(tabKey)
-            if (!isActive) return@launch
-            imageAdapter.submitList(list) {
-                binding?.rvImageGrid?.post {
-                    gridLayoutManager?.scrollToPositionWithOffset(0, 0)
-                }
-            }
-            val hintView = binding?.tvEmptyLibraryHint
-            if (list.isEmpty()) {
-                hintView?.visibility = View.VISIBLE
-                hintView?.text = when {
-                    tabKey == "SEARCH" -> "未找到相关表情"
-                    tabKey == "RECENT" -> "还没有发送记录"
-                    tabKey == "ALL" -> "资源库为空，请在 App 内导入表情"
-                    else -> "该分类暂无图片"
-                }
-            } else {
-                hintView?.visibility = View.GONE
-            }
-        }
-    }
-
     private fun updateUsageStatsInBackground(item: ImageItem) {
         if (item !is ImageItem.SuzuResource) return
         dbExecutor.execute {
@@ -540,6 +549,10 @@ class TestImageIME : InputMethodService() {
                     )
                 }
                 TestLog.i(MODULE, "已在后台更新资源使用频次并按上限($recentLimit)淘汰记录: ID=${item.id}")
+                // 通知 RECENT 页面刷新，确保下一次滑到 RECENT 时展示最新历史
+                serviceScope.launch(Dispatchers.Main) {
+                    categoryPagerAdapter?.refreshTab("RECENT")
+                }
             } catch (e: Exception) {
                 TestLog.e(MODULE, "更新资源使用记录异常: ${e.message}", e)
             }
@@ -566,6 +579,8 @@ class TestImageIME : InputMethodService() {
         imeTabDropdown = null
         tabBar?.destroy()
         tabBar = null
+        categoryPagerAdapter?.clear()
+        categoryPagerAdapter = null
         serviceScope.cancel()
         imageSender.destroy()
         dbExecutor.shutdown()

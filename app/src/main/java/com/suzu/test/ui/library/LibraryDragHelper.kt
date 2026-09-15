@@ -123,4 +123,10 @@ class LibraryDragHelper(
             itemTouchHelper.startDrag(viewHolder)
         }
     }
+
+    fun detach() {
+        if (::itemTouchHelper.isInitialized) {
+            itemTouchHelper.attachToRecyclerView(null)
+        }
+    }
 }

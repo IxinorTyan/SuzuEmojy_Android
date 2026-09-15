@@ -17,6 +17,14 @@ interface ResourceCategoryDao {
         SELECT r.* FROM resources r
         INNER JOIN resource_categories rc ON r.id = rc.resource_id
         WHERE rc.category_id = :categoryId
+        ORDER BY rc.sort_order ASC, rc.added_at DESC LIMIT :limit
+    """)
+    suspend fun getThumbnailPreloadResources(categoryId: Long, limit: Int): List<ResourceEntity>
+
+    @Query("""
+        SELECT r.* FROM resources r
+        INNER JOIN resource_categories rc ON r.id = rc.resource_id
+        WHERE rc.category_id = :categoryId
         ORDER BY rc.sort_order ASC, rc.added_at DESC
     """)
     fun getResourcesForCategory(categoryId: Long): Flow<List<ResourceEntity>>

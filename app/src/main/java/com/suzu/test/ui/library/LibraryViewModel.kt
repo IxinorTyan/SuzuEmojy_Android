@@ -7,6 +7,7 @@ import com.suzu.test.db.entity.ResourceEntity
 import com.suzu.test.resource.KeywordUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -71,4 +72,23 @@ class LibraryViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    fun getCategoryFlow(selection: String): Flow<List<ResourceEntity>> {
+        val catId = if (selection == "ALL") 0L else (selection.toLongOrNull() ?: 0L)
+        val filteredDbFlow = _filterState.flatMapLatest { filter ->
+            database.resourceDao().getFilteredResourcesFlow(
+                noKw = filter.noKwParam,
+                noCat = filter.noCatParam,
+                anim = filter.animParam,
+                catId = catId
+            )
+        }
+        return combine(filteredDbFlow, _searchQuery) { list, query ->
+            if (query.isBlank()) {
+                list
+            } else {
+                KeywordUtils.filterAndSort(list, query)
+            }
+        }.flowOn(Dispatchers.Default)
+    }
 }

@@ -29,7 +29,13 @@ import com.suzu.test.util.PermissionChecker
 
 class SettingsActivity : AppCompatActivity() {
 
+    companion object {
+        private const val SP_NAME = "app_settings"
+        private const val KEY_PERM_EXPANDED = "settings_perm_expanded"
+    }
+
     private lateinit var binding: ActivitySettingsBinding
+    private var isPermissionExpanded = false
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -43,9 +49,34 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupNavigation()
+        setupPermissionCollapse()
         setupPermissionActions()
         setupA11ySwitch()
         observeA11yState()
+    }
+
+    private fun setupPermissionCollapse() {
+        val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        // 默认折叠，节省屏幕空间，可通过点击随时展开
+        isPermissionExpanded = sp.getBoolean(KEY_PERM_EXPANDED, false)
+        applyPermissionExpandState(animate = false)
+
+        binding.layoutPermissionHeader.setOnClickListener {
+            isPermissionExpanded = !isPermissionExpanded
+            sp.edit().putBoolean(KEY_PERM_EXPANDED, isPermissionExpanded).apply()
+            applyPermissionExpandState(animate = true)
+        }
+    }
+
+    private fun applyPermissionExpandState(animate: Boolean) {
+        if (animate) {
+            android.transition.TransitionManager.beginDelayedTransition(binding.cardPermissions)
+        }
+        binding.layoutPermissionContent.visibility = if (isPermissionExpanded) View.VISIBLE else View.GONE
+        binding.ivPermissionExpandArrow.animate()
+            .rotation(if (isPermissionExpanded) 180f else 0f)
+            .setDuration(if (animate) 200 else 0)
+            .start()
     }
 
     private fun observeA11yState() {
@@ -65,6 +96,9 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupNavigation() {
+        binding.btnBack.setOnClickListener {
+            finish()
+        }
         binding.btnNavKeyboardAppearance.setOnClickListener {
             startActivity(Intent(this, SettingsAppearanceActivity::class.java))
         }
@@ -149,29 +183,37 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updatePermissionStates() {
+        val colorActive = 0xFF16A34A.toInt() // Green
+        val colorInactive = 0xFF0F172A.toInt() // Slate dark
+
         // 1. IME
         val isImeEnabled = PermissionChecker.isImeEnabled(this)
         binding.tvPermImeStatus.text = "输入法: " + if (isImeEnabled) "已启用 ✓" else "未启用"
+        binding.tvPermImeStatus.setTextColor(if (isImeEnabled) colorActive else colorInactive)
         binding.btnPermImeAction.visibility = if (isImeEnabled) View.GONE else View.VISIBLE
 
         // 2. 无障碍
         val isA11yRunning = com.suzu.test.accessibility.AccessibilityStateMonitor.isEnabled.value
         binding.tvPermA11yStatus.text = "无障碍服务: " + if (isA11yRunning) "已开启 ✓" else "已关闭"
+        binding.tvPermA11yStatus.setTextColor(if (isA11yRunning) colorActive else colorInactive)
         binding.btnPermA11yAction.visibility = if (isA11yRunning) View.GONE else View.VISIBLE
 
         // 3. 悬浮窗
         val hasOverlay = PermissionChecker.hasOverlayPermission(this)
         binding.tvPermOverlayStatus.text = "悬浮窗: " + if (hasOverlay) "已授权 ✓" else "未授权"
+        binding.tvPermOverlayStatus.setTextColor(if (hasOverlay) colorActive else colorInactive)
         binding.btnPermOverlayAction.visibility = if (hasOverlay) View.GONE else View.VISIBLE
 
         // 4. 相册读取
         val hasStorage = PermissionChecker.hasStoragePermission(this)
         binding.tvPermStorageStatus.text = "相册读取: " + if (hasStorage) "已授权 ✓" else "未授权"
+        binding.tvPermStorageStatus.setTextColor(if (hasStorage) colorActive else colorInactive)
         binding.btnPermStorageAction.visibility = if (hasStorage) View.GONE else View.VISIBLE
 
         // 5. 忽略电池优化
         val isBatteryIgnored = PermissionChecker.isIgnoringBatteryOptimizations(this)
         binding.tvPermBatteryStatus.text = "忽略电池优化: " + if (isBatteryIgnored) "已开启 ✓" else "未开启"
+        binding.tvPermBatteryStatus.setTextColor(if (isBatteryIgnored) colorActive else colorInactive)
         binding.btnPermBatteryAction.visibility = if (isBatteryIgnored) View.GONE else View.VISIBLE
 
         // 6. 自启动 (机型判断，未识别或不支持则整行隐藏)
@@ -179,6 +221,29 @@ class SettingsActivity : AppCompatActivity() {
             binding.layoutPermAutoStart.visibility = View.VISIBLE
         } else {
             binding.layoutPermAutoStart.visibility = View.GONE
+        }
+
+        // 更新头部状态摘要胶囊
+        val coreOk = isImeEnabled && hasStorage
+        val extraOk = hasOverlay && isA11yRunning && isBatteryIgnored
+
+        when {
+            coreOk && extraOk -> {
+                binding.tvPermissionSummaryBadge.text = "全部就绪 ✓"
+                binding.tvPermissionSummaryBadge.setTextColor(0xFF16A34A.toInt())
+                binding.tvPermissionSummaryBadge.setBackgroundResource(com.suzu.test.R.drawable.bg_home_tag_green)
+            }
+            coreOk -> {
+                binding.tvPermissionSummaryBadge.text = "基础已就绪"
+                binding.tvPermissionSummaryBadge.setTextColor(0xFF2563EB.toInt())
+                binding.tvPermissionSummaryBadge.setBackgroundResource(com.suzu.test.R.drawable.bg_home_tag_blue)
+            }
+            else -> {
+                val missingBasic = (if (!isImeEnabled) 1 else 0) + (if (!hasStorage) 1 else 0)
+                binding.tvPermissionSummaryBadge.text = "需配置 ${missingBasic} 项"
+                binding.tvPermissionSummaryBadge.setTextColor(0xFFEA580C.toInt())
+                binding.tvPermissionSummaryBadge.setBackgroundResource(com.suzu.test.R.drawable.bg_home_tag_orange)
+            }
         }
     }
 

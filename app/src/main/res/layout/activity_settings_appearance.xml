@@ -1,400 +1,635 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="20dp"
-    android:background="#F5F5F5">
+    android:background="#F8FAFC"
+    android:paddingHorizontal="16dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp"
+    android:clipToPadding="false"
+    android:clipChildren="false">
 
+    <!-- 顶部导航栏 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="24dp">
+        android:paddingVertical="4dp"
+        android:layout_marginBottom="8dp">
 
         <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@android:color/transparent"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_arrow_back_24"
-            android:tint="#111111"
+            app:tint="#0F172A"
+            android:padding="8dp"
             android:contentDescription="返回" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="键盘外观与主题"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="#111111"
-            android:gravity="center" />
+            android:layout_marginStart="8dp"
+            android:orientation="vertical">
 
-        <View
-            android:layout_width="40dp"
-            android:layout_height="40dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="键盘外观与主题"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#0F172A"
+                android:letterSpacing="-0.01" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="自定义键盘样式、高度与布局"
+                android:textSize="12sp"
+                android:textColor="#64748B"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
     </LinearLayout>
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        android:overScrollMode="never"
+        android:clipToPadding="false"
+        android:clipChildren="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:clipToPadding="false"
+            android:clipChildren="false"
+            android:paddingBottom="24dp">
 
-            <!-- 键盘外观调节 -->
-            <LinearLayout
+            <!-- 1. 主题与尺寸分区 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="主题与尺寸"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#64748B"
+                android:letterSpacing="0.04"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="4dp" />
+
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:padding="16dp"
-                android:elevation="1dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1.5dp"
+                app:cardMaxElevation="3dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#E2E8F0"
+                app:cardBackgroundColor="#FFFFFF"
                 android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="键盘主题与布局"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="#333333" />
-
-                <!-- 主题选择 -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="键盘配色主题"
-                    android:textSize="14sp"
-                    android:textColor="#555555"
-                    android:layout_marginTop="12dp" />
-
-                <RadioGroup
-                    android:id="@+id/rgKeyboardTheme"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="6dp">
-
-                    <RadioButton
-                        android:id="@+id/rbThemeDark"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="暗色主题 (默认)"
-                        android:textSize="14sp" />
-
-                    <RadioButton
-                        android:id="@+id/rbThemeLight"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="24dp"
-                        android:text="亮色主题"
-                        android:textSize="14sp" />
-                </RadioGroup>
-
-                <!-- 键盘高度调节 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="12dp">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
+                    <!-- 主题选择 -->
                     <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="键盘高度 (120 - 400 dp)"
-                        android:textSize="14sp"
-                        android:textColor="#555555" />
-
-                    <TextView
-                        android:id="@+id/tvHeightValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="190 dp"
+                        android:text="键盘配色主题"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#007AFF" />
-                </LinearLayout>
+                        android:textColor="#0F172A" />
 
-                <SeekBar
-                    android:id="@+id/sbKeyboardHeight"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="280"
-                    android:layout_marginTop="6dp" />
-
-                <!-- 每行列数调节 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="16dp">
-
-                    <TextView
-                        android:layout_width="0dp"
+                    <RadioGroup
+                        android:id="@+id/rgKeyboardTheme"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="每行列数 (3 - 8 列)"
-                        android:textSize="14sp"
-                        android:textColor="#555555" />
+                        android:orientation="horizontal"
+                        android:layout_marginTop="6dp">
 
-                    <TextView
-                        android:id="@+id/tvSpanValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="4 列"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="#007AFF" />
-                </LinearLayout>
+                        <RadioButton
+                            android:id="@+id/rbThemeDark"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="暗色主题 (默认)"
+                            android:textColor="#334155"
+                            android:textSize="14sp" />
 
-                <SeekBar
-                    android:id="@+id/sbKeyboardSpan"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="5"
-                    android:layout_marginTop="6dp" />
+                        <RadioButton
+                            android:id="@+id/rbThemeLight"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="24dp"
+                            android:text="亮色主题"
+                            android:textColor="#334155"
+                            android:textSize="14sp" />
+                    </RadioGroup>
 
-                <!-- 分类栏图标大小调节 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="16dp">
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F1F5F9"
+                        android:layout_marginVertical="12dp" />
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="分类栏图标大小 (36 - 64 dp)"
-                        android:textSize="14sp"
-                        android:textColor="#555555" />
-
-                    <TextView
-                        android:id="@+id/tvTabSizeValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="56 dp"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="#007AFF" />
-                </LinearLayout>
-
-                <SeekBar
-                    android:id="@+id/sbKeyboardTabSize"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:max="28"
-                    android:layout_marginTop="6dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="16dp">
-
+                    <!-- 键盘高度调节 -->
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="显示「常用」"
+                            android:layout_weight="1"
+                            android:text="键盘高度 (120 - 400 dp)"
                             android:textSize="14sp"
-                            android:textColor="#333333" />
+                            android:textStyle="bold"
+                            android:textColor="#0F172A" />
 
                         <TextView
+                            android:id="@+id/tvHeightValue"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="关闭后在键盘底部隐藏常用表情栏"
+                            android:text="190 dp"
                             android:textSize="12sp"
-                            android:textColor="#888888"
-                            android:layout_marginTop="2dp" />
+                            android:textStyle="bold"
+                            android:textColor="#2563EB"
+                            android:background="@drawable/bg_home_tag_blue"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp" />
                     </LinearLayout>
 
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/swShowRecentTab"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="16dp">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <SeekBar
+                        android:id="@+id/sbKeyboardHeight"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:max="280"
+                        android:layout_marginTop="8dp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F1F5F9"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 每行列数调节 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="显示「全部表情」"
+                            android:layout_weight="1"
+                            android:text="每行列数 (3 - 8 列)"
                             android:textSize="14sp"
-                            android:textColor="#333333" />
+                            android:textStyle="bold"
+                            android:textColor="#0F172A" />
 
                         <TextView
+                            android:id="@+id/tvSpanValue"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="关闭后在键盘底部隐藏全部表情栏"
+                            android:text="4 列"
                             android:textSize="12sp"
-                            android:textColor="#888888"
-                            android:layout_marginTop="2dp" />
+                            android:textStyle="bold"
+                            android:textColor="#2563EB"
+                            android:background="@drawable/bg_home_tag_blue"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp" />
                     </LinearLayout>
 
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/swShowAllTab"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                    <SeekBar
+                        android:id="@+id/sbKeyboardSpan"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="5"
+                        android:layout_marginTop="8dp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F1F5F9"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 分类栏图标大小调节 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="分类栏图标大小 (36 - 64 dp)"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="#0F172A" />
+
+                        <TextView
+                            android:id="@+id/tvTabSizeValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="56 dp"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:textColor="#2563EB"
+                            android:background="@drawable/bg_home_tag_blue"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp" />
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/sbKeyboardTabSize"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="28"
+                        android:layout_marginTop="8dp" />
                 </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                <!-- 展开分类按钮图标 -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="展开分类按钮图标"
-                    android:textSize="14sp"
-                    android:textColor="#555555"
-                    android:layout_marginTop="16dp" />
+            <!-- 2. 标签与按键分区 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="按键与分类导航"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#64748B"
+                android:letterSpacing="0.04"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="4dp" />
 
-                <RadioGroup
-                    android:id="@+id/rgDropdownIcon"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="6dp">
-
-                    <RadioButton
-                        android:id="@+id/rbDropdownIconArrow"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="向下箭头"
-                        android:textSize="14sp" />
-
-                    <RadioButton
-                        android:id="@+id/rbDropdownIconMenu"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:text="三横线 (≡)"
-                        android:textSize="14sp" />
-
-                    <RadioButton
-                        android:id="@+id/rbDropdownIconMore"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:text="竖三点 (⋮)"
-                        android:textSize="14sp" />
-                </RadioGroup>
-
-                <!-- 展开分类按钮位置 -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="展开分类按钮位置"
-                    android:textSize="14sp"
-                    android:textColor="#555555"
-                    android:layout_marginTop="16dp" />
-
-                <RadioGroup
-                    android:id="@+id/rgDropdownPosition"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="6dp">
-
-                    <RadioButton
-                        android:id="@+id/rbDropdownPosLeft"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="左上角 (默认)"
-                        android:textSize="14sp" />
-
-                    <RadioButton
-                        android:id="@+id/rbDropdownPosRight"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="24dp"
-                        android:text="右上角 (收起左侧)"
-                        android:textSize="14sp" />
-                </RadioGroup>
-            </LinearLayout>
-
-            <!-- 键盘唤出测试与预览 -->
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:padding="16dp"
-                android:elevation="1dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1.5dp"
+                app:cardMaxElevation="3dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#E2E8F0"
+                app:cardBackgroundColor="#FFFFFF"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- 显示常用 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="显示「常用」"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="#0F172A" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="关闭后在键盘底部隐藏常用表情栏"
+                                android:textSize="11sp"
+                                android:textColor="#64748B"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/swShowRecentTab"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F1F5F9"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 显示全部表情 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="显示「全部表情」"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="#0F172A" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="关闭后在键盘底部隐藏全部表情栏"
+                                android:textSize="11sp"
+                                android:textColor="#64748B"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/swShowAllTab"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F1F5F9"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 显示展开收藏夹按钮 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="显示「展开收藏夹」按钮"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="#0F172A" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="控制键盘顶部展开分类面板的按钮"
+                                android:textSize="11sp"
+                                android:textColor="#64748B"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/swShowTabDropdown"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutDropdownOptions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_rounded_input_field"
+                        android:padding="12dp"
+                        android:layout_marginTop="10dp">
+
+                        <!-- 展开分类按钮图标 -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="按钮图标风格"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textColor="#334155" />
+
+                        <RadioGroup
+                            android:id="@+id/rgDropdownIcon"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="4dp">
+
+                            <RadioButton
+                                android:id="@+id/rbDropdownIconArrow"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="箭头 (⌄)"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+
+                            <RadioButton
+                                android:id="@+id/rbDropdownIconMenu"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="14dp"
+                                android:text="菜单 (≡)"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+
+                            <RadioButton
+                                android:id="@+id/rbDropdownIconMore"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="14dp"
+                                android:text="更多 (⋮)"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+                        </RadioGroup>
+
+                        <!-- 展开分类按钮位置 -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="按钮摆放位置"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textColor="#334155"
+                            android:layout_marginTop="8dp" />
+
+                        <RadioGroup
+                            android:id="@+id/rgDropdownPosition"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="4dp">
+
+                            <RadioButton
+                                android:id="@+id/rbDropdownPosLeft"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="左上角 (默认)"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+
+                            <RadioButton
+                                android:id="@+id/rbDropdownPosRight"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="20dp"
+                                android:text="右上角 (收起左侧)"
+                                android:textColor="#475569"
+                                android:textSize="13sp" />
+                        </RadioGroup>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F1F5F9"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- 显示收起键盘按钮 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="显示「收起键盘」按钮"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="#0F172A" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="控制键盘顶部收起输入法(IME)的按钮"
+                                android:textSize="11sp"
+                                android:textColor="#64748B"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/swShowExitButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 3. 测试与预览分区 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="唤出测试与预览"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#64748B"
+                android:letterSpacing="0.04"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="4dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1.5dp"
+                app:cardMaxElevation="3dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#E2E8F0"
+                app:cardBackgroundColor="#FFFFFF"
                 android:layout_marginBottom="24dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="键盘唤出测试"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="#333333" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="点击下方测试输入框可直接调起输入法，直观查看真实键盘效果"
-                    android:textSize="12sp"
-                    android:textColor="#888888"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="8dp" />
-
-                <com.suzu.test.control.RichContentEditText
-                    android:id="@+id/etTestInputBox"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:hint="点击此处呼出键盘进行测试..."
-                    android:textSize="15sp"
-                    android:background="#FAFAFA"
-                    android:paddingHorizontal="12dp"
-                    android:layout_marginBottom="16dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="页面内缩略预览（仅供参考）"
-                    android:textSize="13sp"
-                    android:textColor="#888888"
-                    android:layout_marginBottom="8dp" />
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <FrameLayout
-                    android:id="@+id/flPreviewContainer"
-                    android:layout_width="match_parent"
-                    android:layout_height="190dp"
-                    android:background="#202020">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="键盘调出测试"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="#0F172A" />
 
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvSettingsPreview"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="点击下方测试框直接调起输入法，直观查看真实键盘效果"
+                        android:textSize="11sp"
+                        android:textColor="#64748B"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginBottom="10dp" />
+
+                    <com.suzu.test.control.RichContentEditText
+                        android:id="@+id/etTestInputBox"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:padding="2dp"
-                        android:clipToPadding="false" />
-                </FrameLayout>
-            </LinearLayout>
+                        android:layout_height="48dp"
+                        android:hint="点击此处呼出键盘进行测试..."
+                        android:textColorHint="#94A3B8"
+                        android:textSize="14sp"
+                        android:textColor="#0F172A"
+                        android:background="@drawable/bg_rounded_input_field"
+                        android:paddingHorizontal="14dp"
+                        android:layout_marginBottom="16dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="页面内缩略预览（仅供参考）"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="#64748B"
+                        android:layout_marginBottom="8dp" />
+
+                    <FrameLayout
+                        android:id="@+id/flPreviewContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="190dp"
+                        android:background="@drawable/bg_preview_dark_container"
+                        android:clipToOutline="true">
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvSettingsPreview"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:padding="4dp"
+                            android:clipToPadding="false" />
+                    </FrameLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </ScrollView>

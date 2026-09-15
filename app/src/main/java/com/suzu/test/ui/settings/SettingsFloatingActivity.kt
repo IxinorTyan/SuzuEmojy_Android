@@ -64,6 +64,13 @@ class SettingsFloatingActivity : AppCompatActivity() {
 
         supportActionBar?.hide()
 
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val navBar = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            val baseBottom = (12 * resources.displayMetrics.density).toInt()
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, baseBottom + navBar.bottom)
+            insets
+        }
+
         binding.btnBack.setOnClickListener {
             finish()
         }
@@ -367,7 +374,7 @@ class SettingsFloatingActivity : AppCompatActivity() {
             val cellPx = (10 * density).toInt()
             binding.flPreviewBackground.background = CheckerboardDrawable(cellPx)
         } else {
-            binding.flPreviewBackground.background = ColorDrawable(Color.parseColor("#F0F0F0"))
+            binding.flPreviewBackground.background = ColorDrawable(Color.parseColor("#F1F5F9"))
         }
 
         // 2. 设置 ShapeableImageView 的裁切与 ScaleType

@@ -30,6 +30,13 @@ class ShareWhitelistActivity : AppCompatActivity() {
         binding = ActivityShareWhitelistBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val navBar = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            val baseBottom = (12 * resources.displayMetrics.density).toInt()
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, baseBottom + navBar.bottom)
+            insets
+        }
+
         binding.btnBack.setOnClickListener { finish() }
         loadShareTargets()
     }
@@ -76,13 +83,13 @@ class ShareWhitelistActivity : AppCompatActivity() {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            minimumHeight = dp(68)
-            setPadding(dp(16), dp(8), dp(12), dp(8))
+            minimumHeight = dp(64)
+            setPadding(dp(16), dp(10), dp(16), dp(10))
             setBackgroundResource(android.R.drawable.list_selector_background)
         }
 
         val icon = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(44), dp(44)).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(40), dp(40)).apply {
                 marginEnd = dp(12)
             }
             setImageDrawable(resolveInfo.loadIcon(packageManager))
@@ -97,7 +104,8 @@ class ShareWhitelistActivity : AppCompatActivity() {
         val appName = TextView(this).apply {
             text = resolveInfo.loadLabel(packageManager)
             textSize = 15f
-            setTextColor(Color.rgb(51, 51, 51))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(0xFF0F172A.toInt())
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
         }
@@ -105,7 +113,7 @@ class ShareWhitelistActivity : AppCompatActivity() {
         val packageNameView = TextView(this).apply {
             text = packageName
             textSize = 11f
-            setTextColor(Color.rgb(136, 136, 136))
+            setTextColor(0xFF64748B.toInt())
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
             setPadding(0, dp(2), 0, 0)
@@ -138,8 +146,10 @@ class ShareWhitelistActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dp(1)
-            )
-            background = ColorDrawable(Color.rgb(240, 240, 240))
+            ).apply {
+                marginStart = dp(68)
+            }
+            background = ColorDrawable(0xFFF1F5F9.toInt())
         }
 
     private fun packageNameForThisApp(): String = applicationContext.packageName

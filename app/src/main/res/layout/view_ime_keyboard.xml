@@ -78,22 +78,10 @@
         android:layout_height="190dp"
         android:background="#202020">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvImageGrid"
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/vpCategoryPager"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="2dp"
-            android:clipToPadding="false" />
-
-        <TextView
-            android:id="@+id/tvEmptyLibraryHint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="资源库为空，请在 App 内导入表情"
-            android:textSize="14sp"
-            android:textColor="#888888"
-            android:visibility="gone" />
+            android:layout_height="match_parent" />
     </FrameLayout>
 
     <LinearLayout

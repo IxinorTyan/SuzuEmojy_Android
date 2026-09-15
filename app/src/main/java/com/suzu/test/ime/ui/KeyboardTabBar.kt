@@ -51,6 +51,23 @@ class KeyboardTabBar(
     private var lastStructureKey: String? = null
     private val tabViewMap = mutableMapOf<String, View>()
     private val resourcesDir = File(context.filesDir, "resources")
+    private val thumbnailPreloader = com.suzu.test.ui.view.CategoryThumbnailPreloader(
+        context, scope, com.bumptech.glide.load.engine.DiskCacheStrategy.AUTOMATIC
+    )
+
+    var onTabsStructureChanged: ((tabs: List<String>, selectedTab: String) -> Unit)? = null
+
+    fun orderedTabs(): List<String> = buildList {
+        if (!com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value.isNullOrBlank()) add("SEARCH")
+        if (KeyboardConfig.isRecentTabEnabled(context)) add("RECENT")
+        if (KeyboardConfig.isAllTabEnabled(context)) add("ALL")
+        cachedCategories.orEmpty().forEach { add("cat:${it.id}") }
+    }
+
+    fun selectAdjacent(step: Int) {
+        val next = com.suzu.test.ui.view.adjacentCategory(orderedTabs(), getEffectiveTab(), step) ?: return
+        selectTab(next)
+    }
 
     fun start() {
         observeJob?.cancel()
@@ -75,6 +92,7 @@ class KeyboardTabBar(
 
                     if (isStructureChanged) {
                         render()
+                        onTabsStructureChanged?.invoke(orderedTabs(), newEffectiveTab)
                     } else {
                         updateSelectionState(newEffectiveTab)
                         scrollTabToSelection(newEffectiveTab)
@@ -90,6 +108,7 @@ class KeyboardTabBar(
                     if (!query.isNullOrBlank()) {
                         currentTab = "SEARCH"
                         render()
+                        onTabsStructureChanged?.invoke(orderedTabs(), "SEARCH")
                         onTabSelected("SEARCH")
                     } else {
                         if (currentTab == "SEARCH") {
@@ -100,9 +119,11 @@ class KeyboardTabBar(
                                 prefs.edit().putString(KEY_LAST_TAB, fallback).apply()
                             }
                             render()
+                            onTabsStructureChanged?.invoke(orderedTabs(), fallback)
                             onTabSelected(fallback)
                         } else {
                             render()
+                            onTabsStructureChanged?.invoke(orderedTabs(), currentTab)
                         }
                     }
                 }
@@ -169,6 +190,7 @@ class KeyboardTabBar(
     }
 
     private fun render() {
+        thumbnailPreloader.warm(orderedTabs(), getEffectiveTab())
         val scrollView = container.parent as? android.widget.HorizontalScrollView
         val savedScrollX = scrollView?.scrollX ?: 0
 
@@ -244,7 +266,7 @@ class KeyboardTabBar(
         return true
     }
 
-    fun selectTab(tabKey: String) {
+    fun selectTab(tabKey: String, notify: Boolean = true) {
         if (currentTab == tabKey && lastNotifiedTab == tabKey) {
             scrollTabToSelection(tabKey)
             return
@@ -256,7 +278,10 @@ class KeyboardTabBar(
         }
         updateSelectionState(tabKey)
         scrollTabToSelection(tabKey)
-        onTabSelected(tabKey)
+        if (notify) {
+            onTabSelected(tabKey)
+        }
+        thumbnailPreloader.warm(orderedTabs(), tabKey)
     }
 
     private fun scrollTabToSelection(tabKey: String) {
@@ -389,6 +414,7 @@ class KeyboardTabBar(
     fun getTabSizeDp(): Int = KeyboardConfig.getTabIconSizeDp(context)
 
     fun destroy() {
+        thumbnailPreloader.cancel()
         observeJob?.cancel()
         observeJob = null
         searchJob?.cancel()

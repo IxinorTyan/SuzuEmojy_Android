@@ -24,6 +24,8 @@ import com.suzu.test.ui.import.ImportActivity
 import com.suzu.test.ui.library.LibraryActivity
 import com.suzu.test.ui.settings.SettingsActivity
 import com.suzu.test.util.PermissionChecker
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -81,6 +83,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val navBar = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val baseBottom = (12 * resources.displayMetrics.density).toInt()
+            v.setPadding(
+                v.paddingLeft,
+                v.paddingTop,
+                v.paddingRight,
+                baseBottom + navBar.bottom
+            )
+            insets
+        }
+
         binding.btnTopSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
