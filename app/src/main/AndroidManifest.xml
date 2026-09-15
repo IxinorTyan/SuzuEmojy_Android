@@ -81,6 +81,11 @@
 
         <!-- 资源库浏览界面 -->
         <activity
+            android:name=".ui.similar.SimilarityActivity"
+            android:exported="false"
+            android:label="相似图片清理" />
+
+        <activity
             android:name=".ui.library.LibraryActivity"
             android:exported="false"
             android:label="资源库" />

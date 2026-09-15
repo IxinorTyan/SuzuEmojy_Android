@@ -68,7 +68,7 @@ class BatchOperationsTest {
 
     @Test
     fun testBatchCategoryAddToFrontAndRemove() = runBlocking {
-        val catId = db.categoryDao().insert(CategoryEntity(name = "猫组", sortOrder = 0))
+        val catId = db.categoryDao().insertCategory(CategoryEntity(name = "猫组", sortOrder = 0))
 
         val id1 = db.resourceDao().insert(
             ResourceEntity(filename = "f1.png", format = "PNG", isAnimated = false, syncKey = "k1", pixelMd5 = "m1", fileMd5 = "m1", width = 100, height = 100, byteSize = 100)
@@ -153,7 +153,7 @@ class BatchOperationsTest {
 
     @Test
     fun testMoveResourcesToFrontInCategory() = runBlocking {
-        val catId = db.categoryDao().insert(CategoryEntity(name = "测试组", sortOrder = 0))
+        val catId = db.categoryDao().insertCategory(CategoryEntity(name = "测试组", sortOrder = 0))
 
         val id1 = db.resourceDao().insert(
             ResourceEntity(filename = "f1.png", format = "PNG", isAnimated = false, syncKey = "k1", pixelMd5 = "m1", fileMd5 = "m1", width = 100, height = 100, byteSize = 100)
@@ -177,5 +177,49 @@ class BatchOperationsTest {
         // 验证全局主库资源不受分类内置顶影响
         val globalList = db.resourceDao().getAllResourcesOrdered().first()
         assertEquals(3, globalList.size)
+    }
+
+    @Test
+    fun testMoveResourcesToBack() = runBlocking {
+        val id1 = db.resourceDao().insert(
+            ResourceEntity(filename = "f1.png", format = "PNG", isAnimated = false, syncKey = "k1", pixelMd5 = "m1", fileMd5 = "m1", width = 100, height = 100, byteSize = 100, sortOrder = 0)
+        )
+        val id2 = db.resourceDao().insert(
+            ResourceEntity(filename = "f2.png", format = "PNG", isAnimated = false, syncKey = "k2", pixelMd5 = "m2", fileMd5 = "m2", width = 100, height = 100, byteSize = 100, sortOrder = 1)
+        )
+        val id3 = db.resourceDao().insert(
+            ResourceEntity(filename = "f3.png", format = "PNG", isAnimated = false, syncKey = "k3", pixelMd5 = "m3", fileMd5 = "m3", width = 100, height = 100, byteSize = 100, sortOrder = 2)
+        )
+
+        // 将 id1 和 id2 移动到最后 (保持 [id1, id2] 相对顺序)
+        val count = db.resourceDao().moveResourcesToBack(listOf(id1, id2))
+        assertEquals(2, count)
+
+        val orderedList = db.resourceDao().getAllResourcesOrdered().first()
+        assertEquals(listOf(id3, id1, id2), orderedList.map { it.id })
+    }
+
+    @Test
+    fun testMoveResourcesToBackInCategory() = runBlocking {
+        val catId = db.categoryDao().insertCategory(CategoryEntity(name = "测试组", sortOrder = 0))
+
+        val id1 = db.resourceDao().insert(
+            ResourceEntity(filename = "f1.png", format = "PNG", isAnimated = false, syncKey = "k1", pixelMd5 = "m1", fileMd5 = "m1", width = 100, height = 100, byteSize = 100)
+        )
+        val id2 = db.resourceDao().insert(
+            ResourceEntity(filename = "f2.png", format = "PNG", isAnimated = false, syncKey = "k2", pixelMd5 = "m2", fileMd5 = "m2", width = 100, height = 100, byteSize = 100)
+        )
+        val id3 = db.resourceDao().insert(
+            ResourceEntity(filename = "f3.png", format = "PNG", isAnimated = false, syncKey = "k3", pixelMd5 = "m3", fileMd5 = "m3", width = 100, height = 100, byteSize = 100)
+        )
+
+        db.resourceCategoryDao().addResourcesToCategoryBatch(listOf(id1, id2, id3), catId)
+
+        // 将 id1 和 id2 移动到该分类最后
+        val count = db.resourceCategoryDao().moveResourcesToBackInCategory(catId, listOf(id1, id2))
+        assertEquals(2, count)
+
+        val catList = db.resourceCategoryDao().getResourcesForCategory(catId).first()
+        assertEquals(listOf(id3, id1, id2), catList.map { it.id })
     }
 }

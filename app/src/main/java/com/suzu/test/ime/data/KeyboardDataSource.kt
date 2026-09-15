@@ -30,7 +30,19 @@ class KeyboardDataSource(private val context: Context) {
                     val query = com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value
                     if (!query.isNullOrBlank()) {
                         val all = db.resourceDao().getAllResourcesOrdered().first()
-                        com.suzu.test.resource.KeywordUtils.filterAndSort(all, query)
+                        val scope = com.suzu.test.floating.FloatingBallConfig.getSearchBarScope(context)
+                        val categoryMap = if (scope != com.suzu.test.floating.FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY) {
+                            db.resourceCategoryDao().getAllResourceCategoryNames()
+                                .groupBy({ it.resourceId }, { it.categoryName })
+                        } else {
+                            emptyMap()
+                        }
+                        com.suzu.test.resource.KeywordUtils.filterAndSort(
+                            resources = all,
+                            query = query,
+                            categoryMap = categoryMap,
+                            searchScope = scope
+                        )
                     } else {
                         emptyList()
                     }

@@ -92,11 +92,18 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, LibraryActivity::class.java))
         }
 
+        binding.cardSimilarity.setOnClickListener {
+            startActivity(Intent(this, com.suzu.test.ui.similar.SimilarityActivity::class.java))
+        }
         binding.cardImport.setOnClickListener {
             startActivity(Intent(this, ImportActivity::class.java))
         }
         binding.cardExportPackage.setOnClickListener {
             startActivity(Intent(this, ExportActivity::class.java))
+        }
+
+        binding.cardRecentAdded.setOnClickListener {
+            startActivity(Intent(this, LibraryActivity::class.java))
         }
 
         recentAdapter = RecentThumbAdapter {
@@ -153,7 +160,12 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     db.resourceDao().getResourceCountFlow().collectLatest { count ->
-                        binding.tvResourceCount.text = "$count 个资源"
+                        binding.tvResourceCount.text = "$count"
+                    }
+                }
+                launch {
+                    db.categoryDao().getAllCategoriesFlow().collectLatest { list ->
+                        binding.tvCategoryCount.text = "${list.size}"
                     }
                 }
                 launch {
@@ -197,12 +209,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateGuideStatus(
-        ime: Boolean,
-        storage: Boolean,
-        overlay: Boolean,
-        a11y: Boolean
-    ) {
+    private fun updateGuideStatus(ime: Boolean, storage: Boolean, overlay: Boolean, a11y: Boolean) {
         if (ime) {
             binding.tvGuideImeDot.text = "✓"
             binding.tvGuideImeDot.setTextColor(0xFF4CAF50.toInt())
@@ -265,7 +272,7 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
             }
         } else if (!a11y && notifyA11y) {
-            // 优先级 2: 无障碍已关闭且开启了提示开关
+            // 优先级 2: 无障碍已关闭 且 开启了提示开关
             binding.layoutPermissionWarning.visibility = View.VISIBLE
             binding.tvWarningText.text = "无障碍服务已关闭，悬浮球功能不可用"
             binding.btnWarningAction.text = "去开启"

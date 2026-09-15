@@ -37,6 +37,13 @@ interface ResourceCategoryDao {
     """)
     suspend fun getCategoriesForResource(resourceId: Long): List<CategoryEntity>
 
+    @Query("""
+        SELECT rc.resource_id AS resource_id, c.name AS category_name
+        FROM resource_categories rc
+        INNER JOIN categories c ON rc.category_id = c.id
+    """)
+    suspend fun getAllResourceCategoryNames(): List<ResourceCategoryName>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addResourceToCategory(relation: ResourceCategoryEntity)
 
@@ -92,9 +99,22 @@ interface ResourceCategoryDao {
         val existing = getExistingResourceIdsInCategory(categoryId, resourceIds).toSet()
         val validIds = resourceIds.filter { it in existing }
         if (validIds.isEmpty()) return 0
-        val minSort = getMinSortOrderForCategory(categoryId) ?: 0
+        val baseSort = (getMinSortOrderForCategory(categoryId) ?: 0) - validIds.size
         validIds.forEachIndexed { index, resId ->
-            updateSortOrder(resId, categoryId, minSort - 1 - index)
+            updateSortOrder(resId, categoryId, baseSort + index)
+        }
+        return validIds.size
+    }
+
+    @Transaction
+    suspend fun moveResourcesToBackInCategory(categoryId: Long, resourceIds: List<Long>): Int {
+        if (resourceIds.isEmpty()) return 0
+        val existing = getExistingResourceIdsInCategory(categoryId, resourceIds).toSet()
+        val validIds = resourceIds.filter { it in existing }
+        if (validIds.isEmpty()) return 0
+        val maxSort = getMaxSortOrderForCategory(categoryId) ?: 0
+        validIds.forEachIndexed { index, resId ->
+            updateSortOrder(resId, categoryId, maxSort + 1 + index)
         }
         return validIds.size
     }
@@ -109,3 +129,8 @@ interface ResourceCategoryDao {
     @Query("UPDATE resource_categories SET sort_order = :sortOrder WHERE resource_id = :resourceId AND category_id = :categoryId")
     suspend fun updateSortOrder(resourceId: Long, categoryId: Long, sortOrder: Int)
 }
+
+data class ResourceCategoryName(
+    @androidx.room.ColumnInfo(name = "resource_id") val resourceId: Long,
+    @androidx.room.ColumnInfo(name = "category_name") val categoryName: String
+)

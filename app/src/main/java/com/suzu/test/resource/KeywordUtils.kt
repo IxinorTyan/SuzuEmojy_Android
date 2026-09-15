@@ -1,6 +1,7 @@
 package com.suzu.test.resource
 
 import com.suzu.test.db.entity.ResourceEntity
+import com.suzu.test.floating.FloatingBallConfig
 
 enum class MatchMode {
     SUBSTRING,
@@ -58,35 +59,62 @@ object KeywordUtils {
 
     /**
      * 统一匹配函数：全项目单一入口
-     * 匹配范围：keywords + filename，均 lowercase 后比较
+     * 匹配范围：按 searchScope 决定匹配 tag(keywords)、分类夹(categoryNames)、或二者皆匹配
+     * 严格不匹配 filename
      */
-    fun matches(resource: ResourceEntity, query: String, mode: MatchMode = KEYWORD_MATCH_MODE): Boolean {
+    fun matches(
+        resource: ResourceEntity,
+        query: String,
+        mode: MatchMode = KEYWORD_MATCH_MODE,
+        categoryNames: List<String>? = null,
+        searchScope: Int = FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY
+    ): Boolean {
         if (query.isBlank()) return true
         val q = query.trim().lowercase()
-        val kw = resource.keywords.lowercase()
-        val fn = resource.filename.lowercase()
 
-        return when (mode) {
-            MatchMode.SUBSTRING -> {
-                kw.contains(q) || fn.contains(q)
+        val tagMatch = if (searchScope != FloatingBallConfig.SEARCH_SCOPE_CATEGORY_ONLY) {
+            val kw = resource.keywords.lowercase()
+            when (mode) {
+                MatchMode.SUBSTRING -> kw.contains(q)
+                MatchMode.PREFIX -> kw.startsWith(q) || kw.contains(" $q")
             }
-            MatchMode.PREFIX -> {
-                kw.startsWith(q) || kw.contains(" $q") || fn.startsWith(q)
+        } else false
+
+        val categoryMatch = if (searchScope != FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY && !categoryNames.isNullOrEmpty()) {
+            categoryNames.any { catName ->
+                val cn = catName.lowercase()
+                when (mode) {
+                    MatchMode.SUBSTRING -> cn.contains(q)
+                    MatchMode.PREFIX -> cn.startsWith(q) || cn.contains(" $q")
+                }
             }
-        }
+        } else false
+
+        return tagMatch || categoryMatch
     }
 
     /**
      * 判断是否为前缀命中（用于排序加权：前缀命中排在中间命中之前）
      */
-    fun isPrefixMatch(resource: ResourceEntity, query: String): Boolean {
+    fun isPrefixMatch(
+        resource: ResourceEntity,
+        query: String,
+        categoryNames: List<String>? = null,
+        searchScope: Int = FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY
+    ): Boolean {
         if (query.isBlank()) return false
         val q = query.trim().lowercase()
-        val fn = resource.filename.lowercase()
-        if (fn.startsWith(q)) return true
 
-        val tokens = parse(resource.keywords)
-        return tokens.any { it.lowercase().startsWith(q) }
+        if (searchScope != FloatingBallConfig.SEARCH_SCOPE_CATEGORY_ONLY) {
+            val tokens = parse(resource.keywords)
+            if (tokens.any { it.lowercase().startsWith(q) }) return true
+        }
+
+        if (searchScope != FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY && !categoryNames.isNullOrEmpty()) {
+            if (categoryNames.any { it.lowercase().startsWith(q) }) return true
+        }
+
+        return false
     }
 
     /**
@@ -95,7 +123,9 @@ object KeywordUtils {
     fun filterAndSort(
         resources: List<ResourceEntity>,
         query: String,
-        mode: MatchMode = KEYWORD_MATCH_MODE
+        mode: MatchMode = KEYWORD_MATCH_MODE,
+        categoryMap: Map<Long, List<String>>? = null,
+        searchScope: Int = FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY
     ): List<ResourceEntity> {
         if (query.isBlank()) {
             return resources.sortedWith(
@@ -104,9 +134,13 @@ object KeywordUtils {
             )
         }
 
-        val matched = resources.filter { matches(it, query, mode) }
+        val matched = resources.filter {
+            matches(it, query, mode, categoryMap?.get(it.id), searchScope)
+        }
         return matched.sortedWith(
-            compareByDescending<ResourceEntity> { isPrefixMatch(it, query) }
+            compareByDescending<ResourceEntity> {
+                isPrefixMatch(it, query, categoryMap?.get(it.id), searchScope)
+            }
                 .thenBy { it.sortOrder }
                 .thenBy { it.id }
         )

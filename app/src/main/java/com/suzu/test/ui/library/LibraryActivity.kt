@@ -88,12 +88,16 @@ class LibraryActivity : AppCompatActivity() {
             val isDeleted = data.getBooleanExtra(ResourceDetailActivity.EXTRA_DELETED, false)
             val targetPos = data.getIntExtra(ResourceDetailActivity.EXTRA_CURRENT_POSITION, 0)
             val deletedIdx = data.getIntExtra(ResourceDetailActivity.EXTRA_DELETED_INDEX, -1)
+            val shouldReposition = data.getBooleanExtra(
+                ResourceDetailActivity.EXTRA_REPOSITION_AFTER_PREVIEW,
+                false
+            )
 
             if (isDeleted && deletedIdx >= 0) {
                 val currentCount = adapter.itemCount
                 val safePos = deletedIdx.coerceIn(0, (currentCount - 1).coerceAtLeast(0))
                 gridLayoutManager.scrollToPositionWithOffset(safePos, 0)
-            } else {
+            } else if (shouldReposition) {
                 gridLayoutManager.scrollToPositionWithOffset(targetPos, 0)
             }
         }
@@ -490,13 +494,15 @@ class LibraryActivity : AppCompatActivity() {
     private fun showBatchOperationMenu(anchorView: View) {
         val popup = PopupMenu(this, anchorView)
         popup.menu.add(0, 1, 0, "置顶")
-        popup.menu.add(0, 2, 1, "关键词")
-        popup.menu.add(0, 3, 2, "分类")
-        popup.menu.add(0, 4, 3, "导出")
+        popup.menu.add(0, 5, 1, "置底")
+        popup.menu.add(0, 2, 2, "关键词")
+        popup.menu.add(0, 3, 3, "分类")
+        popup.menu.add(0, 4, 4, "导出")
 
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> handleBatchMoveToFront()
+                5 -> handleBatchMoveToBack()
                 2 -> showBatchKeywordsDialog()
                 3 -> showBatchCategoryDialog()
                 4 -> handleBatchExport()
@@ -522,6 +528,26 @@ class LibraryActivity : AppCompatActivity() {
                 }
             }
             Toast.makeText(this@LibraryActivity, "已将 $count 张表情移动到最前", Toast.LENGTH_SHORT).show()
+            setSelectionMode(false)
+        }
+    }
+
+    private fun handleBatchMoveToBack() {
+        if (selectedIds.isEmpty()) return
+        val currentSelection = categoryController.currentSelection
+        val orderedSelectedIds = currentDisplayedItems.filter { selectedIds.contains(it.id) }.map { it.id } +
+                selectedIds.filter { id -> currentDisplayedItems.none { it.id == id } }
+
+        lifecycleScope.launch {
+            val count = withContext(Dispatchers.IO) {
+                if (currentSelection == "ALL") {
+                    database.resourceDao().moveResourcesToBack(orderedSelectedIds)
+                } else {
+                    val catId = currentSelection.toLongOrNull() ?: 0L
+                    database.resourceCategoryDao().moveResourcesToBackInCategory(catId, orderedSelectedIds)
+                }
+            }
+            Toast.makeText(this@LibraryActivity, "已将 $count 张表情移动到最后", Toast.LENGTH_SHORT).show()
             setSelectionMode(false)
         }
     }
@@ -778,6 +804,7 @@ class LibraryActivity : AppCompatActivity() {
             val actions = mutableListOf<String>()
             actions.add("编辑关键词")
             actions.add("移动到最前")
+            actions.add("移动到最后")
             actions.add("调整位置")
             actions.add("分类")
             actions.add("导出")
@@ -792,6 +819,7 @@ class LibraryActivity : AppCompatActivity() {
                     when (actions[which]) {
                         "编辑关键词" -> showEditKeywordsDialog(resource)
                         "移动到最前" -> moveSingleResourceToFront(resource, selection)
+                        "移动到最后" -> moveSingleResourceToBack(resource, selection)
                         "调整位置" -> enterSortingMode()
                         "分类" -> showCategoryAssignmentDialog(resource)
                         "导出" -> ResourceExportHelper.exportResources(
@@ -818,6 +846,20 @@ class LibraryActivity : AppCompatActivity() {
                 }
             }
             Toast.makeText(this@LibraryActivity, "已将此表情移动到最前", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun moveSingleResourceToBack(resource: ResourceEntity, selection: String) {
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                if (selection == "ALL") {
+                    database.resourceDao().moveResourcesToBack(listOf(resource.id))
+                } else {
+                    val catId = selection.toLongOrNull() ?: 0L
+                    database.resourceCategoryDao().moveResourcesToBackInCategory(catId, listOf(resource.id))
+                }
+            }
+            Toast.makeText(this@LibraryActivity, "已将此表情移动到最后", Toast.LENGTH_SHORT).show()
         }
     }
 

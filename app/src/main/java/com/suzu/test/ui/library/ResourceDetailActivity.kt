@@ -45,6 +45,7 @@ class ResourceDetailActivity : AppCompatActivity() {
         const val EXTRA_CURRENT_POSITION = "extra_current_position"
         const val EXTRA_DELETED = "extra_deleted"
         const val EXTRA_DELETED_INDEX = "extra_deleted_index"
+        const val EXTRA_REPOSITION_AFTER_PREVIEW = "extra_reposition_after_preview"
     }
 
     private lateinit var binding: ActivityResourceDetailBinding
@@ -54,6 +55,8 @@ class ResourceDetailActivity : AppCompatActivity() {
     private val items = mutableListOf<ResourceEntity>()
     private var currentPosition: Int = 0
     private var detailAdapter: DetailPagerAdapter? = null
+    /** Whether the user actually switched pages in the detail pager. */
+    private var hasSwitchedPreview: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -147,6 +150,7 @@ class ResourceDetailActivity : AppCompatActivity() {
         val intent = Intent().apply {
             putExtra(EXTRA_CURRENT_POSITION, currentPosition)
             putExtra(EXTRA_DELETED, false)
+            putExtra(EXTRA_REPOSITION_AFTER_PREVIEW, hasSwitchedPreview)
         }
         setResult(RESULT_OK, intent)
         finish()
@@ -181,6 +185,9 @@ class ResourceDetailActivity : AppCompatActivity() {
             binding.vpDetailPager.adapter = detailAdapter
             binding.vpDetailPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
+                    if (position != currentPosition) {
+                        hasSwitchedPreview = true
+                    }
                     currentPosition = position
                     updateUIForPosition(position)
                 }

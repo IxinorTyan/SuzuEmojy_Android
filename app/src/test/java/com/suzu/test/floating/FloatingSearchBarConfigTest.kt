@@ -1,4 +1,4 @@
-﻿package com.suzu.test.floating
+package com.suzu.test.floating
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -32,5 +32,23 @@ class FloatingSearchBarConfigTest {
         // Test above max
         assertEquals(max, 1001.coerceIn(min, max))
         assertEquals(max, 9999.coerceIn(min, max))
+    }
+
+    @Test
+    fun searchScopeConstants_verifyValuesAndDefaults() {
+        assertEquals("floating_search_bar_scope", FloatingBallConfig.KEY_SEARCH_BAR_SCOPE)
+        assertEquals(0, FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY)
+        assertEquals(1, FloatingBallConfig.SEARCH_SCOPE_CATEGORY_ONLY)
+        assertEquals(2, FloatingBallConfig.SEARCH_SCOPE_TAG_AND_CATEGORY)
+        assertEquals(FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY, FloatingBallConfig.DEFAULT_SEARCH_BAR_SCOPE)
+
+        // Clamping logic
+        val min = FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY
+        val max = FloatingBallConfig.SEARCH_SCOPE_TAG_AND_CATEGORY
+        assertEquals(min, (-1).coerceIn(min, max))
+        assertEquals(0, 0.coerceIn(min, max))
+        assertEquals(1, 1.coerceIn(min, max))
+        assertEquals(2, 2.coerceIn(min, max))
+        assertEquals(max, 3.coerceIn(min, max))
     }
 }

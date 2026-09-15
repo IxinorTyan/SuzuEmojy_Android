@@ -104,6 +104,12 @@ object FloatingBallConfig {
     const val MAX_SEARCH_BAR_TOP_MARGIN_DP = 1000
     const val DEFAULT_SEARCH_BAR_TOP_MARGIN_FALLBACK_DP = 40
 
+    const val KEY_SEARCH_BAR_SCOPE = "floating_search_bar_scope"
+    const val SEARCH_SCOPE_TAG_ONLY = 0
+    const val SEARCH_SCOPE_CATEGORY_ONLY = 1
+    const val SEARCH_SCOPE_TAG_AND_CATEGORY = 2
+    const val DEFAULT_SEARCH_BAR_SCOPE = SEARCH_SCOPE_TAG_ONLY
+
     const val SHAPE_CIRCLE = 0
     const val SHAPE_ROUNDED_RECT = 1
     const val SHAPE_BORDERLESS = 2
@@ -545,6 +551,20 @@ object FloatingBallConfig {
         context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
             .edit()
             .putInt(KEY_SEARCH_BAR_TOP_MARGIN_DP, clamped)
+            .apply()
+    }
+
+    fun getSearchBarScope(context: Context): Int {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getInt(KEY_SEARCH_BAR_SCOPE, DEFAULT_SEARCH_BAR_SCOPE)
+            .coerceIn(SEARCH_SCOPE_TAG_ONLY, SEARCH_SCOPE_TAG_AND_CATEGORY)
+    }
+
+    fun setSearchBarScope(context: Context, scope: Int) {
+        val clamped = scope.coerceIn(SEARCH_SCOPE_TAG_ONLY, SEARCH_SCOPE_TAG_AND_CATEGORY)
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_SEARCH_BAR_SCOPE, clamped)
             .apply()
     }
 }

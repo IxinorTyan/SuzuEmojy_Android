@@ -1067,6 +1067,16 @@ class SettingsFloatingActivity : AppCompatActivity() {
             accessibility.syncBallState()
             accessibility.showSearchBar()
         }
+
+        binding.rgSearchBarScope.setOnCheckedChangeListener { _, checkedId ->
+            val scope = when (checkedId) {
+                R.id.rbScopeCategoryOnly -> FloatingBallConfig.SEARCH_SCOPE_CATEGORY_ONLY
+                R.id.rbScopeTagAndCategory -> FloatingBallConfig.SEARCH_SCOPE_TAG_AND_CATEGORY
+                else -> FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY
+            }
+            FloatingBallConfig.setSearchBarScope(this, scope)
+            TestLog.i(MODULE, "修改搜索框检索范围: $scope")
+        }
     }
 
     private fun updateSearchBarUI() {
@@ -1074,5 +1084,12 @@ class SettingsFloatingActivity : AppCompatActivity() {
         binding.sbSearchBarTopMargin.progress =
             currentMargin - FloatingBallConfig.MIN_SEARCH_BAR_TOP_MARGIN_DP
         binding.tvSearchBarTopMarginValue.text = "$currentMargin dp"
+
+        val currentScope = FloatingBallConfig.getSearchBarScope(this)
+        when (currentScope) {
+            FloatingBallConfig.SEARCH_SCOPE_CATEGORY_ONLY -> binding.rbScopeCategoryOnly.isChecked = true
+            FloatingBallConfig.SEARCH_SCOPE_TAG_AND_CATEGORY -> binding.rbScopeTagAndCategory.isChecked = true
+            else -> binding.rbScopeTagOnly.isChecked = true
+        }
     }
 }

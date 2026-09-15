@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="12dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical">
+        <ImageButton android:id="@+id/btnBack" android:layout_width="48dp" android:layout_height="48dp"
+            android:src="@drawable/ic_arrow_back_24" android:contentDescription="返回"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="相似图片清理" android:textSize="18sp" android:textStyle="bold" />
+    </LinearLayout>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="查找外观相近的图片和动图，自行比较并选择删除。" android:paddingVertical="8dp" />
+    <Spinner android:id="@+id/spinnerMedia" android:layout_width="match_parent" android:layout_height="48dp"
+        android:contentDescription="图片类型" />
+    <Spinner android:id="@+id/spinnerScope" android:layout_width="match_parent" android:layout_height="48dp"
+        android:contentDescription="扫描范围" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="匹配范围：严格 → 宽松" android:textStyle="bold" android:paddingTop="8dp" />
+    <SeekBar android:id="@+id/seekThreshold" android:layout_width="match_parent" android:layout_height="48dp"
+        android:max="16" android:progress="6" android:contentDescription="匹配范围，向右调节更宽松" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="越宽松，候选差异可能越大。重新匹配会清空勾选。" android:textSize="12sp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+        <Button android:id="@+id/btnScan" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="开始扫描" />
+        <Button android:id="@+id/btnCancel" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="取消" android:visibility="gone" />
+    </LinearLayout>
+    <ProgressBar android:id="@+id/progress" style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent" android:layout_height="4dp" android:indeterminate="true" android:visibility="gone" />
+    <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:paddingVertical="8dp" android:accessibilityLiveRegion="polite" />
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvGroups"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+    <Button android:id="@+id/btnDelete" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="删除所选（0）" android:enabled="false" />
+</LinearLayout>

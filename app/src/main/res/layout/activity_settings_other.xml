@@ -71,7 +71,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="说人话:避免微信现发送雷霆大图,增强QQ兼容性"
+            android:text="说人话:避免微信发送雷霆大图,增强QQ兼容性"
             android:textSize="12sp"
             android:textColor="#888888"
             android:layout_marginTop="4dp" />

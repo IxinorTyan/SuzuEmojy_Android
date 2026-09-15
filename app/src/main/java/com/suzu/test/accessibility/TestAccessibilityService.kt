@@ -52,7 +52,6 @@ class TestAccessibilityService : AccessibilityService() {
     var imeDetectionAvailable: Boolean = true
         private set
 
-    // 旧版精髓：无障碍通道自行缓存上次可见性，仅真实跃迁时才通知悬浮球
     private var lastImeVisible: Boolean? = null
 
     // 自家 IME 已明确隐藏后的短暂保护期，避免无障碍窗口列表残留立即覆盖为 true
@@ -74,7 +73,7 @@ class TestAccessibilityService : AccessibilityService() {
         }
     }
 
-    private val IME_DIAG = false // 自测开关（已关闭诊断）
+    private val IME_DIAG = false
     private var lastDiagTime = 0L
 
     private fun logImeDiag(event: AccessibilityEvent) {
@@ -229,10 +228,6 @@ class TestAccessibilityService : AccessibilityService() {
                 }
             }
 
-            // previous_ime_id 只在 switchToTestIme() 切入前记录（与 1.4 一致）。
-            // 窗口可能残留或属于本 IME，不能从窗口包名反推并覆盖原输入法。
-
-            // 有效 IME 边界同时供边缘手势跟随。
             val imeTop = imeRects
                 .asSequence()
                 .filter { rect -> isImeWindowValid(rect, screenHeight) }
@@ -534,7 +529,6 @@ class TestAccessibilityService : AccessibilityService() {
         val attempt = com.suzu.test.ime.ImeSwitchAttempt(android.os.SystemClock.uptimeMillis())
         switchAttempt = attempt
         val initialIme = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-        // 系统切换必须立即发起；微信的无障碍输入框节点可能暂时不可见，不能阻塞切换请求。
         var switched = switchToTestIme()
         if (!switched) {
             cancelImeSwitch("系统未接受切换请求")
@@ -560,8 +554,6 @@ class TestAccessibilityService : AccessibilityService() {
                 try {
                     val matches = root != null && root.windowId == target.windowId &&
                         root.packageName?.toString() == target.packageName
-                    // A focused application window other than our overlay means the user left.
-                    // 微信等应用在切换输入法时会短暂重建窗口，不能因 windowId/focus 瞬态变化取消请求。
                     if (matches) focused = root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
                     val ready = matches && focused?.isEditable == true && focused?.isVisibleToUser == true
                     val visible = own && ready && TestImageIME.instance?.isShowingFor(target.packageName) == true

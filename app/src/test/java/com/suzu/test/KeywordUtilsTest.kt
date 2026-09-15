@@ -120,4 +120,110 @@ class KeywordUtilsTest {
         assertEquals(resPrefix.id, sorted[0].id)
         assertEquals(resInfix.id, sorted[1].id)
     }
+
+    @Test
+    fun testFilenameNotMatched() {
+        val res = ResourceEntity(
+            id = 10,
+            filename = "cat_in_box_funny.png",
+            format = "PNG",
+            isAnimated = false,
+            syncKey = "p:10",
+            pixelMd5 = "10",
+            fileMd5 = "10",
+            width = 100,
+            height = 100,
+            byteSize = 1000,
+            keywords = "kitten cute",
+            sortOrder = 0
+        )
+
+        // Filename contains "cat" and "funny", but keywords don't
+        assertFalse(KeywordUtils.matches(res, "cat"))
+        assertFalse(KeywordUtils.matches(res, "funny"))
+        assertFalse(KeywordUtils.isPrefixMatch(res, "cat"))
+
+        // Searching keywords matches
+        assertTrue(KeywordUtils.matches(res, "kitten"))
+        assertTrue(KeywordUtils.matches(res, "cute"))
+    }
+
+    @Test
+    fun testSearchScopes() {
+        val res = ResourceEntity(
+            id = 20,
+            filename = "img20.png",
+            format = "PNG",
+            isAnimated = false,
+            syncKey = "p:20",
+            pixelMd5 = "20",
+            fileMd5 = "20",
+            width = 100,
+            height = 100,
+            byteSize = 1000,
+            keywords = "happy smile",
+            sortOrder = 0
+        )
+        val categories = listOf("MemeCategory", "Anime")
+
+        // 1. SEARCH_SCOPE_TAG_ONLY
+        val scopeTag = com.suzu.test.floating.FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY
+        assertTrue(KeywordUtils.matches(res, "happy", categoryNames = categories, searchScope = scopeTag))
+        assertFalse(KeywordUtils.matches(res, "meme", categoryNames = categories, searchScope = scopeTag))
+
+        // 2. SEARCH_SCOPE_CATEGORY_ONLY
+        val scopeCat = com.suzu.test.floating.FloatingBallConfig.SEARCH_SCOPE_CATEGORY_ONLY
+        assertFalse(KeywordUtils.matches(res, "happy", categoryNames = categories, searchScope = scopeCat))
+        assertTrue(KeywordUtils.matches(res, "meme", categoryNames = categories, searchScope = scopeCat))
+        assertTrue(KeywordUtils.matches(res, "anime", categoryNames = categories, searchScope = scopeCat))
+
+        // 3. SEARCH_SCOPE_TAG_AND_CATEGORY
+        val scopeBoth = com.suzu.test.floating.FloatingBallConfig.SEARCH_SCOPE_TAG_AND_CATEGORY
+        assertTrue(KeywordUtils.matches(res, "happy", categoryNames = categories, searchScope = scopeBoth))
+        assertTrue(KeywordUtils.matches(res, "meme", categoryNames = categories, searchScope = scopeBoth))
+        assertTrue(KeywordUtils.matches(res, "anime", categoryNames = categories, searchScope = scopeBoth))
+        assertFalse(KeywordUtils.matches(res, "sad", categoryNames = categories, searchScope = scopeBoth))
+    }
+
+    @Test
+    fun testFilterAndSortWithCategoryMap() {
+        val res1 = ResourceEntity(
+            id = 1,
+            filename = "1.png",
+            format = "PNG",
+            isAnimated = false,
+            syncKey = "p:1",
+            pixelMd5 = "1",
+            fileMd5 = "1",
+            width = 100,
+            height = 100,
+            byteSize = 100,
+            keywords = "unrelated",
+            sortOrder = 10
+        )
+        val res2 = ResourceEntity(
+            id = 2,
+            filename = "2.png",
+            format = "PNG",
+            isAnimated = false,
+            syncKey = "p:2",
+            pixelMd5 = "2",
+            fileMd5 = "2",
+            width = 100,
+            height = 100,
+            byteSize = 100,
+            keywords = "dog",
+            sortOrder = 5
+        )
+
+        val catMap = mapOf(1L to listOf("DogeFolder"))
+        val scopeBoth = com.suzu.test.floating.FloatingBallConfig.SEARCH_SCOPE_TAG_AND_CATEGORY
+        val result = KeywordUtils.filterAndSort(listOf(res1, res2), "dog", categoryMap = catMap, searchScope = scopeBoth)
+
+        // Both should match: res2 via tag "dog", res1 via category "DogeFolder"
+        assertEquals(2, result.size)
+        // Both are prefix matches ("dog" and "dogefolder"), ordered by sortOrder (res2 has 5, res1 has 10)
+        assertEquals(2L, result[0].id)
+        assertEquals(1L, result[1].id)
+    }
 }

@@ -1365,6 +1365,64 @@
                         android:layout_marginStart="12dp"
                         android:text="预览测试搜索框" />
                 </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#F0F0F0"
+                    android:layout_marginVertical="12dp" />
+
+                <!-- 检索范围设置 -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="检索范围"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#555555" />
+
+                <RadioGroup
+                    android:id="@+id/rgSearchBarScope"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <RadioButton
+                        android:id="@+id/rbScopeTagOnly"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="仅 tag"
+                        android:textSize="13sp"
+                        android:textColor="#333333" />
+
+                    <RadioButton
+                        android:id="@+id/rbScopeCategoryOnly"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="仅分类夹"
+                        android:textSize="13sp"
+                        android:textColor="#333333" />
+
+                    <RadioButton
+                        android:id="@+id/rbScopeTagAndCategory"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1.2"
+                        android:text="tag和分类夹"
+                        android:textSize="13sp"
+                        android:textColor="#333333" />
+                </RadioGroup>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="控制悬浮搜索框检索表情时的匹配范围（已排除文件名称匹配）"
+                    android:textSize="11sp"
+                    android:textColor="#888888"
+                    android:layout_marginTop="4dp" />
             </LinearLayout>
 
             <!-- ================= 区块 5：实时示意预览（独立区块，仅跟随总开关，不随悬浮球/手势折叠） ================= -->

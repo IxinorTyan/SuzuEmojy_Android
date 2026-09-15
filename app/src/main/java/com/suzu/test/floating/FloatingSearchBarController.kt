@@ -309,7 +309,8 @@ class FloatingSearchBarController(private val context: Context) {
             return
         }
 
-        TestLog.i(MODULE, "发起搜索: query='$query'")
+        val scope = FloatingBallConfig.getSearchBarScope(context)
+        TestLog.i(MODULE, "发起搜索: query='$query', scope=$scope")
         ImeSearchStateHolder.setSearchQuery(query)
 
         // 1. 回车/点击搜索后，检索悬浮窗立即自动收起隐藏，但不主动关闭软键盘以避免输入会话中断

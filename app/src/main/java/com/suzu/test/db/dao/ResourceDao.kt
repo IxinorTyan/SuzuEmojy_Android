@@ -101,6 +101,9 @@ interface ResourceDao {
     @Query("SELECT MIN(sort_order) FROM resources")
     suspend fun getMinSortOrder(): Int?
 
+    @Query("SELECT MAX(sort_order) FROM resources")
+    suspend fun getMaxSortOrder(): Int?
+
     @Query("UPDATE resources SET sort_order = :sortOrder WHERE id = :id")
     suspend fun updateSortOrder(id: Long, sortOrder: Int)
 
@@ -114,23 +117,33 @@ interface ResourceDao {
     @androidx.room.Transaction
     suspend fun moveResourcesToFront(ids: List<Long>): Int {
         if (ids.isEmpty()) return 0
-        val minSort = getMinSortOrder() ?: 0
+        val baseSort = (getMinSortOrder() ?: 0) - ids.size
         ids.forEachIndexed { index, id ->
-            updateSortOrder(id, minSort - 1 - index)
+            updateSortOrder(id, baseSort + index)
+        }
+        return ids.size
+    }
+
+    @androidx.room.Transaction
+    suspend fun moveResourcesToBack(ids: List<Long>): Int {
+        if (ids.isEmpty()) return 0
+        val maxSort = getMaxSortOrder() ?: 0
+        ids.forEachIndexed { index, id ->
+            updateSortOrder(id, maxSort + 1 + index)
         }
         return ids.size
     }
 
     @Query("""
         SELECT * FROM resources 
-        WHERE lower(keywords) LIKE '%' || :kw || '%' OR lower(filename) LIKE '%' || :kw || '%'
+        WHERE lower(keywords) LIKE '%' || :kw || '%'
         ORDER BY sort_order ASC, id ASC
     """)
     fun searchResourcesSubstring(kw: String): Flow<List<ResourceEntity>>
 
     @Query("""
         SELECT * FROM resources 
-        WHERE lower(keywords) LIKE :kw || '%' OR lower(keywords) LIKE '% ' || :kw || '%' OR lower(filename) LIKE :kw || '%'
+        WHERE lower(keywords) LIKE :kw || '%' OR lower(keywords) LIKE '% ' || :kw || '%'
         ORDER BY sort_order ASC, id ASC
     """)
     fun searchResourcesPrefix(kw: String): Flow<List<ResourceEntity>>
