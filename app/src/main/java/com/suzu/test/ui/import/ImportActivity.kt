@@ -224,6 +224,28 @@ class ImportActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        binding.tvProgress.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: android.text.Editable?) {
+                if (!s.isNullOrBlank()) {
+                    binding.layoutStatusSection.visibility = android.view.View.VISIBLE
+                }
+            }
+        })
+
+        binding.tvSummary.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val hasText = !s.isNullOrBlank()
+                binding.tvSummary.visibility = if (hasText) android.view.View.VISIBLE else android.view.View.GONE
+                if (hasText) {
+                    binding.layoutStatusSection.visibility = android.view.View.VISIBLE
+                }
+            }
+        })
+
         // 页面重建后如果之前有待弹出的对话框，恢复弹出
         val pendingSummary = viewModel.lastImportSummary
         if (!viewModel.isDialogShown && pendingSummary != null) {
@@ -328,8 +350,8 @@ class ImportActivity : AppCompatActivity() {
             }
             if (category != null) {
                 presetCategoryName = category.name
-                val titleView = binding.root.getChildAt(0) as? android.widget.TextView
-                titleView?.text = "导入表情到「${category.name}」"
+                binding.tvTitle.text = "导入到「${category.name}」"
+                binding.tvSubtitle.text = "导入的表情将自动添加至此分类"
             } else {
                 presetCategoryId = null
             }

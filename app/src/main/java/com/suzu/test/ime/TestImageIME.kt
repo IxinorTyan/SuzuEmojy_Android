@@ -106,6 +106,8 @@ class TestImageIME : InputMethodService() {
 
     override fun onCreateInputView(): View {
         TestLog.i(MODULE, "onCreateInputView: 创建 SuzuEmojy 键盘界面")
+        tabBar?.destroy()
+        tabBar = null
         val viewBinding = ViewImeKeyboardBinding.inflate(layoutInflater)
         binding = viewBinding
 
@@ -132,6 +134,7 @@ class TestImageIME : InputMethodService() {
         viewBinding.vpCategoryPager.adapter = pagerAdapter
         // 关键：预加载前后各 1 页，拖动时 0ms 顺畅露边，绝不白屏
         viewBinding.vpCategoryPager.offscreenPageLimit = 1
+        var updatingTabs = false
         viewBinding.vpCategoryPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageScrollStateChanged(state: Int) {
                 if (state == ViewPager2.SCROLL_STATE_DRAGGING) {
@@ -140,6 +143,8 @@ class TestImageIME : InputMethodService() {
             }
 
             override fun onPageSelected(position: Int) {
+                if (updatingTabs || tabBar?.hasLoadedCategories() != true ||
+                    binding !== viewBinding || position != viewBinding.vpCategoryPager.currentItem) return
                 val tabKey = pagerAdapter.getTabKey(position) ?: return
                 if (tabBar?.currentTab != tabKey) {
                     tabBar?.selectTab(tabKey, notify = false)
@@ -171,10 +176,16 @@ class TestImageIME : InputMethodService() {
             }
         )
         tb.onTabsStructureChanged = { tabs, selectedTab ->
-            pagerAdapter.setTabs(tabs)
-            val pos = pagerAdapter.getPositionForTab(selectedTab)
-            if (pos >= 0 && viewBinding.vpCategoryPager.currentItem != pos) {
-                viewBinding.vpCategoryPager.setCurrentItem(pos, false)
+            updatingTabs = true
+            try {
+                pagerAdapter.setTabs(tabs)
+                val pos = pagerAdapter.getPositionForTab(selectedTab)
+                if (pos >= 0 && viewBinding.vpCategoryPager.currentItem != pos) {
+                    viewBinding.vpCategoryPager.setCurrentItem(pos, false)
+                }
+                imeTabDropdown?.setSelectedTab(selectedTab)
+            } finally {
+                updatingTabs = false
             }
         }
         tabBar = tb
@@ -190,9 +201,6 @@ class TestImageIME : InputMethodService() {
         )
         imeTabDropdown = dropdown
         dropdown.refreshTheme()
-
-        val initialTabs = tb.orderedTabs()
-        pagerAdapter.setTabs(initialTabs)
 
         val initialEffectiveTab = tb.getEffectiveTab()
         dropdown.setSelectedTab(initialEffectiveTab)
@@ -338,6 +346,7 @@ class TestImageIME : InputMethodService() {
     }
 
     override fun onWindowHidden() {
+        tabBar?.saveNavigationState()
         super.onWindowHidden()
         imeWindowVisible = false
         isImeShowing = false
@@ -466,6 +475,7 @@ class TestImageIME : InputMethodService() {
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
+        tabBar?.saveNavigationState()
         previewPopup?.dismiss()
         imeTabDropdown?.close()
         isImeShowing = false
@@ -476,6 +486,7 @@ class TestImageIME : InputMethodService() {
     }
 
     override fun onFinishInput() {
+        tabBar?.saveNavigationState()
         previewPopup?.dismiss()
         isImeShowing = false
         imeWindowVisible = false
@@ -496,6 +507,7 @@ class TestImageIME : InputMethodService() {
      * 统一恢复先前输入法入口
      */
     fun restorePreviousKeyboard(reason: String = ""): Boolean {
+        tabBar?.saveNavigationState()
         TestAccessibilityService.instance?.cancelImeSwitch("恢复原输入法: $reason")
         TestLog.i(MODULE, ">>> 执行恢复原输入法 ($reason)")
         isImeShowing = false
@@ -565,6 +577,7 @@ class TestImageIME : InputMethodService() {
     }
 
     override fun onDestroy() {
+        tabBar?.saveNavigationState()
         imeWindowVisible = false
         if (instance === this) {
             instance = null

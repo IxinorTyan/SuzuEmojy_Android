@@ -1,38 +1,355 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:padding="12dp">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical">
-        <ImageButton android:id="@+id/btnBack" android:layout_width="48dp" android:layout_height="48dp"
-            android:src="@drawable/ic_arrow_back_24" android:contentDescription="返回"
-            android:background="?attr/selectableItemBackgroundBorderless" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="相似图片清理" android:textSize="18sp" android:textStyle="bold" />
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F8FAFC">
+
+    <!-- 顶部导航栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_back_24"
+            app:tint="#0F172A"
+            android:padding="8dp"
+            android:contentDescription="返回" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="相似图片清理"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#0F172A"
+                android:letterSpacing="-0.01" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="感知哈希比对 · 查找外观相近与重复表情"
+                android:textSize="12sp"
+                android:textColor="#64748B"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
     </LinearLayout>
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="查找外观相近的图片和动图，自行比较并选择删除。" android:paddingVertical="8dp" />
-    <Spinner android:id="@+id/spinnerMedia" android:layout_width="match_parent" android:layout_height="48dp"
-        android:contentDescription="图片类型" />
-    <Spinner android:id="@+id/spinnerScope" android:layout_width="match_parent" android:layout_height="48dp"
-        android:contentDescription="扫描范围" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="匹配范围：严格 → 宽松" android:textStyle="bold" android:paddingTop="8dp" />
-    <SeekBar android:id="@+id/seekThreshold" android:layout_width="match_parent" android:layout_height="48dp"
-        android:max="16" android:progress="6" android:contentDescription="匹配范围，向右调节更宽松" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="越宽松，候选差异可能越大。重新匹配会清空勾选。" android:textSize="12sp" />
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content">
-        <Button android:id="@+id/btnScan" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:text="开始扫描" />
-        <Button android:id="@+id/btnCancel" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="取消" android:visibility="gone" />
-    </LinearLayout>
-    <ProgressBar android:id="@+id/progress" style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent" android:layout_height="4dp" android:indeterminate="true" android:visibility="gone" />
-    <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:paddingVertical="8dp" android:accessibilityLiveRegion="polite" />
-    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvGroups"
-        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
-    <Button android:id="@+id/btnDelete" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="删除所选（0）" android:enabled="false" />
+
+    <!-- 扫描配置与控制卡片 -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="8dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="1.5dp"
+        app:cardMaxElevation="3dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="#E2E8F0"
+        app:cardBackgroundColor="#FFFFFF">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- 筛选下拉框两列并排 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- 媒体类型 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="图片类型"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="#64748B"
+                        android:layout_marginBottom="4dp" />
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_rounded_input_field">
+
+                        <Spinner
+                            android:id="@+id/spinnerMedia"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:contentDescription="图片类型" />
+                    </FrameLayout>
+                </LinearLayout>
+
+                <!-- 扫描范围 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="扫描范围"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="#64748B"
+                        android:layout_marginBottom="4dp" />
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_rounded_input_field">
+
+                        <Spinner
+                            android:id="@+id/spinnerScope"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:contentDescription="扫描范围" />
+                    </FrameLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 阈值调节区域 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="匹配阈值"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#0F172A" />
+
+                <TextView
+                    android:id="@+id/tvThresholdBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="阈值: 6 · 推荐"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#2563EB"
+                    android:background="@drawable/bg_home_tag_blue"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2.5dp" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seekThreshold"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:max="16"
+                android:progress="6"
+                android:progressTint="#2563EB"
+                android:thumbTint="#2563EB"
+                android:contentDescription="匹配范围，向右调节更宽松"
+                android:layout_marginTop="2dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="严格 (0)"
+                    android:textSize="11sp"
+                    android:textColor="#94A3B8" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="宽松 (16)"
+                    android:textSize="11sp"
+                    android:textColor="#94A3B8" />
+            </LinearLayout>
+
+            <!-- 操作按钮行 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnScan"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="开始扫描"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="10dp"
+                    app:backgroundTint="#2563EB" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCancel"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="8dp"
+                    android:text="取消"
+                    android:textSize="13sp"
+                    android:textColor="#64748B"
+                    app:strokeColor="#CBD5E1"
+                    app:cornerRadius="10dp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:indeterminate="true"
+                android:indeterminateTint="#2563EB"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="#64748B"
+                android:layout_marginTop="6dp"
+                android:accessibilityLiveRegion="polite" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 结果网格内容与空状态区域 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="10dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvGroups"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="12dp" />
+
+        <!-- 空状态提示 -->
+        <LinearLayout
+            android:id="@+id/layoutEmptyState"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <FrameLayout
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_home_icon_blue"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_similar_images"
+                    app:tint="#2563EB"
+                    android:contentDescription="相似图片" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvEmptyTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="未发现疑似相似图片"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#334155" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="可尝试调大匹配阈值后重新扫描"
+                android:textSize="12sp"
+                android:textColor="#94A3B8"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- 底部删除操作栏 (扫描后且有结果时显示) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/layoutDeleteBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardElevation="4dp"
+        app:cardMaxElevation="6dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="#E2E8F0"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="0dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="14dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDelete"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="删除所选（0）"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#94A3B8"
+                app:cornerRadius="12dp"
+                app:backgroundTint="#E2E8F0"
+                android:enabled="false" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
 </LinearLayout>

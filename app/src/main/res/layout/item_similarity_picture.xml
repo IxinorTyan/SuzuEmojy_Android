@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardPictureRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="3dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
+    app:cardMaxElevation="2dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="#E2E8F0"
+    app:cardBackgroundColor="#FFFFFF"
+    app:rippleColor="#1A2563EB">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- 图片展示区域 -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="108dp"
+            android:background="#F8FAFC">
+
+            <ImageView
+                android:id="@+id/ivPicture"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="6dp"
+                android:scaleType="fitCenter" />
+
+            <!-- 右上角勾选 CheckBox -->
+            <CheckBox
+                android:id="@+id/cbSelect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="6dp"
+                app:buttonTint="#2563EB" />
+        </FrameLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F1F5F9" />
+
+        <!-- 底部尺寸与信息 -->
+        <TextView
+            android:id="@+id/tvPictureInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="5dp"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="middle"
+            android:textSize="11sp"
+            android:textColor="#64748B" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

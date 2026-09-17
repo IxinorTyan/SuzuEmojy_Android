@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.EditText
 import android.widget.PopupMenu
@@ -136,6 +135,14 @@ class LibraryActivity : AppCompatActivity() {
                     updateTitleAndCount(selection, list)
                     dragHelper?.updateItems(list)
                 }
+            },
+            isScaleEnabled = { !isSortingMode && !isSelectionMode },
+            onScale = { factor ->
+                val currentSpan = libraryPagerAdapter.spanCount
+                when {
+                    factor > 1.15f && currentSpan > MIN_SPAN_COUNT -> changeSpanCount(currentSpan - 1)
+                    factor < 0.85f && currentSpan < MAX_SPAN_COUNT -> changeSpanCount(currentSpan + 1)
+                }
             }
         )
         libraryPagerAdapter.updateSpanCount(savedSpan)
@@ -186,7 +193,6 @@ class LibraryActivity : AppCompatActivity() {
             dragHelper?.startDrag(viewHolder)
         }
 
-        setupScaleGesture()
         setupTopBar()
         setupImportButton()
         setupFilterButton()
@@ -296,42 +302,6 @@ class LibraryActivity : AppCompatActivity() {
             binding.btnImport.visibility = if (!isSelectionMode) View.VISIBLE else View.GONE
             binding.btnToggleSelectMode.visibility = View.VISIBLE
             binding.tvSortingModeHint.visibility = View.GONE
-        }
-    }
-
-    private fun setupScaleGesture() {
-        var spanChangedInThisGesture = false
-        val scaleDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-                spanChangedInThisGesture = false
-                return true
-            }
-
-            override fun onScale(detector: ScaleGestureDetector): Boolean {
-                if (spanChangedInThisGesture) return false
-
-                val factor = detector.scaleFactor
-                val currentSpan = libraryPagerAdapter.spanCount
-
-                if (factor > 1.15f && currentSpan > MIN_SPAN_COUNT) {
-                    changeSpanCount(currentSpan - 1)
-                    spanChangedInThisGesture = true
-                    return true
-                } else if (factor < 0.85f && currentSpan < MAX_SPAN_COUNT) {
-                    changeSpanCount(currentSpan + 1)
-                    spanChangedInThisGesture = true
-                    return true
-                }
-                return false
-            }
-        })
-
-        binding.vpLibraryPager.setOnTouchListener { _, event ->
-            if (isSortingMode) return@setOnTouchListener false
-            if (event.pointerCount > 1) {
-                scaleDetector.onTouchEvent(event)
-            }
-            false
         }
     }
 
@@ -467,15 +437,28 @@ class LibraryActivity : AppCompatActivity() {
 
     private fun updateBatchActionBar() {
         val count = selectedIds.size
-        binding.tvSelectedCount.text = "已选 ${count} 张"
+        binding.tvSelectedCount.text = "${count}张"
 
         val hasSelection = count > 0
         binding.btnBatchOperation.isEnabled = hasSelection
         binding.btnBatchDelete.isEnabled = hasSelection
+        binding.btnBatchMoveToFront.isEnabled = hasSelection
+        binding.btnBatchMoveToBack.isEnabled = hasSelection
+        listOf(binding.btnBatchOperation, binding.btnBatchDelete,
+            binding.btnBatchMoveToFront, binding.btnBatchMoveToBack).forEach {
+            it.alpha = if (hasSelection) 1f else 0.3f
+        }
 
         val visibleIds = currentDisplayedItems.map { it.id }
         val isAllVisibleSelected = visibleIds.isNotEmpty() && visibleIds.all { selectedIds.contains(it) }
-        binding.btnBatchSelectAll.text = if (isAllVisibleSelected) "取消全选" else "全选"
+        binding.btnBatchSelectAll.isSelected = isAllVisibleSelected
+        val selectAllLabel = if (isAllVisibleSelected) "取消全选" else "全选"
+        binding.btnBatchSelectAll.contentDescription = selectAllLabel
+        binding.btnBatchSelectAll.tooltipText = selectAllLabel
+        listOf(binding.btnBatchSelectAll, binding.btnBatchInvertSelection).forEach {
+            it.isEnabled = visibleIds.isNotEmpty()
+            it.alpha = if (it.isEnabled) 1f else 0.3f
+        }
     }
 
     private fun setupBatchActionBar() {
@@ -493,6 +476,16 @@ class LibraryActivity : AppCompatActivity() {
             updateBatchActionBar()
         }
 
+        binding.btnBatchInvertSelection.setOnClickListener {
+            currentDisplayedItems.forEach { item ->
+                if (!selectedIds.remove(item.id)) selectedIds.add(item.id)
+            }
+            libraryPagerAdapter.setSelectionState(isSelectionMode, selectedIds)
+            updateBatchActionBar()
+        }
+        binding.btnBatchMoveToFront.setOnClickListener { handleBatchMoveToFront() }
+        binding.btnBatchMoveToBack.setOnClickListener { handleBatchMoveToBack() }
+
         binding.btnBatchOperation.setOnClickListener { view ->
             if (selectedIds.isEmpty()) return@setOnClickListener
             showBatchOperationMenu(view)
@@ -505,16 +498,12 @@ class LibraryActivity : AppCompatActivity() {
 
     private fun showBatchOperationMenu(anchorView: View) {
         val popup = PopupMenu(this, anchorView)
-        popup.menu.add(0, 1, 0, "置顶")
-        popup.menu.add(0, 5, 1, "置底")
         popup.menu.add(0, 2, 2, "关键词")
         popup.menu.add(0, 3, 3, "分类")
         popup.menu.add(0, 4, 4, "导出")
 
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                1 -> handleBatchMoveToFront()
-                5 -> handleBatchMoveToBack()
                 2 -> showBatchKeywordsDialog()
                 3 -> showBatchCategoryDialog()
                 4 -> handleBatchExport()

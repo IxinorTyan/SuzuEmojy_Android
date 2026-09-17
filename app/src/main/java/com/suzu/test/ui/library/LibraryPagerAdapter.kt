@@ -3,6 +3,7 @@ package com.suzu.test.ui.library
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
@@ -27,7 +28,9 @@ class LibraryPagerAdapter(
     private val onItemClick: (ResourceEntity) -> Unit,
     private val onItemSelectToggle: (ResourceEntity) -> Unit,
     private val onItemLongClick: (ResourceEntity) -> Unit,
-    private val onPageListUpdated: (selection: String, list: List<ResourceEntity>) -> Unit
+    private val onPageListUpdated: (selection: String, list: List<ResourceEntity>) -> Unit,
+    private val isScaleEnabled: () -> Boolean,
+    private val onScale: (Float) -> Unit
 ) : RecyclerView.Adapter<LibraryPagerAdapter.PageViewHolder>() {
 
     private val selections = mutableListOf<String>()
@@ -126,6 +129,29 @@ class LibraryPagerAdapter(
         private var downX = 0f
         private var downY = 0f
         private var directionDetermined = false
+        private var ownsPinchGesture = false
+        private var spanChangedInThisGesture = false
+
+        private val scaleDetector = ScaleGestureDetector(
+            context,
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+                    return isScaleEnabled()
+                }
+
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                    if (!isScaleEnabled() || spanChangedInThisGesture) return false
+                    val factor = detector.scaleFactor
+                    if (factor > 1.15f || factor < 0.85f) {
+                        onScale(factor)
+                        spanChangedInThisGesture = true
+                        return true
+                    }
+                    // Keep the detector's reference span until the cumulative change reaches 15%.
+                    return false
+                }
+            }
+        )
 
         init {
             binding.rvPageGrid.layoutManager = gridLayoutManager
@@ -134,12 +160,26 @@ class LibraryPagerAdapter(
 
             binding.rvPageGrid.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
                 override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                    if (e.actionMasked == MotionEvent.ACTION_DOWN) {
+                        ownsPinchGesture = false
+                        spanChangedInThisGesture = false
+                    }
+                    if (isScaleEnabled()) {
+                        scaleDetector.onTouchEvent(e)
+                        if (e.pointerCount > 1) {
+                            ownsPinchGesture = true
+                            rv.parent?.requestDisallowInterceptTouchEvent(true)
+                            // Cancel thumbnail clicks and let this listener own the remaining stream.
+                            return true
+                        }
+                    }
                     when (e.actionMasked) {
                         MotionEvent.ACTION_DOWN -> {
                             downX = e.x
                             downY = e.y
                             directionDetermined = false
-                            rv.parent?.requestDisallowInterceptTouchEvent(false)
+                            // Decide the direction before allowing the pager to intercept a MOVE.
+                            rv.parent?.requestDisallowInterceptTouchEvent(true)
                         }
                         MotionEvent.ACTION_MOVE -> {
                             if (!directionDetermined) {
@@ -163,6 +203,20 @@ class LibraryPagerAdapter(
                         }
                     }
                     return false
+                }
+
+                override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
+                    if (!ownsPinchGesture) return
+                    scaleDetector.onTouchEvent(e)
+                    if (e.actionMasked == MotionEvent.ACTION_UP ||
+                        e.actionMasked == MotionEvent.ACTION_CANCEL) {
+                        ownsPinchGesture = false
+                        directionDetermined = false
+                        rv.parent?.requestDisallowInterceptTouchEvent(false)
+                    } else {
+                        // Keep ownership even after one finger lifts: no accidental page swipe.
+                        rv.parent?.requestDisallowInterceptTouchEvent(true)
+                    }
                 }
             })
         }

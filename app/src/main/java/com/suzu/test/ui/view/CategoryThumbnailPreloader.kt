@@ -18,6 +18,8 @@ class CategoryThumbnailPreloader(
     private val scope: CoroutineScope,
     private val diskCacheStrategy: DiskCacheStrategy
 ) {
+    // Resolve while the Activity is alive; cancel() also runs during onDestroy.
+    private val requests = Glide.with(context)
     private var job: Job? = null
     private val targets = mutableListOf<Target<Bitmap>>()
 
@@ -35,7 +37,7 @@ class CategoryThumbnailPreloader(
                     else -> continue
                 }
                 for (item in items) {
-                    targets += Glide.with(context).asBitmap()
+                    targets += requests.asBitmap()
                         .load(File(context.filesDir, "resources/${item.filename}"))
                         .override(250, 250).centerCrop()
                         .diskCacheStrategy(diskCacheStrategy)
@@ -47,7 +49,7 @@ class CategoryThumbnailPreloader(
 
     fun cancel() {
         job?.cancel()
-        val requests = Glide.with(context)
+        job = null
         targets.forEach { requests.clear(it) }
         targets.clear()
     }

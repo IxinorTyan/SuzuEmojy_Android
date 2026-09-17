@@ -8,6 +8,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.content.res.ColorStateList
 import android.widget.TextView
+import androidx.core.view.doOnNextLayout
 import com.bumptech.glide.Glide
 import com.suzu.test.R
 import com.suzu.test.ime.config.KeyboardConfig
@@ -35,6 +36,7 @@ class KeyboardTabBar(
     companion object {
         private const val SP_NAME = "ime_prefs"
         private const val KEY_LAST_TAB = "last_selected_tab"
+        private const val KEY_TAB_SCROLL_X = "tab_scroll_x"
         private const val TAB_ICON_SCALE = 0.72f
     }
 
@@ -49,6 +51,9 @@ class KeyboardTabBar(
     private var searchJob: Job? = null
     private var cachedCategories: List<CategoryEntity>? = null
     private var lastStructureKey: String? = null
+    private var pendingScrollX: Int? = prefs.getInt(KEY_TAB_SCROLL_X, 0)
+    private var renderVersion = 0
+    private var destroyed = false
     private val tabViewMap = mutableMapOf<String, View>()
     private val resourcesDir = File(context.filesDir, "resources")
     private val thumbnailPreloader = com.suzu.test.ui.view.CategoryThumbnailPreloader(
@@ -56,6 +61,15 @@ class KeyboardTabBar(
     )
 
     var onTabsStructureChanged: ((tabs: List<String>, selectedTab: String) -> Unit)? = null
+
+    fun hasLoadedCategories(): Boolean = cachedCategories != null
+
+    fun saveNavigationState() {
+        if (!hasLoadedCategories() || currentTab == "SEARCH") return
+        val scrollX = pendingScrollX ?: (container.parent as? android.widget.HorizontalScrollView)?.scrollX ?: 0
+        prefs.edit().putString(KEY_LAST_TAB, currentTab)
+            .putInt(KEY_TAB_SCROLL_X, scrollX).apply()
+    }
 
     fun orderedTabs(): List<String> = buildList {
         if (!com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value.isNullOrBlank()) add("SEARCH")
@@ -81,8 +95,11 @@ class KeyboardTabBar(
                     lastStructureKey = structureKey
 
                     val newEffectiveTab = getEffectiveTab()
+                    if (currentTab == "SEARCH" && newEffectiveTab != "SEARCH") {
+                        pendingScrollX = prefs.getInt(KEY_TAB_SCROLL_X, 0)
+                    }
+                    currentTab = newEffectiveTab
                     if (newEffectiveTab != lastNotifiedTab) {
-                        currentTab = newEffectiveTab
                         if (newEffectiveTab != "SEARCH") {
                             prefs.edit().putString(KEY_LAST_TAB, newEffectiveTab).apply()
                         }
@@ -95,7 +112,6 @@ class KeyboardTabBar(
                         onTabsStructureChanged?.invoke(orderedTabs(), newEffectiveTab)
                     } else {
                         updateSelectionState(newEffectiveTab)
-                        scrollTabToSelection(newEffectiveTab)
                     }
                 }
             }
@@ -106,12 +122,17 @@ class KeyboardTabBar(
             com.suzu.test.floating.ImeSearchStateHolder.searchQuery.collectLatest { query ->
                 withContext(Dispatchers.Main) {
                     if (!query.isNullOrBlank()) {
+                        saveNavigationState()
                         currentTab = "SEARCH"
+                        lastNotifiedTab = "SEARCH"
                         render()
-                        onTabsStructureChanged?.invoke(orderedTabs(), "SEARCH")
+                        if (hasLoadedCategories()) onTabsStructureChanged?.invoke(orderedTabs(), "SEARCH")
                         onTabSelected("SEARCH")
+                        scrollTabToSelection("SEARCH")
                     } else {
                         if (currentTab == "SEARCH") {
+                            currentTab = prefs.getString(KEY_LAST_TAB, "RECENT") ?: "RECENT"
+                            pendingScrollX = prefs.getInt(KEY_TAB_SCROLL_X, 0)
                             val fallback = getEffectiveTab()
                             currentTab = fallback
                             lastNotifiedTab = fallback
@@ -119,11 +140,11 @@ class KeyboardTabBar(
                                 prefs.edit().putString(KEY_LAST_TAB, fallback).apply()
                             }
                             render()
-                            onTabsStructureChanged?.invoke(orderedTabs(), fallback)
+                            if (hasLoadedCategories()) onTabsStructureChanged?.invoke(orderedTabs(), fallback)
                             onTabSelected(fallback)
                         } else {
                             render()
-                            onTabsStructureChanged?.invoke(orderedTabs(), currentTab)
+                            if (hasLoadedCategories()) onTabsStructureChanged?.invoke(orderedTabs(), currentTab)
                         }
                     }
                 }
@@ -147,52 +168,23 @@ class KeyboardTabBar(
     }
 
     fun getEffectiveTab(): String {
-        val categories = cachedCategories
-        val showRecent = KeyboardConfig.isRecentTabEnabled(context)
-        val showAll = KeyboardConfig.isAllTabEnabled(context)
         val hasSearch = !com.suzu.test.floating.ImeSearchStateHolder.searchQuery.value.isNullOrBlank()
-
-        // 未加载完成时：直接返回 currentTab 保留用户意图，若为非法但配置了开关则根据开关回退
-        if (categories == null) {
-            if (hasSearch && currentTab == "SEARCH") return "SEARCH"
-            if (!showRecent && currentTab == "RECENT") {
-                return if (showAll) "ALL" else currentTab
-            }
-            if (!showAll && currentTab == "ALL") {
-                return if (showRecent) "RECENT" else currentTab
-            }
-            if (!hasSearch && currentTab == "SEARCH") {
-                return if (showRecent) "RECENT" else "ALL"
-            }
-            return currentTab
-        }
-
-        // 加载完成后：严格校验合法性
-        val availableTabs = mutableListOf<String>()
-        if (hasSearch) {
-            availableTabs.add("SEARCH")
-        }
-        if (showRecent) {
-            availableTabs.add("RECENT")
-        }
-        if (showAll) {
-            availableTabs.add("ALL")
-        }
-        for (cat in categories) {
-            availableTabs.add("cat:${cat.id}")
-        }
-
-        return if (currentTab in availableTabs) {
-            currentTab
-        } else {
-            availableTabs.firstOrNull() ?: "ALL"
-        }
+        if (!hasLoadedCategories() && hasSearch && currentTab == "SEARCH") return "SEARCH"
+        return restoredImeTab(
+            currentTab,
+            prefs.getString(KEY_LAST_TAB, "RECENT") ?: "RECENT",
+            if (hasLoadedCategories()) orderedTabs() else null
+        )
     }
 
     private fun render() {
+        // 不用尚未加载的临时标签列表覆盖之前的收藏夹和滚动位置。
+        if (!hasLoadedCategories() || destroyed) return
         thumbnailPreloader.warm(orderedTabs(), getEffectiveTab())
         val scrollView = container.parent as? android.widget.HorizontalScrollView
-        val savedScrollX = scrollView?.scrollX ?: 0
+        val savedScrollX = pendingScrollX ?: scrollView?.scrollX ?: 0
+        pendingScrollX = savedScrollX
+        val version = ++renderVersion
 
         container.removeAllViews()
         tabViewMap.clear()
@@ -242,9 +234,10 @@ class KeyboardTabBar(
             container.addView(catView)
         }
 
-        scrollView?.post {
+        scrollView?.doOnNextLayout {
+            if (destroyed || version != renderVersion) return@doOnNextLayout
             scrollView.scrollTo(savedScrollX, 0)
-            scrollTabToSelection(effectiveTab)
+            pendingScrollX = null
         }
     }
 
@@ -289,6 +282,7 @@ class KeyboardTabBar(
         val tab = tabViewMap[tabKey] ?: return
 
         tab.post {
+            if (destroyed || currentTab != tabKey || tabViewMap[tabKey] !== tab) return@post
             val viewportLeft = scrollView.scrollX
             val viewportRight = viewportLeft + scrollView.width
             val tabLeft = tab.left
@@ -414,6 +408,8 @@ class KeyboardTabBar(
     fun getTabSizeDp(): Int = KeyboardConfig.getTabIconSizeDp(context)
 
     fun destroy() {
+        saveNavigationState()
+        destroyed = true
         thumbnailPreloader.cancel()
         observeJob?.cancel()
         observeJob = null

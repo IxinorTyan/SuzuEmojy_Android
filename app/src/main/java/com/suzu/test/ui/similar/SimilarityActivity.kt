@@ -1,6 +1,8 @@
 package com.suzu.test.ui.similar
 
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -65,6 +67,7 @@ class SimilarityActivity : AppCompatActivity() {
         binding.seekThreshold.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar) = Unit
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                binding.tvThresholdBadge.text = formatThresholdBadge(progress)
                 // Accessibility and keyboard adjustments do not send a touch-stop callback.
                 if (fromUser && !seekBar.isPressed) model.setThreshold(progress)
             }
@@ -83,6 +86,16 @@ class SimilarityActivity : AppCompatActivity() {
         }
     }
 
+    private fun formatThresholdBadge(value: Int): String {
+        val level = when (value) {
+            in 0..3 -> "严格"
+            in 4..6 -> "推荐"
+            in 7..10 -> "宽松"
+            else -> "极宽松"
+        }
+        return "阈值: $value · $level"
+    }
+
     private fun render(state: SimilarityState) {
         val deleting = state.deleting
         binding.spinnerMedia.isEnabled = !state.busy && !deleting
@@ -94,14 +107,28 @@ class SimilarityActivity : AppCompatActivity() {
         }
         binding.spinnerScope.isEnabled = !state.busy && !deleting
         binding.seekThreshold.isEnabled = !state.busy && !deleting
-        if (!binding.seekThreshold.isPressed) binding.seekThreshold.progress = state.threshold
+        if (!binding.seekThreshold.isPressed) {
+            binding.seekThreshold.progress = state.threshold
+            binding.tvThresholdBadge.text = formatThresholdBadge(state.threshold)
+        }
         binding.btnScan.isEnabled = !state.busy && !deleting
         binding.btnScan.text = if (state.scanned) "重新扫描" else "开始扫描"
         binding.btnCancel.visibility = if (state.busy) View.VISIBLE else View.GONE
         binding.progress.visibility = if (state.busy) View.VISIBLE else View.GONE
         binding.tvStatus.text = state.message
+        binding.layoutEmptyState.visibility = if (state.scanned && state.groups.isEmpty() && !state.busy) View.VISIBLE else View.GONE
+        val showDeleteBar = state.scanned && state.groups.isNotEmpty()
+        binding.layoutDeleteBar.visibility = if (showDeleteBar) View.VISIBLE else View.GONE
+        val hasSelected = state.selected.isNotEmpty()
         binding.btnDelete.text = "删除所选（${state.selected.size}）"
-        binding.btnDelete.isEnabled = state.selected.isNotEmpty() && !state.busy && !deleting
+        binding.btnDelete.isEnabled = hasSelected && !state.busy && !deleting
+        if (hasSelected) {
+            binding.btnDelete.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#DC2626"))
+            binding.btnDelete.setTextColor(Color.WHITE)
+        } else {
+            binding.btnDelete.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#E2E8F0"))
+            binding.btnDelete.setTextColor(Color.parseColor("#94A3B8"))
+        }
         adapter.submit(state.groups, state.selected, !state.busy && !deleting, state.durations)
     }
 

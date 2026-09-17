@@ -1,0 +1,3 @@
+<resources>
+    <dimen name="batch_action_button_width">48dp</dimen>
+</resources>

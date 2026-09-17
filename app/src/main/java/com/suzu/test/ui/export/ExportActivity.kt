@@ -86,6 +86,28 @@ class ExportActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
+
+        binding.tvProgress.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: android.text.Editable?) {
+                if (!s.isNullOrBlank()) {
+                    binding.layoutStatusSection.visibility = android.view.View.VISIBLE
+                }
+            }
+        })
+
+        binding.tvSummary.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val hasText = !s.isNullOrBlank()
+                binding.tvSummary.visibility = if (hasText) android.view.View.VISIBLE else android.view.View.GONE
+                if (hasText) {
+                    binding.layoutStatusSection.visibility = android.view.View.VISIBLE
+                }
+            }
+        })
     }
 
     private fun showCategorySelectDialog() {
@@ -105,16 +127,19 @@ class ExportActivity : AppCompatActivity() {
 
     private fun showCategoryMultiSelectDialog(categories: List<CategoryEntity>) {
         val checked = BooleanArray(categories.size)
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
+
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(48, 24, 48, 0)
+            setPadding(dp(20), dp(12), dp(20), 0)
         }
 
         val hint = TextView(this).apply {
-            text = "可同时勾选多个收藏夹，最终只导出为一个资源包"
-            textSize = 13f
-            setTextColor(0xFF666666.toInt())
-            setPadding(0, 0, 0, 16)
+            text = "可同时勾选多个收藏夹，最终合并打包为一个资源包"
+            textSize = 12f
+            setTextColor(0xFF64748B.toInt())
+            setPadding(0, 0, 0, dp(10))
         }
         container.addView(hint)
 
@@ -127,8 +152,10 @@ class ExportActivity : AppCompatActivity() {
             val checkBox = CheckBox(this).apply {
                 text = category.name
                 isChecked = false
-                textSize = 15f
-                setPadding(0, 12, 0, 12)
+                textSize = 14f
+                setTextColor(0xFF0F172A.toInt())
+                setPadding(dp(8), dp(10), dp(8), dp(10))
+                buttonTintList = android.content.res.ColorStateList.valueOf(0xFF2563EB.toInt())
                 setOnCheckedChangeListener { _, isChecked ->
                     checked[index] = isChecked
                 }

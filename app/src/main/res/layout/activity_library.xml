@@ -212,53 +212,103 @@
     <LinearLayout
         android:id="@+id/llBatchActionBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
+        android:layout_marginTop="8dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="6dp"
-        android:background="#EAEAEA"
+        android:paddingStart="12dp"
+        android:paddingEnd="4dp"
+        android:background="@drawable/bg_batch_action_bar"
         android:visibility="gone">
 
         <TextView
             android:id="@+id/tvSelectedCount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="已选 0 张"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:textColor="#0078D4"
-            android:paddingEnd="8dp" />
-
-        <View
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="10sp"
+            android:autoSizeMaxTextSize="14sp"
+            android:autoSizeStepGranularity="1sp"
+            android:accessibilityLiveRegion="polite"
+            android:text="0张"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/btnBatchSelectAll"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:layout_marginStart="4dp"
-            android:textSize="13sp"
-            android:text="全选" />
+            android:layout_width="@dimen/batch_action_button_width"
+            android:layout_height="48dp"
+            android:padding="10dp"
+            android:scaleType="centerInside"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:srcCompat="@drawable/ic_batch_select_all"
+            app:tint="@color/batch_action_icon_tint"
+            android:contentDescription="全选"
+            android:tooltipText="全选" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnBatchInvertSelection"
+            android:layout_width="@dimen/batch_action_button_width"
+            android:layout_height="48dp"
+            android:padding="10dp"
+            android:scaleType="centerInside"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:srcCompat="@drawable/ic_batch_invert"
+            app:tint="@color/batch_action_icon_tint"
+            android:contentDescription="反选"
+            android:tooltipText="反选" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnBatchMoveToFront"
+            android:layout_width="@dimen/batch_action_button_width"
+            android:layout_height="48dp"
+            android:padding="10dp"
+            android:scaleType="centerInside"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:srcCompat="@drawable/ic_batch_top"
+            app:tint="@color/batch_action_icon_tint"
+            android:contentDescription="置顶"
+            android:tooltipText="置顶" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnBatchMoveToBack"
+            android:layout_width="@dimen/batch_action_button_width"
+            android:layout_height="48dp"
+            android:padding="10dp"
+            android:scaleType="centerInside"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:srcCompat="@drawable/ic_batch_bottom"
+            app:tint="@color/batch_action_icon_tint"
+            android:contentDescription="置底"
+            android:tooltipText="置底" />
+
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/btnBatchOperation"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:layout_marginStart="4dp"
-            android:textSize="13sp"
-            android:text="操作 ▾" />
+            android:layout_width="@dimen/batch_action_button_width"
+            android:layout_height="48dp"
+            android:padding="10dp"
+            android:scaleType="centerInside"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:srcCompat="@drawable/ic_batch_more"
+            app:tint="@color/batch_action_icon_tint"
+            android:contentDescription="更多操作"
+            android:tooltipText="更多操作" />
 
-        <Button
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/btnBatchDelete"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:layout_marginStart="4dp"
-            android:textSize="13sp"
-            android:textColor="#D32F2F"
-            android:text="删除" />
+            android:layout_width="@dimen/batch_action_button_width"
+            android:layout_height="48dp"
+            android:padding="10dp"
+            android:scaleType="centerInside"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:srcCompat="@drawable/ic_batch_delete"
+            app:tint="#D32F2F"
+            android:contentDescription="删除"
+            android:tooltipText="删除" />
     </LinearLayout>
 
 </LinearLayout>
