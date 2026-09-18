@@ -7,60 +7,14 @@
     android:orientation="vertical"
     android:background="#F8FAFC">
 
-    <!-- 顶部导航栏 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="8dp">
-
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_arrow_back_24"
-            app:tint="#0F172A"
-            android:padding="8dp"
-            android:contentDescription="返回" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="导出表情"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#0F172A"
-                android:letterSpacing="-0.01" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="打包备份本地表情或分享至其他设备"
-                android:textSize="12sp"
-                android:textColor="#64748B"
-                android:layout_marginTop="2dp" />
-        </LinearLayout>
-    </LinearLayout>
-
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:scrollbars="none"
         android:overScrollMode="never"
-        android:clipToPadding="false"
-        android:clipChildren="false"
+        android:clipToPadding="true"
+        android:clipChildren="true"
         android:paddingBottom="48dp">
 
         <LinearLayout
@@ -72,6 +26,51 @@
             android:paddingHorizontal="16dp"
             android:paddingTop="4dp"
             android:paddingBottom="16dp">
+
+            <!-- 顶部导航栏 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingTop="12dp"
+                android:paddingBottom="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_arrow_back_24"
+                    app:tint="#0F172A"
+                    android:padding="8dp"
+                    android:contentDescription="返回" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="导出表情"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#0F172A"
+                        android:letterSpacing="-0.01" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="打包备份本地表情或分享至其他设备"
+                        android:textSize="12sp"
+                        android:textColor="#64748B"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"

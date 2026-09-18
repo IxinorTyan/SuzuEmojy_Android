@@ -33,6 +33,9 @@ object KeyboardConfig {
     const val KEY_SHOW_EXIT_BUTTON = "keyboard_show_exit_button"
     const val DEFAULT_SHOW_EXIT_BUTTON = true
 
+    const val KEY_SEND_FAILURE_FORWARD = "keyboard_send_failure_forward"
+    const val DEFAULT_SEND_FAILURE_FORWARD = false
+
     const val KEY_DROPDOWN_ICON_STYLE = "keyboard_dropdown_icon_style"
     const val DROPDOWN_ICON_ARROW = "arrow"
     const val DROPDOWN_ICON_MENU = "menu"
@@ -131,6 +134,18 @@ object KeyboardConfig {
         context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_SHOW_EXIT_BUTTON, enabled)
+            .apply()
+    }
+
+    fun isSendFailureForwardEnabled(context: Context): Boolean {
+        val sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        return sp.getBoolean(KEY_SEND_FAILURE_FORWARD, DEFAULT_SEND_FAILURE_FORWARD)
+    }
+
+    fun setSendFailureForwardEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_SEND_FAILURE_FORWARD, enabled)
             .apply()
     }
 

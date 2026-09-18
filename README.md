@@ -17,18 +17,23 @@ SuzuEmojy Android 是一个专注于本地表情包管理与快捷发送的轻�
 
 ## 构建与运行
 
-### 1. 构建 Debug APK
+### 1. 构建 APK
 确保根目录已存在 `local.properties` 并正确配置 Android SDK 路径，执行：
 
 ```bash
 # Windows
-.\gradlew.bat assembleDebug
+.\gradlew.bat :app:assembleDebug
+.\gradlew.bat :app:assembleRelease
 
 # Linux / macOS
-./gradlew assembleDebug
+./gradlew :app:assembleDebug
+./gradlew :app:assembleRelease
 ```
 
-- **APK 产物路径**：`app/build/outputs/apk/debug/app-debug.apk`
+- Debug 和 Release 默认启用代码压缩与资源裁剪，无需额外参数；Debug 保留可调试属性。
+- **Debug APK**：`app/build/outputs/apk/debug/app-debug.apk`
+- **Release APK**：`app/build/outputs/apk/release/app-release.apk`
+- 混淆报告位于 `app/build/outputs/mapping/debug/` 和 `app/build/outputs/mapping/release/`，排查崩溃时保留对应版本的报告。
 
 ### 2. 命令行安装
 ```bash

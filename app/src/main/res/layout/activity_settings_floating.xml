@@ -12,51 +12,6 @@
     android:clipToPadding="false"
     android:clipChildren="false">
 
-    <!-- 顶部导航栏 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingVertical="4dp"
-        android:layout_marginBottom="8dp">
-
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_arrow_back_24"
-            app:tint="#0F172A"
-            android:padding="8dp"
-            android:contentDescription="返回" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="悬浮窗设置"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#0F172A"
-                android:letterSpacing="-0.01" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="配置快捷悬浮球、边缘手势与搜索条"
-                android:textSize="12sp"
-                android:textColor="#64748B"
-                android:layout_marginTop="2dp" />
-        </LinearLayout>
-    </LinearLayout>
-
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -64,8 +19,8 @@
         android:fillViewport="true"
         android:scrollbars="none"
         android:overScrollMode="never"
-        android:clipToPadding="false"
-        android:clipChildren="false">
+        android:clipToPadding="true"
+        android:clipChildren="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -74,6 +29,51 @@
             android:clipToPadding="false"
             android:clipChildren="false"
             android:paddingBottom="24dp">
+
+            <!-- 顶部导航栏 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="4dp"
+                android:layout_marginBottom="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_arrow_back_24"
+                    app:tint="#0F172A"
+                    android:padding="8dp"
+                    android:contentDescription="返回" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="悬浮窗设置"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#0F172A"
+                        android:letterSpacing="-0.01" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="配置悬浮球、边缘手势与搜索条"
+                        android:textSize="12sp"
+                        android:textColor="#64748B"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+            </LinearLayout>
 
             <!-- ================= 区块 1：悬浮窗功能总开关 ================= -->
             <com.google.android.material.card.MaterialCardView
@@ -1091,7 +1091,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="未检测到输入法时自动隐藏悬浮球；在本应用内始终显示"
+                                android:text="未检测到输入法时自动隐藏；本应用内常显，但仍受应用白名单限制"
                                 android:textSize="12sp"
                                 android:textColor="#64748B"
                                 android:layout_marginTop="2dp" />
@@ -1107,7 +1107,7 @@
                         android:id="@+id/tvA11yWarning"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="⚠️ 需要开启无障碍服务才能检测键盘弹出"
+                        android:text="⚠️ 需要开启无障碍服务才能识别当前应用和键盘状态"
                         android:textSize="12sp"
                         android:textColor="#E65100"
                         android:layout_marginTop="4dp"
@@ -1118,6 +1118,27 @@
                         android:layout_height="1dp"
                         android:background="#F1F5F9"
                         android:layout_marginVertical="12dp" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/swBallWhitelist"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="仅在白名单应用中启用悬浮球"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="白名单外隐藏；白名单内沿用现有显示规则。本应用固定允许，仅影响悬浮球。"
+                        android:textSize="12sp"
+                        android:textColor="#64748B" />
+
+                    <Button
+                        android:id="@+id/btnBallWhitelistApps"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="选择白名单应用" />
 
                     <!-- 悬浮球外观与尺寸 -->
                     <TextView

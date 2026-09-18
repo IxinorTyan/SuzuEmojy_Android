@@ -1,5 +1,6 @@
 package com.suzu.test.ui.settings
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.SeekBar
@@ -38,6 +39,9 @@ class SettingsAppearanceActivity : AppCompatActivity() {
         }
 
         binding.btnBack.setOnClickListener { finish() }
+        binding.btnNavShareWhitelist.setOnClickListener {
+            startActivity(Intent(this, ShareWhitelistActivity::class.java))
+        }
 
         setupThemeSelector()
         setupKeyboardAdjusters()
@@ -46,6 +50,7 @@ class SettingsAppearanceActivity : AppCompatActivity() {
         setupTabDropdownSwitch()
         setupDropdownSettings()
         setupExitButtonSwitch()
+        setupSendFailureForwardSwitch()
         setupPreview()
     }
 
@@ -83,6 +88,14 @@ class SettingsAppearanceActivity : AppCompatActivity() {
             KeyboardConfig.setExitButtonEnabled(this, isChecked)
             TestImageIME.instance?.applyKeyboardConfigLayout()
             TestLog.i(MODULE, "切换显示「收起键盘」开关: $isChecked")
+        }
+    }
+
+    private fun setupSendFailureForwardSwitch() {
+        binding.swSendFailureForward.isChecked = KeyboardConfig.isSendFailureForwardEnabled(this)
+        binding.swSendFailureForward.setOnCheckedChangeListener { _, isChecked ->
+            KeyboardConfig.setSendFailureForwardEnabled(this, isChecked)
+            TestLog.i(MODULE, "切换「IME 发送失败拉起转发」开关: $isChecked")
         }
     }
 

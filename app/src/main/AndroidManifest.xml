@@ -17,6 +17,10 @@
 
     <!-- 目标应用查询声明 (包含 package 与 intent 两种形式) -->
     <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
         <package android:name="com.tencent.mobileqq" />
         <package android:name="com.tencent.tim" />
         <package android:name="com.tencent.qqlite" />
@@ -105,7 +109,7 @@
         <activity
             android:name=".ui.settings.SettingsAppearanceActivity"
             android:exported="false"
-            android:label="键盘外观与主题" />
+            android:label="键盘设置" />
 
         <activity
             android:name=".ui.settings.SettingsKeyboardTestActivity"
@@ -127,6 +131,11 @@
             android:name=".ui.settings.SettingsOtherActivity"
             android:exported="false"
             android:label="其他设置" />
+
+        <activity
+            android:name=".ui.settings.BallWhitelistActivity"
+            android:exported="false"
+            android:label="悬浮球白名单" />
 
         <activity
             android:name=".ui.settings.ShareWhitelistActivity"

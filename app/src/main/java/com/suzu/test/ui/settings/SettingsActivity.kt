@@ -107,10 +107,6 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsFloatingActivity::class.java))
         }
 
-        binding.btnNavShareWhitelist.setOnClickListener {
-            startActivity(Intent(this, ShareWhitelistActivity::class.java))
-        }
-
         binding.btnNavOtherSettings.setOnClickListener {
             startActivity(Intent(this, SettingsOtherActivity::class.java))
         }
@@ -206,8 +202,13 @@ class SettingsActivity : AppCompatActivity() {
 
         // 4. 相册读取
         val hasStorage = PermissionChecker.hasStoragePermission(this)
-        binding.tvPermStorageStatus.text = "相册读取: " + if (hasStorage) "已授权 ✓" else "未授权"
-        binding.tvPermStorageStatus.setTextColor(if (hasStorage) colorActive else colorInactive)
+        val hasSelectedPhotos = PermissionChecker.hasSelectedPhotosPermission(this)
+        binding.tvPermStorageStatus.text = "相册读取: " + when {
+            hasStorage -> "完整访问 ✓"
+            hasSelectedPhotos -> "部分访问 ✓"
+            else -> "未授权"
+        }
+        binding.tvPermStorageStatus.setTextColor(if (hasStorage || hasSelectedPhotos) colorActive else colorInactive)
         binding.btnPermStorageAction.visibility = if (hasStorage) View.GONE else View.VISIBLE
 
         // 5. 忽略电池优化
@@ -224,7 +225,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         // 更新头部状态摘要胶囊
-        val coreOk = isImeEnabled && hasStorage
+        val coreOk = isImeEnabled && (hasStorage || hasSelectedPhotos)
         val extraOk = hasOverlay && isA11yRunning && isBatteryIgnored
 
         when {
@@ -239,7 +240,7 @@ class SettingsActivity : AppCompatActivity() {
                 binding.tvPermissionSummaryBadge.setBackgroundResource(com.suzu.test.R.drawable.bg_home_tag_blue)
             }
             else -> {
-                val missingBasic = (if (!isImeEnabled) 1 else 0) + (if (!hasStorage) 1 else 0)
+                val missingBasic = (if (!isImeEnabled) 1 else 0) + (if (!hasStorage && !hasSelectedPhotos) 1 else 0)
                 binding.tvPermissionSummaryBadge.text = "需配置 ${missingBasic} 项"
                 binding.tvPermissionSummaryBadge.setTextColor(0xFFEA580C.toInt())
                 binding.tvPermissionSummaryBadge.setBackgroundResource(com.suzu.test.R.drawable.bg_home_tag_orange)

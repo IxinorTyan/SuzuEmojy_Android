@@ -7,71 +7,14 @@
     android:orientation="vertical"
     android:background="#F8FAFC">
 
-    <!-- 顶部导航栏 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="8dp">
-
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_arrow_back_24"
-            app:tint="#0F172A"
-            android:padding="8dp"
-            android:contentDescription="返回" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tvTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="导入表情"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#0F172A"
-                android:letterSpacing="-0.01" />
-
-            <TextView
-                android:id="@+id/tvSubtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="支持相册、文件、文件夹及资源包导入"
-                android:textSize="12sp"
-                android:textColor="#64748B"
-                android:layout_marginTop="2dp" />
-        </LinearLayout>
-
-        <ImageButton
-            android:id="@+id/btnOpenWebShare"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_suzu_share"
-            android:padding="8dp"
-            android:contentDescription="在线表情包" />
-    </LinearLayout>
-
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:scrollbars="none"
         android:overScrollMode="never"
-        android:clipToPadding="false"
-        android:clipChildren="false"
+        android:clipToPadding="true"
+        android:clipChildren="true"
         android:paddingBottom="48dp">
 
         <LinearLayout
@@ -83,6 +26,62 @@
             android:paddingHorizontal="16dp"
             android:paddingTop="4dp"
             android:paddingBottom="16dp">
+
+            <!-- 顶部导航栏 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingTop="12dp"
+                android:paddingBottom="8dp">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_arrow_back_24"
+                    app:tint="#0F172A"
+                    android:padding="8dp"
+                    android:contentDescription="返回" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="导入表情"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#0F172A"
+                        android:letterSpacing="-0.01" />
+
+                    <TextView
+                        android:id="@+id/tvSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="支持相册、文件、文件夹及资源包导入"
+                        android:textSize="12sp"
+                        android:textColor="#64748B"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/btnOpenWebShare"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_suzu_share"
+                    android:padding="8dp"
+                    android:contentDescription="在线表情包" />
+            </LinearLayout>
 
             <!-- 提示说明 -->
             <TextView

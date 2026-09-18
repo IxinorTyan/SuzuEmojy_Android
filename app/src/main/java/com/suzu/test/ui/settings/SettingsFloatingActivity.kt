@@ -28,6 +28,7 @@ import com.suzu.test.R
 import com.suzu.test.databinding.ActivitySettingsFloatingBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.floating.FloatingBallConfig
+import com.suzu.test.floating.BallAppWhitelist
 import com.suzu.test.log.TestLog
 import com.suzu.test.ui.view.CheckerboardDrawable
 import kotlinx.coroutines.Dispatchers
@@ -109,6 +110,7 @@ class SettingsFloatingActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        updateBallWhitelistSummary()
         com.suzu.test.accessibility.AccessibilityStateMonitor.refresh()
         binding.swMasterSwitch.isChecked = FloatingBallConfig.isFloatingMasterEnabled(this)
         binding.swEdgeGestureEnabled.isChecked = FloatingBallConfig.isEdgeGestureEnabled(this)
@@ -515,11 +517,26 @@ class SettingsFloatingActivity : AppCompatActivity() {
     }
 
     private fun setupAppFilter() {
+        binding.swBallWhitelist.isChecked = BallAppWhitelist.isEnabled(this)
+        binding.swBallWhitelist.setOnCheckedChangeListener { _, enabled ->
+            BallAppWhitelist.setEnabled(this, enabled)
+        }
+        updateBallWhitelistSummary()
+        binding.btnBallWhitelistApps.setOnClickListener { showBallWhitelistPicker() }
         binding.swShowOnlyWithIme.isChecked = FloatingBallConfig.isShowOnlyWithImeEnabled(this)
         binding.swShowOnlyWithIme.setOnCheckedChangeListener { _, isChecked ->
             FloatingBallConfig.setShowOnlyWithImeEnabled(this, isChecked)
             TestLog.i(MODULE, "仅在弹出键盘时显示开关: $isChecked")
         }
+    }
+
+    private fun updateBallWhitelistSummary() {
+        binding.btnBallWhitelistApps.text =
+            "选择白名单应用（已选 ${BallAppWhitelist.packages(this).size} 个）"
+    }
+
+    private fun showBallWhitelistPicker() {
+        startActivity(Intent(this, BallWhitelistActivity::class.java))
     }
 
     private fun setupEdgeGestureSettings() {

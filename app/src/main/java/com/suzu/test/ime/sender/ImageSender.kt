@@ -17,6 +17,7 @@ import androidx.core.content.FileProvider
 import com.suzu.test.BuildConfig
 import com.suzu.test.accessibility.TestAccessibilityService
 import com.suzu.test.ime.ImageItem
+import com.suzu.test.ime.config.KeyboardConfig
 import com.suzu.test.ime.diag.DebugSendTestConfig
 import com.suzu.test.ime.diag.ImageSendDiagnostics
 import com.suzu.test.log.TestLog
@@ -141,8 +142,8 @@ class ImageSender(private val context: Context) {
                     if (ic == null) {
                         record.commandException = "InputConnection 为 null"
                         ImageSendDiagnostics.update(record)
-                        TestLog.e(MODULE, "[${record.eventId}] [H1β] 失败: InputConnection 为 null，转入通道B")
-                        launchImageShare(
+                        TestLog.e(MODULE, "[${record.eventId}] [H1β] 失败: InputConnection 为 null")
+                        launchFallbackShare(
                             prepared = prepared,
                             record = record,
                             targetPkg = targetPkg,
@@ -164,7 +165,7 @@ class ImageSender(private val context: Context) {
                         ) {
                             TestLog.i(
                                 MODULE,
-                                "[$record.eventId] DEBUG测试开关已开启，模拟 H1β 失败并转入通道B"
+                                "[$record.eventId] DEBUG测试开关已开启，模拟 H1β 失败"
                             )
                             false
                         } else {
@@ -177,7 +178,7 @@ class ImageSender(private val context: Context) {
                         if (accepted) {
                             onSuccess()
                         } else {
-                            launchImageShare(
+                            launchFallbackShare(
                                 prepared = prepared,
                                 record = record,
                                 targetPkg = targetPkg,
@@ -189,10 +190,10 @@ class ImageSender(private val context: Context) {
                         ImageSendDiagnostics.update(record)
                         TestLog.e(
                             MODULE,
-                            "[${record.eventId}] [H1β] 异常: ${e.message}，转入通道B",
+                            "[${record.eventId}] [H1β] 异常: ${e.message}",
                             e
                         )
-                        launchImageShare(
+                        launchFallbackShare(
                             prepared = prepared,
                             record = record,
                             targetPkg = targetPkg,
@@ -268,6 +269,19 @@ class ImageSender(private val context: Context) {
                 TestLog.e(MODULE, "发送异常: ${e.message}", e)
             }
         }
+    }
+
+    private fun launchFallbackShare(
+        prepared: PreparedResult,
+        record: ImageSendDiagnostics.Record,
+        targetPkg: String,
+        onSuccess: () -> Unit
+    ) {
+        if (!KeyboardConfig.isSendFailureForwardEnabled(context)) {
+            TestLog.i(MODULE, "[${record.eventId}] IME 发送失败拉起转发已关闭，跳过自动转发")
+            return
+        }
+        launchImageShare(prepared, record, targetPkg, onSuccess = onSuccess)
     }
 
     private fun launchImageShare(
@@ -530,7 +544,7 @@ class ImageSender(private val context: Context) {
             "[${record.eventId}] ${FALLBACK_CHECK_DELAY_MS}ms 内未检测到 Provider openFile 且未发生清理，转入通道B"
         )
         val file = File(record.filePath)
-        launchImageShare(
+        launchFallbackShare(
             prepared = PreparedResult(
                 uri = Uri.parse(record.uri),
                 file = file,
@@ -546,7 +560,8 @@ class ImageSender(private val context: Context) {
     }
 
     private fun shouldFallback(record: ImageSendDiagnostics.Record): Boolean =
-        record.commandResult == true &&
+        KeyboardConfig.isSendFailureForwardEnabled(context) &&
+            record.commandResult == true &&
             record.providerOpen == "未发生" &&
             record.revokeOrDelete.isBlank()
 
@@ -576,7 +591,7 @@ class ImageSender(private val context: Context) {
                 diagnostic = record,
                 deleteFileOnCleanup = false
             )
-            launchImageShare(
+            launchFallbackShare(
                 prepared = prepared,
                 record = record,
                 targetPkg = record.targetPackage.orEmpty()

@@ -16,6 +16,7 @@ import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.InputMethodManager
 import com.suzu.test.floating.FloatingBallConfig
 import com.suzu.test.floating.FloatingBallController
+import com.suzu.test.floating.BallAppWhitelist
 import com.suzu.test.ime.TestImageIME
 import com.suzu.test.log.TestLog
 
@@ -99,6 +100,77 @@ class TestAccessibilityService : AccessibilityService() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var ballController: FloatingBallController? = null
 
+    // Independent from the legacy foreground hint used by IME and edge gestures.
+    var verifiedBallForeground: String? = null
+        private set
+    private var ballForegroundRetry = 0
+    private var screenReceiverRegistered = false
+    private val ballForegroundRecheck = Runnable { refreshBallForeground() }
+    private val ballScreenReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) {
+                mainHandler.removeCallbacks(ballForegroundRecheck)
+                publishBallForeground(null)
+            } else {
+                requestBallForegroundRefresh()
+            }
+        }
+    }
+
+    private fun publishBallForeground(pkg: String?) {
+        if (verifiedBallForeground == pkg) return
+        verifiedBallForeground = pkg
+        TestLog.i(MODULE, "悬浮球白名单窗口核验: ${pkg ?: "未知或受限窗口"}")
+        ballController?.onVerifiedForegroundChanged()
+    }
+
+    private fun requestBallForegroundRefresh() {
+        mainHandler.removeCallbacks(ballForegroundRecheck)
+        ballForegroundRetry = 0
+        refreshBallForeground()
+    }
+
+    private fun refreshBallForeground() {
+        if (!BallAppWhitelist.isEnabled(this)) {
+            publishBallForeground(null)
+            return
+        }
+        val power = getSystemService(android.os.PowerManager::class.java)
+        val keyguard = getSystemService(android.app.KeyguardManager::class.java)
+        if (!power.isInteractive || keyguard.isKeyguardLocked) {
+            publishBallForeground(null)
+            return
+        }
+        val snapshots = try {
+            windows.mapNotNull { window ->
+                val bounds = android.graphics.Rect()
+                window.getBoundsInScreen(bounds)
+                if (bounds.isEmpty) return@mapNotNull null
+                val root = window.root
+                val pkg = try { root?.packageName?.toString() } finally {
+                    @Suppress("DEPRECATION")
+                    root?.recycle()
+                }
+                val kind = when (window.type) {
+                    AccessibilityWindowInfo.TYPE_APPLICATION -> BallWindowSnapshot.Kind.APPLICATION
+                    AccessibilityWindowInfo.TYPE_INPUT_METHOD -> BallWindowSnapshot.Kind.IME
+                    else -> if (pkg == packageName) BallWindowSnapshot.Kind.OWN_OVERLAY
+                        else BallWindowSnapshot.Kind.OTHER
+                }
+                BallWindowSnapshot(kind, pkg, window.isFocused, window.isActive)
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+        val pkg = BallForegroundResolver.resolve(snapshots, verifiedBallForeground)
+        publishBallForeground(pkg)
+        // Only bounded retries after an event; never background polling.
+        if (pkg == null && ballForegroundRetry < 2) {
+            ballForegroundRetry++
+            mainHandler.postDelayed(ballForegroundRecheck, 120L * ballForegroundRetry)
+        }
+    }
+
     private data class PendingShareCard(
         val targetPackage: String,
         val expiresAt: Long
@@ -128,16 +200,34 @@ class TestAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        verifiedBallForeground = null
+        val screenFilter = android.content.IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        if (!screenReceiverRegistered) {
+            androidx.core.content.ContextCompat.registerReceiver(
+                this, ballScreenReceiver, screenFilter,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            screenReceiverRegistered = true
+        }
         refreshDefaultImePackage()
         observeBallConfig()
         syncBallState()
         syncImeStateFromWindows()
+        requestBallForegroundRefresh()
         TestLog.i(MODULE, "onServiceConnected: SuzuEmojy 辅助切换服务已就绪 (输入法快速切换 + IME/前台双信号分发)")
     }
 
     private fun observeBallConfig() {
         val sp = getSharedPreferences(FloatingBallConfig.SP_NAME, Context.MODE_PRIVATE)
+        ballConfigListener?.let { sp.unregisterOnSharedPreferenceChangeListener(it) }
         ballConfigListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == BallAppWhitelist.KEY_ENABLED || key == BallAppWhitelist.KEY_PACKAGES) {
+                requestBallForegroundRefresh()
+            }
             if (key == FloatingBallConfig.KEY_FLOATING_MASTER_ENABLED ||
                 key == FloatingBallConfig.KEY_BALL_ENABLED ||
                 key == FloatingBallConfig.KEY_EDGE_GESTURE_ENABLED ||
@@ -376,6 +466,7 @@ class TestAccessibilityService : AccessibilityService() {
 
         // 信号二：IME 可见性（自家表情 IME 同样计入）
         if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED || event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            requestBallForegroundRefresh()
             syncImeStateFromWindows()
         }
 
@@ -391,6 +482,19 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
+        mainHandler.removeCallbacks(ballForegroundRecheck)
+        publishBallForeground(null)
+        ballController?.detach()
+        ballController = null
+        ballConfigListener?.let {
+            getSharedPreferences(FloatingBallConfig.SP_NAME, Context.MODE_PRIVATE)
+                .unregisterOnSharedPreferenceChangeListener(it)
+        }
+        ballConfigListener = null
+        if (screenReceiverRegistered) {
+            unregisterReceiver(ballScreenReceiver)
+            screenReceiverRegistered = false
+        }
         cancelImeSwitch("服务停止")
         TestLog.i(MODULE, "onUnbind: 服务解绑")
         instance = null
@@ -398,6 +502,12 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        mainHandler.removeCallbacks(ballForegroundRecheck)
+        if (screenReceiverRegistered) {
+            unregisterReceiver(ballScreenReceiver)
+            screenReceiverRegistered = false
+        }
+        verifiedBallForeground = null
         cancelImeSwitch("服务停止")
         ballConfigListener?.let {
             getSharedPreferences(FloatingBallConfig.SP_NAME, Context.MODE_PRIVATE)

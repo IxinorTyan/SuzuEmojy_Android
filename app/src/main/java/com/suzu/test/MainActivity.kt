@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
         private const val MODULE = "MainActivity"
         private const val SP_NAME = "app_settings"
         private const val KEY_GUIDE_DISMISSED = "home_guide_dismissed"
+        private const val KEY_GUIDE_FINISHED = "home_guide_finished"
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -53,6 +54,7 @@ class MainActivity : AppCompatActivity() {
 
         TestLog.i(MODULE, "onCreate: MainActivity 启动")
 
+        initializeGuideState()
         setupUI()
         observeData()
         observeA11yState()
@@ -131,22 +133,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
         }
         binding.btnGuideStorage.setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                storagePermissionLauncher.launch(
-                    arrayOf(
-                        android.Manifest.permission.READ_MEDIA_IMAGES,
-                        android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-                    )
-                )
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                storagePermissionLauncher.launch(
-                    arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES)
-                )
-            } else {
-                storagePermissionLauncher.launch(
-                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
-                )
-            }
+            storagePermissionLauncher.launch(PermissionChecker.getStoragePermissions())
         }
         binding.btnGuideOverlay.setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -161,11 +148,26 @@ class MainActivity : AppCompatActivity() {
         binding.btnGuideA11y.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
-        binding.btnGuideDismiss.setOnClickListener {
-            val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-            sp.edit().putBoolean(KEY_GUIDE_DISMISSED, true).apply()
-            checkAndUpdateState()
+        binding.btnGuideComplete.setOnClickListener {
+            if (PermissionChecker.isImeEnabled(this)) finishGuide() else checkAndUpdateState()
         }
+        binding.btnGuideDismiss.setOnClickListener { finishGuide() }
+    }
+
+    private fun initializeGuideState() {
+        val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
+        if (!sp.contains(KEY_GUIDE_FINISHED)) {
+            // 仅首次迁移旧逻辑；必须在离开应用授权前记录 false，避免返回时误判完成。
+            val previouslyFinished = sp.getBoolean(KEY_GUIDE_DISMISSED, false) ||
+                PermissionChecker.isImeEnabled(this)
+            sp.edit().putBoolean(KEY_GUIDE_FINISHED, previouslyFinished).apply()
+        }
+    }
+
+    private fun finishGuide() {
+        getSharedPreferences(SP_NAME, Context.MODE_PRIVATE).edit()
+            .putBoolean(KEY_GUIDE_FINISHED, true).apply()
+        checkAndUpdateState()
     }
 
     private fun observeData() {
@@ -205,9 +207,7 @@ class MainActivity : AppCompatActivity() {
         val hasOverlay = PermissionChecker.hasOverlayPermission(this)
 
         val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-        val guideDismissed = sp.getBoolean(KEY_GUIDE_DISMISSED, false)
-
-        val showGuide = !isImeEnabled && !guideDismissed
+        val showGuide = !sp.getBoolean(KEY_GUIDE_FINISHED, false)
 
         if (showGuide) {
             binding.layoutGuideContainer.visibility = View.VISIBLE
@@ -224,6 +224,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateGuideStatus(ime: Boolean, storage: Boolean, overlay: Boolean, a11y: Boolean) {
+        binding.btnGuideComplete.isEnabled = ime
         if (ime) {
             binding.tvGuideImeDot.text = "✓"
             binding.tvGuideImeDot.setTextColor(0xFF4CAF50.toInt())
@@ -240,7 +241,12 @@ class MainActivity : AppCompatActivity() {
             binding.tvGuideStorageDot.text = "✓"
             binding.tvGuideStorageDot.setTextColor(0xFF4CAF50.toInt())
             binding.btnGuideStorage.isEnabled = false
-            binding.btnGuideStorage.text = "已授权"
+            binding.btnGuideStorage.text = "完整访问"
+        } else if (PermissionChecker.hasSelectedPhotosPermission(this)) {
+            binding.tvGuideStorageDot.text = "✓"
+            binding.tvGuideStorageDot.setTextColor(0xFF4CAF50.toInt())
+            binding.btnGuideStorage.isEnabled = true
+            binding.btnGuideStorage.text = "部分访问"
         } else {
             binding.tvGuideStorageDot.text = "○"
             binding.tvGuideStorageDot.setTextColor(0xFF888888.toInt())

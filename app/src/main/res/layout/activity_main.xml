@@ -115,7 +115,7 @@
             android:clipChildren="false"
             android:clipToPadding="false">
 
-            <!-- 首次引导态卡片 (IME 未启用且未点稍后再说时显示) -->
+            <!-- 首次引导：用户主动完成或跳过后隐藏 -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/layoutGuideContainer"
                 android:layout_width="match_parent"
@@ -145,7 +145,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="请完成必要设置，以开启完整的表情与快捷键盘体验"
+                    android:text="启用输入法后即可完成设置，其余项目可按需开启"
                     android:textSize="12sp"
                     android:textColor="#64748B"
                     android:layout_marginTop="4dp"
@@ -269,7 +269,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="用于从系统相册选取并导入表情"
+                            android:text="可授权全部或部分照片，也可稍后使用系统选择器导入"
                             android:textSize="12sp"
                             android:textColor="#64748B"
                             android:layout_marginTop="2dp" />
@@ -432,13 +432,21 @@
                     android:lineSpacingExtra="2dp" />
 
                 <Button
+                    android:id="@+id/btnGuideComplete"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:enabled="false"
+                    android:text="完成并进入首页" />
+
+                <Button
                     android:id="@+id/btnGuideDismiss"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:textColor="#64748B"
-                    android:text="稍后再说" />
+                    android:text="稍后设置，先进入首页" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

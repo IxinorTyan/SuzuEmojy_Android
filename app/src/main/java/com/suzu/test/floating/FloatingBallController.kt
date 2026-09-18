@@ -251,6 +251,8 @@ class FloatingBallController(private val context: Context) {
                 }
                 FloatingBallConfig.KEY_FLOATING_MASTER_ENABLED,
                 FloatingBallConfig.KEY_BALL_ENABLED,
+                BallAppWhitelist.KEY_ENABLED,
+                BallAppWhitelist.KEY_PACKAGES,
                 FloatingBallConfig.KEY_SHOW_ONLY_WITH_IME -> {
                     evaluateVisibility()
                 }
@@ -266,6 +268,18 @@ class FloatingBallController(private val context: Context) {
             evaluateVisibility()
         }
     }
+
+    fun onVerifiedForegroundChanged() {
+        // Accessibility callbacks and preference notifications run on the main thread.
+        // Do not enqueue a stale allowed result behind a newer app switch.
+        evaluateVisibility()
+    }
+
+    private fun isAppAllowed(): Boolean = BallAppAccessPolicy.allows(
+        BallAppWhitelist.isEnabled(context),
+        BallAppWhitelist.packages(context),
+        TestAccessibilityService.instance?.verifiedBallForeground
+    )
 
     fun onImeVisibilityChanged(visible: Boolean) {
         mainHandler.post {
@@ -332,6 +346,29 @@ class FloatingBallController(private val context: Context) {
     }
 
     private fun applyVisibility(shouldShow: Boolean) {
+        val appDenied = !isAppAllowed()
+        if (appDenied) {
+            mainHandler.removeCallbacks(imeGuardRecheck)
+            if (!isBallVisible && floatingView?.visibility == View.GONE) return
+            floatingView?.animate()?.cancel()
+            cancelSpringReturn()
+            finishTouchGesture?.invoke()
+            isBallVisible = false
+            updateGifPlayback()
+            floatingView?.alpha = 0f
+            floatingView?.visibility = View.GONE
+            layoutParams?.let { params ->
+                params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                floatingView?.let { view ->
+                    try {
+                        windowManager?.updateViewLayout(view, params)
+                    } catch (e: Exception) {
+                        TestLog.w(MODULE, "白名单隐藏窗口失败: ${e.message}")
+                    }
+                }
+            }
+            return
+        }
         if (!shouldShow && System.currentTimeMillis() < imeSwitchGuardUntil) {
             // 不立即隐藏以避免输入法切换过程中的闪烁，但保护期结束后必须补做评估。
             mainHandler.removeCallbacks(imeGuardRecheck)
@@ -352,6 +389,7 @@ class FloatingBallController(private val context: Context) {
         val fView = floatingView ?: return
         val params = layoutParams ?: return
         val wm = windowManager ?: return
+        if (shouldShow) fView.visibility = View.VISIBLE
 
         try {
             val targetAlpha = if (shouldShow) {
@@ -419,9 +457,16 @@ class FloatingBallController(private val context: Context) {
     }
 
     private fun determineShouldShow(): Boolean {
+        if (!isAppAllowed()) return false
         if (!FloatingBallConfig.isBallEnabled(context)) return false
-        // 自家软件前台常显：在自家 App 中始终显示悬浮球方便配置、调试和预览
-        if (lastForegroundPackage == context.packageName) return true
+        // 白名单准入和自家应用常显必须使用同一宿主，不能把自家 IME 的事件包名
+        // 当成打开了自家应用。白名单关闭时保留原有前台判断。
+        val foregroundPackage = if (BallAppWhitelist.isEnabled(context)) {
+            TestAccessibilityService.instance?.verifiedBallForeground
+        } else {
+            lastForegroundPackage
+        }
+        if (foregroundPackage == context.packageName) return true
         if (!FloatingBallConfig.isShowOnlyWithImeEnabled(context)) return true
         // 检测不可用时 fail-open：宁可显示也不误隐藏（旧版精髓）
         val accOk = TestAccessibilityService.instance?.imeDetectionAvailable ?: false
@@ -809,6 +854,10 @@ class FloatingBallController(private val context: Context) {
         }
 
         view.setOnTouchListener { _, event ->
+            if (!isAppAllowed()) {
+                evaluateVisibility()
+                return@setOnTouchListener false
+            }
             val params = layoutParams ?: return@setOnTouchListener false
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
