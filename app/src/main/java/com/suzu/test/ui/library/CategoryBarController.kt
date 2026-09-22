@@ -69,12 +69,16 @@ class CategoryBarController(
         private set
 
     private val resourcesDir = File(context.filesDir, "resources")
-    private val dialogHelper = CategoryDialogHelper(context, scope, onEnterSortingMode)
+    private val dialogHelper = CategoryDialogHelper(context, scope, onEnterSortingMode, onCategoryReorderClick)
 
     init {
         dropdownButton.setOnClickListener {
             if (isSortingMode()) return@setOnClickListener
             setDropdownExpanded(!isDropdownExpanded)
+        }
+        dropdownButton.setOnLongClickListener {
+            onCategoryReorderClick()
+            true
         }
         dropdownPanel.visibility = View.GONE
         dropdownButton.rotation = 0f
@@ -187,6 +191,10 @@ class CategoryBarController(
         item.setOnClickListener {
             if (isSortingMode()) return@setOnClickListener
             selectCategory(selection)
+        }
+        item.setOnLongClickListener {
+            onCategoryReorderClick()
+            true
         }
 
         val itemParams = GridLayout.LayoutParams().apply {

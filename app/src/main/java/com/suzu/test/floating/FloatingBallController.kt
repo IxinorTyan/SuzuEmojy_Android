@@ -290,6 +290,10 @@ class FloatingBallController(private val context: Context) {
         }
     }
 
+    fun onSelfImeShown() {
+        searchBarController?.onSelfImeShown()
+    }
+
     fun onImeBoundsChanged(topPx: Int?) {
         mainHandler.post {
             edgeGestureController?.onImeBoundsChanged(topPx)

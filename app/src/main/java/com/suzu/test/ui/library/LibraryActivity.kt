@@ -68,6 +68,7 @@ class LibraryActivity : AppCompatActivity() {
 
     private var isSelectionMode: Boolean = false
     private var isSortingMode: Boolean = false
+    private var categoryReorderOpening = false
     private val selectedIds: MutableSet<Long> = mutableSetOf()
     private var currentDisplayedItems: List<ResourceEntity> = emptyList()
     private var slideHelper: SlideSelectionHelper? = null
@@ -173,7 +174,7 @@ class LibraryActivity : AppCompatActivity() {
             scope = lifecycleScope,
             isSortingMode = { isSortingMode },
             onAllLongClick = {
-                enterSortingMode()
+                showCategoryReorderBottomSheet()
             },
             onCategoryReorderClick = {
                 showCategoryReorderBottomSheet()
@@ -247,16 +248,22 @@ class LibraryActivity : AppCompatActivity() {
     }
 
     private fun showCategoryReorderBottomSheet() {
+        if (categoryReorderOpening) return
+        categoryReorderOpening = true
+        categoryController.closeDropdown()
         lifecycleScope.launch {
             val categories = withContext(Dispatchers.IO) {
                 database.categoryDao().getAllCategories()
             }
             if (categories.isEmpty()) {
                 Toast.makeText(this@LibraryActivity, "暂无自定义分类可排序", Toast.LENGTH_SHORT).show()
+                categoryReorderOpening = false
                 return@launch
             }
-            val bottomSheet = CategoryReorderBottomSheet(this@LibraryActivity, lifecycleScope, categories) {
-                switchCategoryView(categoryController.currentSelection)
+            val bottomSheet = CategoryReorderBottomSheet(
+                this@LibraryActivity, lifecycleScope, categories, categoryController.currentSelection
+            ) {
+                categoryReorderOpening = false
             }
             bottomSheet.show()
         }

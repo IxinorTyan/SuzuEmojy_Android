@@ -22,11 +22,20 @@ import com.suzu.test.accessibility.TestAccessibilityService
 import com.suzu.test.databinding.LayoutFloatingSearchBarBinding
 import com.suzu.test.ime.theme.KeyboardTheme
 import com.suzu.test.log.TestLog
+import kotlinx.coroutines.*
+import android.database.ContentObserver
+import android.os.SystemClock
 
 class FloatingSearchBarController(private val context: Context) {
 
     companion object {
         private const val MODULE = "FloatingSearchBar"
+        internal fun resolveHeight(topPx: Int?, offset: Int, cardHeight: Int, screenHeight: Int): Int {
+            val available = (screenHeight - offset).coerceAtLeast(cardHeight)
+            return if (topPx != null && topPx > offset + cardHeight) {
+                (topPx - offset).coerceAtMost(available)
+            } else cardHeight
+        }
     }
 
     private var windowManager: WindowManager? = null
@@ -39,10 +48,38 @@ class FloatingSearchBarController(private val context: Context) {
     private var imeGuardUntil: Long = 0L
     private var lastImeVisible: Boolean = false
     private var currentImeTop: Int? = null
+    private var pendingImeTop: Int? = null
+    private var imeBoundsUpdatePosted = false
     private var searchTarget: TestAccessibilityService.InputTarget? = null
+    private var showGeneration = 0L
+    private val launchState = SearchLaunchState()
+    private val launchScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var launchJob: Job? = null
+    private var observingIme = false
+    private val preparationTimeout = Runnable {
+        if (launchState.phase == SearchLaunchState.Phase.PREPARING ||
+            launchState.phase == SearchLaunchState.Phase.WAITING_TEXT_IME) {
+            TestLog.w(MODULE, "搜索准备超时，取消本轮请求")
+            hide(false)
+        }
+    }
+    private val imeObserver = object : ContentObserver(mainHandler) {
+        override fun onChange(selfChange: Boolean) {
+            val current = Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+            if (launchState.shouldYieldToOwnIme() && TestAccessibilityService.instance?.isSelfIme(current) == true) {
+                onSelfImeShown()
+            }
+        }
+    }
+
+    private val imeBoundsUpdateRunnable = Runnable {
+        imeBoundsUpdatePosted = false
+        currentImeTop = pendingImeTop
+        if (isShowing) updateWindowHeightForIme(currentImeTop)
+    }
 
     private val delayedHideRunnable = Runnable {
-        if (isShowing && !lastImeVisible && System.currentTimeMillis() >= imeGuardUntil) {
+        if (isShowing && !lastImeVisible && SystemClock.uptimeMillis() >= imeGuardUntil) {
             TestLog.i(MODULE, "已确认键盘收起且度过切换保护期，自动隐藏搜索框")
             hide()
         }
@@ -88,6 +125,7 @@ class FloatingSearchBarController(private val context: Context) {
         layoutParams = params
 
         b.root.alpha = 0f
+        params.alpha = 0f
         b.viewDismissArea.visibility = View.GONE
         setupListeners(b)
 
@@ -205,20 +243,66 @@ class FloatingSearchBarController(private val context: Context) {
     }
 
     fun show() {
-        if (isShowing) return
+        if (isShowing || launchState.phase != SearchLaunchState.Phase.IDLE) return
+        val token = launchState.begin(SystemClock.uptimeMillis())
+        mainHandler.removeCallbacks(preparationTimeout)
+        mainHandler.postDelayed(preparationTimeout, 2500L)
+        launchJob = launchScope.launch {
+            try {
+                val service = TestAccessibilityService.instance
+                service?.cancelImeSwitch("打开搜索框")
+                val started = SystemClock.uptimeMillis()
+                val target = withContext(Dispatchers.IO) { service?.captureInputTarget() }
+                TestLog.i(MODULE, "搜索准备 pid=${android.os.Process.myPid()} token=$token targetElapsed=${SystemClock.uptimeMillis() - started}ms")
+                if (!launchState.accepts(token)) return@launch
+                if (launchState.expired(SystemClock.uptimeMillis())) { launchState.close(); return@launch }
+                searchTarget = target
+                val current = Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+                if (service?.isSelfIme(current) == true) {
+                    launchState.waiting()
+                    val restored = withContext(Dispatchers.IO) { service.requestTextImeForSearch() }
+                    if (!restored) { launchState.close(); return@launch }
+                    while (service.isSelfIme(Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD))) {
+                        if (launchState.expired(SystemClock.uptimeMillis())) {
+                            TestLog.w(MODULE, "搜索启动等待文本输入法超时")
+                            launchState.close()
+                            return@launch
+                        }
+                        delay(50L)
+                    }
+                }
+                if (launchState.accepts(token)) showPrepared()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                TestLog.e(MODULE, "搜索启动失败", e)
+                if (isShowing) hide(false) else launchState.close()
+            }
+        }
+    }
+
+    private fun showPrepared() {
+        val started = android.os.SystemClock.uptimeMillis()
+        TestLog.i(MODULE, "搜索唤起开始 pid=${android.os.Process.myPid()} generation=${showGeneration + 1}")
         val service = TestAccessibilityService.instance
         service?.cancelImeSwitch("打开搜索框")
-        searchTarget = service?.captureInputTarget()
         if (!isAttached) {
             attach()
         }
+        if (!isAttached) { launchState.close(); return }
         val view = searchView ?: return
         val params = layoutParams ?: return
         val wm = windowManager ?: return
 
         isShowing = true
+        mainHandler.removeCallbacks(preparationTimeout)
+        launchState.activate()
+        context.contentResolver.registerContentObserver(
+            Settings.Secure.getUriFor(Settings.Secure.DEFAULT_INPUT_METHOD), false, imeObserver)
+        observingIme = true
+        val generation = ++showGeneration
         // 设定保护锁：给焦点切换留足 1200ms，期间忽略输入法瞬态隐藏
-        imeGuardUntil = System.currentTimeMillis() + 1200L
+        imeGuardUntil = SystemClock.uptimeMillis() + 1200L
         mainHandler.removeCallbacks(delayedHideRunnable)
         applyTheme()
 
@@ -227,15 +311,7 @@ class FloatingSearchBarController(private val context: Context) {
         val currentIme = Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
         val isCurrentOwnIme = accessibility != null && accessibility.isSelfIme(currentIme)
 
-        if (isCurrentOwnIme && accessibility != null) {
-            TestLog.i(MODULE, "当前处于自研表情键盘，唤醒搜索框时直接复用 IME 收起/退出逻辑静默切回原输入法以供打字")
-            val ime = com.suzu.test.ime.TestImageIME.instance
-            if (ime != null) {
-                ime.exitAndRestoreIme()
-            } else {
-                accessibility.restorePreviousIme()
-            }
-        }
+        if (isCurrentOwnIme) { hide(false); return }
 
         ImeSearchStateHolder.clearSearch()
         binding?.etSearchInput?.setText("")
@@ -246,6 +322,7 @@ class FloatingSearchBarController(private val context: Context) {
         params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
         view.alpha = 1f
+        params.alpha = 1f
         params.y = getTopMarginPx()
         updateWindowHeightForIme(currentImeTop)
 
@@ -253,35 +330,40 @@ class FloatingSearchBarController(private val context: Context) {
             wm.updateViewLayout(view, params)
         } catch (e: Exception) {
             TestLog.e(MODULE, "updateViewLayout 失败: ${e.message}", e)
+            hide(false)
+            return
         }
 
         val showSoftInputDelay = if (isCurrentOwnIme) 200L else 80L
         binding?.etSearchInput?.let { et ->
             et.requestFocus()
             mainHandler.postDelayed({
-                if (!isShowing || !et.hasFocus()) return@postDelayed
+                if (!isShowing || generation != showGeneration || !et.hasFocus()) return@postDelayed
                 val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
                 imm?.showSoftInput(et, InputMethodManager.SHOW_IMPLICIT)
             }, showSoftInputDelay)
         }
 
-        TestLog.i(MODULE, "顶部搜索框已展开 (isCurrentOwnIme=$isCurrentOwnIme, imeGuardUntil=$imeGuardUntil)")
+        TestLog.i(MODULE, "顶部搜索框已展开 (generation=$generation, elapsed=${android.os.SystemClock.uptimeMillis() - started}ms, isCurrentOwnIme=$isCurrentOwnIme, imeGuardUntil=$imeGuardUntil)")
     }
 
     fun hide(hideKeyboard: Boolean = true) {
+        mainHandler.removeCallbacks(preparationTimeout)
+        launchState.close()
+        launchJob?.cancel()
+        launchJob = null
+        if (observingIme) {
+            context.contentResolver.unregisterContentObserver(imeObserver)
+            observingIme = false
+        }
         if (!isShowing) return
         isShowing = false
+        showGeneration++
         mainHandler.removeCallbacks(delayedHideRunnable)
+        mainHandler.removeCallbacks(imeBoundsUpdateRunnable)
+        imeBoundsUpdatePosted = false
 
         binding?.viewDismissArea?.visibility = View.GONE
-
-        binding?.etSearchInput?.let { et ->
-            if (hideKeyboard) {
-                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-                imm?.hideSoftInputFromWindow(et.windowToken, 0)
-            }
-            et.clearFocus()
-        }
 
         val view = searchView ?: return
         val params = layoutParams ?: return
@@ -291,11 +373,21 @@ class FloatingSearchBarController(private val context: Context) {
         params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
         view.alpha = 0f
+        params.alpha = 0f
 
         try {
             wm.updateViewLayout(view, params)
         } catch (e: Exception) {
             TestLog.e(MODULE, "hide updateViewLayout 失败: ${e.message}", e)
+            detach()
+        }
+
+        binding?.etSearchInput?.let { et ->
+            et.clearFocus()
+            if (hideKeyboard) {
+                val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.hideSoftInputFromWindow(et.windowToken, 0)
+            }
         }
 
         TestLog.i(MODULE, "顶部搜索框已自动收起隐藏 (hideKeyboard=$hideKeyboard)")
@@ -333,7 +425,7 @@ class FloatingSearchBarController(private val context: Context) {
             mainHandler.removeCallbacks(delayedHideRunnable)
         } else {
             if (isShowing) {
-                val remaining = (imeGuardUntil - System.currentTimeMillis()).coerceAtLeast(0L)
+                val remaining = (imeGuardUntil - SystemClock.uptimeMillis()).coerceAtLeast(0L)
                 val delay = maxOf(remaining, 350L)
                 mainHandler.removeCallbacks(delayedHideRunnable)
                 mainHandler.postDelayed(delayedHideRunnable, delay)
@@ -342,11 +434,22 @@ class FloatingSearchBarController(private val context: Context) {
         }
     }
 
+    fun onSelfImeShown() {
+        if (!launchState.shouldYieldToOwnIme()) return
+        val current = Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+        if (TestAccessibilityService.instance?.isSelfIme(current) != true) return
+        TestLog.i(MODULE, "自研 IME 接管输入，关闭搜索浮窗")
+        hide(hideKeyboard = false)
+        TestAccessibilityService.instance?.switchToTestImeAndEnsureShown(searchTarget)
+    }
+
     fun onImeBoundsChanged(topPx: Int?) {
         currentImeTop = topPx
-        if (isShowing) {
-            updateWindowHeightForIme(topPx)
-        }
+        pendingImeTop = topPx
+        if (!isShowing || imeBoundsUpdatePosted) return
+        imeBoundsUpdatePosted = true
+        // IME insets can generate many callbacks per frame. Apply only the latest one.
+        mainHandler.postDelayed(imeBoundsUpdateRunnable, 16L)
     }
 
     private fun updateWindowHeightForIme(topPx: Int?) {
@@ -362,11 +465,8 @@ class FloatingSearchBarController(private val context: Context) {
         val maxTopOffset = maxOf(0, screenHeight - cardHeight)
         val clampedTopOffset = minOf(topOffset, maxTopOffset)
 
-        val targetHeight = if (topPx != null && topPx > clampedTopOffset + cardHeight) {
-            topPx - clampedTopOffset
-        } else {
-            maxOf(cardHeight, screenHeight - clampedTopOffset)
-        }
+        // Unknown or off-screen IME bounds must not enlarge the touch interceptor.
+        val targetHeight = resolveHeight(topPx, clampedTopOffset, cardHeight, screenHeight)
 
         if (params.height != targetHeight || params.y != clampedTopOffset) {
             params.height = targetHeight
@@ -402,10 +502,20 @@ class FloatingSearchBarController(private val context: Context) {
     }
 
     fun detach() {
+        mainHandler.removeCallbacks(preparationTimeout)
+        launchState.close()
+        launchJob?.cancel()
+        if (observingIme) {
+            context.contentResolver.unregisterContentObserver(imeObserver)
+            observingIme = false
+        }
         if (!isAttached) return
+        showGeneration++
         isAttached = false
         isShowing = false
         mainHandler.removeCallbacks(delayedHideRunnable)
+        mainHandler.removeCallbacks(imeBoundsUpdateRunnable)
+        imeBoundsUpdatePosted = false
         mainHandler.removeCallbacksAndMessages(null)
         searchView?.let { view ->
             try {

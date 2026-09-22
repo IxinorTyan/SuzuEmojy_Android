@@ -10,6 +10,7 @@ import android.widget.LinearLayout
 import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.doAfterTextChanged
 import com.suzu.test.R
 import com.suzu.test.databinding.ActivityShareWhitelistBinding
 import com.suzu.test.log.TestLog
@@ -43,6 +44,7 @@ abstract class AppWhitelistActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityShareWhitelistBinding
+    private var loadedApps: List<AppEntry>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,6 +63,7 @@ abstract class AppWhitelistActivity : AppCompatActivity() {
         }
 
         binding.btnBack.setOnClickListener { finish() }
+        binding.etAppSearch.doAfterTextChanged { renderApps() }
         loadShareTargets()
     }
 
@@ -88,19 +91,35 @@ abstract class AppWhitelistActivity : AppCompatActivity() {
                         { it.packageName }
                     ))
                 }
-                binding.llAppList.removeAllViews()
-                binding.tvEmptyHint.text = emptyHint
-                binding.tvEmptyHint.visibility = if (apps.isEmpty()) View.VISIBLE else View.GONE
-                apps.forEachIndexed { index, app ->
-                    addAppRow(app, app.packageName in selected)
-                    if (index < apps.lastIndex) binding.llAppList.addView(createDivider())
-                }
+                loadedApps = apps
+                renderApps()
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 binding.tvEmptyHint.text = "无法读取应用列表，请返回后重试"
                 binding.tvEmptyHint.visibility = View.VISIBLE
                 TestLog.e(MODULE, "读取应用列表失败", e)
             }
+        }
+    }
+
+    private fun renderApps() {
+        // Keep loading/error hints until the application list is available.
+        val apps = loadedApps ?: return
+        val query = binding.etAppSearch.text?.toString().orEmpty().trim()
+        val visibleApps = apps.filter {
+            it.label.contains(query, ignoreCase = true) ||
+                it.packageName.contains(query, ignoreCase = true)
+        }
+        // Read current selections rather than the snapshot used for initial ordering.
+        val selected = selectedPackages()
+        binding.llAppList.removeAllViews()
+        binding.tvEmptyHint.text = if (apps.isNotEmpty() && query.isNotEmpty()) {
+            getString(R.string.whitelist_search_no_results)
+        } else emptyHint
+        binding.tvEmptyHint.visibility = if (visibleApps.isEmpty()) View.VISIBLE else View.GONE
+        visibleApps.forEachIndexed { index, app ->
+            addAppRow(app, app.packageName in selected)
+            if (index < visibleApps.lastIndex) binding.llAppList.addView(createDivider())
         }
     }
 

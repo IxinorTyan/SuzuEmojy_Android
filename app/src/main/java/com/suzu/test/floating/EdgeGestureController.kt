@@ -138,13 +138,16 @@ class EdgeGestureController(
     fun onForegroundAppChanged(packageName: String?) = Unit
 
     fun onImeVisibilityChanged(visible: Boolean) {
+        if (imeVisible == visible) return
         imeVisible = visible
         if (!visible) imeTopPx = null
         refreshViews()
     }
 
     fun onImeBoundsChanged(topPx: Int?) {
-        imeTopPx = topPx?.takeIf { it > 0 }
+        val nextTop = topPx?.takeIf { it > 0 }
+        if (imeTopPx == nextTop) return
+        imeTopPx = nextTop
         refreshViews()
     }
 
@@ -342,16 +345,20 @@ class EdgeGestureController(
             val widthPx = getRegionWidthPx(region)
             val bounds = getRegionBounds(region)
             val touchable = shouldReceiveTouches(region)
+            val nextX = getRegionX(region, widthPx)
+            val nextFlags = if (touchable) baseFlags() else baseFlags() or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            val layoutChanged = layoutParams.width != widthPx || layoutParams.height != bounds.height ||
+                layoutParams.x != nextX || layoutParams.y != bounds.y || layoutParams.flags != nextFlags
 
             layoutParams.width = widthPx
             layoutParams.height = bounds.height
-            layoutParams.x = getRegionX(region, widthPx)
+            layoutParams.x = nextX
             layoutParams.y = bounds.y
             setTouchable(layoutParams, touchable)
 
             view.setTouchEnabled(touchable)
             view.setDisplayState()
-            updateViewLayout(view, layoutParams)
+            if (layoutChanged) updateViewLayout(view, layoutParams)
         }
     }
 

@@ -28,20 +28,22 @@ import com.suzu.test.resource.export.ResourceExportHelper
 class CategoryDialogHelper(
     private val context: Context,
     private val scope: CoroutineScope,
-    private val onEnterSortingMode: (() -> Unit)? = null
+    private val onEnterSortingMode: (() -> Unit)? = null,
+    private val onReorderCategories: (() -> Unit)? = null
 ) {
 
     fun showCategoryMenuDialog(category: CategoryEntity, onDeleteSuccess: () -> Unit) {
-        val options = arrayOf("调整位置", "设置文本图标", "重命名", "导出分类", "删除")
+        val options = arrayOf("调整分类顺序", "调整图片位置", "设置文本图标", "重命名", "导出分类", "删除")
         AlertDialog.Builder(context)
             .setTitle(category.name)
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> onEnterSortingMode?.invoke()
-                    1 -> showSetTextIconDialog(category)
-                    2 -> showRenameCategoryDialog(category)
-                    3 -> exportCategoryResources(category)
-                    4 -> showDeleteCategoryDialog(category, onDeleteSuccess)
+                    0 -> onReorderCategories?.invoke()
+                    1 -> onEnterSortingMode?.invoke()
+                    2 -> showSetTextIconDialog(category)
+                    3 -> showRenameCategoryDialog(category)
+                    4 -> exportCategoryResources(category)
+                    5 -> showDeleteCategoryDialog(category, onDeleteSuccess)
                 }
             }
             .show()

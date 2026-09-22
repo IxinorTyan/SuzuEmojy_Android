@@ -520,6 +520,7 @@ class SettingsFloatingActivity : AppCompatActivity() {
         binding.swBallWhitelist.isChecked = BallAppWhitelist.isEnabled(this)
         binding.swBallWhitelist.setOnCheckedChangeListener { _, enabled ->
             BallAppWhitelist.setEnabled(this, enabled)
+            updateBallWhitelistSummary()
         }
         updateBallWhitelistSummary()
         binding.btnBallWhitelistApps.setOnClickListener { showBallWhitelistPicker() }
@@ -531,6 +532,8 @@ class SettingsFloatingActivity : AppCompatActivity() {
     }
 
     private fun updateBallWhitelistSummary() {
+        binding.btnBallWhitelistApps.visibility =
+            if (BallAppWhitelist.isEnabled(this)) View.VISIBLE else View.GONE
         binding.btnBallWhitelistApps.text =
             "选择白名单应用（已选 ${BallAppWhitelist.packages(this).size} 个）"
     }

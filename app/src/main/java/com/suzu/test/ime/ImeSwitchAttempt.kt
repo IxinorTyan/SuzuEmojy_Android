@@ -5,7 +5,7 @@ internal class ImeSwitchAttempt(val startedAt: Long) {
     private var visibleSince: Long? = null
     private var clicks = 0
     private var lastClickAt: Long? = null
-    var cancelled = false
+    @Volatile var cancelled = false
         private set
 
     fun cancel() { cancelled = true }

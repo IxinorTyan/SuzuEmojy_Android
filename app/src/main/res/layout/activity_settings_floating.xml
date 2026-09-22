@@ -1138,6 +1138,7 @@
                         android:id="@+id/btnBallWhitelistApps"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:visibility="gone"
                         android:text="选择白名单应用" />
 
                     <!-- 悬浮球外观与尺寸 -->

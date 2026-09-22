@@ -19,6 +19,15 @@ import com.suzu.test.floating.FloatingBallController
 import com.suzu.test.floating.BallAppWhitelist
 import com.suzu.test.ime.TestImageIME
 import com.suzu.test.log.TestLog
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.os.SystemClock
 
 class TestAccessibilityService : AccessibilityService() {
 
@@ -63,13 +72,16 @@ class TestAccessibilityService : AccessibilityService() {
     private var cachedDefaultImePackage: String? = null
 
     private fun onImeLifecycleChanged(visible: Boolean) {
+        windowEpoch++
+        requestWindowStateSync()
         imeLifecycleHiddenUntil = if (visible) {
             0L
         } else {
-            System.currentTimeMillis() + 200L
+            SystemClock.uptimeMillis() + 200L
         }
         lastImeVisible = visible
         mainHandler.post {
+            if (visible && TestImageIME.isShowing()) ballController?.onSelfImeShown()
             ballController?.onImeVisibilityChanged(visible)
         }
     }
@@ -98,17 +110,29 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val windowScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var windowEpoch = 0L
+    private var windowScanBusy = false
+    private var windowScanDirty = false
+    private var previousVerifiedHost: String? = null
     private var ballController: FloatingBallController? = null
 
     // Independent from the legacy foreground hint used by IME and edge gestures.
     var verifiedBallForeground: String? = null
         private set
     private var ballForegroundRetry = 0
+    private var windowStateSyncPosted = false
+    private val windowStateSyncRunnable = Runnable {
+        windowStateSyncPosted = false
+        scanWindowState()
+    }
     private var screenReceiverRegistered = false
-    private val ballForegroundRecheck = Runnable { refreshBallForeground() }
+    private val ballForegroundRecheck = Runnable { requestWindowStateSync() }
     private val ballScreenReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_SCREEN_OFF) {
+                windowEpoch++
+                previousVerifiedHost = null
                 mainHandler.removeCallbacks(ballForegroundRecheck)
                 publishBallForeground(null)
             } else {
@@ -127,47 +151,110 @@ class TestAccessibilityService : AccessibilityService() {
     private fun requestBallForegroundRefresh() {
         mainHandler.removeCallbacks(ballForegroundRecheck)
         ballForegroundRetry = 0
-        refreshBallForeground()
+        windowEpoch++
+        previousVerifiedHost = verifiedBallForeground ?: previousVerifiedHost
+        publishBallForeground(null)
+        requestWindowStateSync()
     }
 
-    private fun refreshBallForeground() {
-        if (!BallAppWhitelist.isEnabled(this)) {
-            publishBallForeground(null)
-            return
-        }
-        val power = getSystemService(android.os.PowerManager::class.java)
-        val keyguard = getSystemService(android.app.KeyguardManager::class.java)
-        if (!power.isInteractive || keyguard.isKeyguardLocked) {
-            publishBallForeground(null)
-            return
-        }
-        val snapshots = try {
-            windows.mapNotNull { window ->
-                val bounds = android.graphics.Rect()
-                window.getBoundsInScreen(bounds)
-                if (bounds.isEmpty) return@mapNotNull null
-                val root = window.root
-                val pkg = try { root?.packageName?.toString() } finally {
-                    @Suppress("DEPRECATION")
-                    root?.recycle()
+    /** One in-flight scan and one coalesced follow-up; never queue one scan per event. */
+    private fun requestWindowStateSync() {
+        windowScanDirty = true
+        if (windowScanBusy) return
+        if (windowStateSyncPosted) return
+        windowStateSyncPosted = true
+        mainHandler.postDelayed(windowStateSyncRunnable, 50L)
+    }
+
+    private data class WindowSnapshot(
+        val id: Int, val type: Int, val bounds: android.graphics.Rect,
+        val focused: Boolean, val active: Boolean, val pkg: String?
+    )
+
+    private fun screenUnlocked(): Boolean =
+        getSystemService(android.os.PowerManager::class.java).isInteractive &&
+            !getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked
+
+    private fun scanWindowState() {
+        if (windowScanBusy || instance !== this) return
+        windowScanBusy = true
+        windowScanDirty = false
+        val epoch = windowEpoch
+        val whitelist = BallAppWhitelist.isEnabled(this)
+        val needsPackage = whitelist || foregroundAppPackage == null
+        val started = SystemClock.uptimeMillis()
+        windowScope.launch {
+            try {
+                // A root query can wait for another ViewRoot on this very main thread.
+                // Keep every AccessibilityNodeInfo on the worker; publish values only.
+                val snapshot = withContext(Dispatchers.IO) {
+                    try {
+                        windows.map { window ->
+                            val rect = android.graphics.Rect().also { window.getBoundsInScreen(it) }
+                            val pkg = if (needsPackage && !rect.isEmpty &&
+                                window.type != AccessibilityWindowInfo.TYPE_INPUT_METHOD) {
+                                val root = window.root
+                                try { root?.packageName?.toString() } finally { root?.recycle() }
+                            } else null
+                            WindowSnapshot(window.id, window.type, rect, window.isFocused, window.isActive, pkg)
+                        }
+                    } catch (e: Exception) {
+                        TestLog.w(MODULE, "窗口快照读取失败: ${e.message}")
+                        emptyList()
+                    }
                 }
+                if (epoch != windowEpoch || instance !== this@TestAccessibilityService) return@launch
+                applyWindowSnapshot(snapshot, whitelist)
+            } finally {
+                windowScanBusy = false
+                val elapsed = SystemClock.uptimeMillis() - started
+                if (elapsed >= 100L) TestLog.w(MODULE, "窗口快照耗时=${elapsed}ms epoch=$epoch pid=${android.os.Process.myPid()}")
+                if (windowScanDirty && instance === this@TestAccessibilityService) requestWindowStateSync()
+            }
+        }
+    }
+
+    private fun applyWindowSnapshot(snapshot: List<WindowSnapshot>, whitelist: Boolean) {
+        if (whitelist && screenUnlocked()) {
+            val balls = snapshot.filter { !it.bounds.isEmpty }.map { window ->
                 val kind = when (window.type) {
                     AccessibilityWindowInfo.TYPE_APPLICATION -> BallWindowSnapshot.Kind.APPLICATION
                     AccessibilityWindowInfo.TYPE_INPUT_METHOD -> BallWindowSnapshot.Kind.IME
-                    else -> if (pkg == packageName) BallWindowSnapshot.Kind.OWN_OVERLAY
+                    else -> if (window.pkg == packageName) BallWindowSnapshot.Kind.OWN_OVERLAY
                         else BallWindowSnapshot.Kind.OTHER
                 }
-                BallWindowSnapshot(kind, pkg, window.isFocused, window.isActive)
+                BallWindowSnapshot(kind, window.pkg, window.focused, window.active)
             }
-        } catch (_: Exception) {
-            emptyList()
+            val host = BallForegroundResolver.resolve(balls, previousVerifiedHost)
+            previousVerifiedHost = host
+            publishBallForeground(host)
+            if (host == null && ballForegroundRetry < 2) {
+                ballForegroundRetry++
+                mainHandler.removeCallbacks(ballForegroundRecheck)
+                mainHandler.postDelayed(ballForegroundRecheck, 120L * ballForegroundRetry)
+            }
+        } else {
+            previousVerifiedHost = null
+            publishBallForeground(null)
         }
-        val pkg = BallForegroundResolver.resolve(snapshots, verifiedBallForeground)
-        publishBallForeground(pkg)
-        // Only bounded retries after an event; never background polling.
-        if (pkg == null && ballForegroundRetry < 2) {
-            ballForegroundRetry++
-            mainHandler.postDelayed(ballForegroundRecheck, 120L * ballForegroundRetry)
+        imeDetectionAvailable = snapshot.isNotEmpty()
+        if (snapshot.isEmpty()) return
+        val screenHeight = getScreenHeight()
+        val imeTop = snapshot.filter {
+            it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD && isImeWindowValid(it.bounds, screenHeight)
+        }.minOfOrNull { it.bounds.top }
+        val visible = imeTop != null && SystemClock.uptimeMillis() >= imeLifecycleHiddenUntil
+        if (lastImeVisible != visible) {
+            lastImeVisible = visible
+            ballController?.onImeVisibilityChanged(visible)
+        }
+        ballController?.onImeBoundsChanged(if (visible) imeTop else null)
+        if (foregroundAppPackage == null) {
+            val pkg = snapshot.firstOrNull { it.focused || it.active }?.pkg
+            if (!pkg.isNullOrEmpty() && pkg != "com.android.systemui") {
+                foregroundAppPackage = pkg
+                ballController?.onForegroundAppChanged(pkg)
+            }
         }
     }
 
@@ -216,9 +303,9 @@ class TestAccessibilityService : AccessibilityService() {
         refreshDefaultImePackage()
         observeBallConfig()
         syncBallState()
-        syncImeStateFromWindows()
+        requestWindowStateSync()
         requestBallForegroundRefresh()
-        TestLog.i(MODULE, "onServiceConnected: SuzuEmojy 辅助切换服务已就绪 (输入法快速切换 + IME/前台双信号分发)")
+        TestLog.i(MODULE, "onServiceConnected: pid=${android.os.Process.myPid()} uptime=${SystemClock.uptimeMillis()}")
     }
 
     private fun observeBallConfig() {
@@ -281,71 +368,6 @@ class TestAccessibilityService : AccessibilityService() {
             if (visibleHeight <= 100) return false
         }
         return true
-    }
-
-    private fun syncImeStateFromWindows() {
-        val winList = try { windows } catch (e: Exception) { null }
-        val screenHeight = getScreenHeight()
-        if (winList.isNullOrEmpty()) {
-            // 窗口列表为空仅代表此刻检测不可用（如 IME 切换间隙），
-            // 不强制上报 false，配合悬浮球侧 fail-open 避免切换间隙误隐藏。
-            imeDetectionAvailable = false
-        } else {
-            imeDetectionAvailable = true
-            // 不能仅凭 TYPE_INPUT_METHOD 判断可见：
-            // 部分系统在键盘收起后仍会暂时保留 IME 窗口对象，
-            // 但其边界已经为空、过小或完全位于屏幕外。
-            // 只有存在有效屏幕可见区域的 IME 窗口时，才认为键盘真正展开。
-            val imeRects = winList
-                .asSequence()
-                .filter { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
-                .mapNotNull { window ->
-                    try {
-                        android.graphics.Rect().also { window.getBoundsInScreen(it) }
-                    } catch (_: Exception) {
-                        null
-                    }
-                }
-                .toList()
-
-            val windowVisible = imeRects.any { rect -> isImeWindowValid(rect, screenHeight) }
-            val lifecycleHidden = System.currentTimeMillis() < imeLifecycleHiddenUntil
-            val visible = windowVisible && !lifecycleHidden
-            if (visible != lastImeVisible) {
-                lastImeVisible = visible
-                mainHandler.post {
-                    ballController?.onImeVisibilityChanged(visible)
-                }
-            }
-
-            val imeTop = imeRects
-                .asSequence()
-                .filter { rect -> isImeWindowValid(rect, screenHeight) }
-                .minByOrNull { it.top }
-                ?.top
-
-            mainHandler.post {
-                ballController?.onImeBoundsChanged(imeTop)
-            }
-
-            if (foregroundAppPackage == null) {
-                val focusedWin = winList.firstOrNull { it.isFocused || it.isActive }
-                val rootNode = try { focusedWin?.root } catch (e: Exception) { null }
-                try {
-                    val pkg = rootNode?.packageName?.toString()
-                    if (!pkg.isNullOrEmpty() && pkg != "com.android.systemui") {
-                        foregroundAppPackage = pkg
-                        TestLog.i(MODULE, "初始化补齐前台应用包名: $pkg")
-                        mainHandler.post {
-                            ballController?.onForegroundAppChanged(pkg)
-                        }
-                    }
-                } finally {
-                    @Suppress("DEPRECATION")
-                    rootNode?.recycle()
-                }
-            }
-        }
     }
 
     private fun refreshDefaultImePackage() {
@@ -466,8 +488,10 @@ class TestAccessibilityService : AccessibilityService() {
 
         // 信号二：IME 可见性（自家表情 IME 同样计入）
         if (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED || event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            requestBallForegroundRefresh()
-            syncImeStateFromWindows()
+            windowEpoch++
+            // Our own show/hide also emits window events. Keep the last verified
+            // result until the next snapshot, or showing the ball hides it again.
+            requestWindowStateSync()
         }
 
         logImeDiag(event)
@@ -482,7 +506,11 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
+        windowEpoch++
+        windowScope.coroutineContext.cancelChildren()
         mainHandler.removeCallbacks(ballForegroundRecheck)
+        mainHandler.removeCallbacks(windowStateSyncRunnable)
+        windowStateSyncPosted = false
         publishBallForeground(null)
         ballController?.detach()
         ballController = null
@@ -502,7 +530,11 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        windowEpoch++
+        windowScope.cancel()
         mainHandler.removeCallbacks(ballForegroundRecheck)
+        mainHandler.removeCallbacks(windowStateSyncRunnable)
+        windowStateSyncPosted = false
         if (screenReceiverRegistered) {
             unregisterReceiver(ballScreenReceiver)
             screenReceiverRegistered = false
@@ -550,10 +582,9 @@ class TestAccessibilityService : AccessibilityService() {
 
     fun isSelfIme(imeId: String?): Boolean {
         if (imeId.isNullOrEmpty()) return false
-        val ownImeId = findTestImeId()
         val fullId = packageName + "/" + TestImageIME::class.java.name
         val shortId = ComponentName(packageName, TestImageIME::class.java.name).flattenToShortString()
-        return imeId == ownImeId || imeId == fullId || imeId == shortId || imeId.startsWith("$packageName/")
+        return imeId == fullId || imeId == shortId || imeId.startsWith("$packageName/")
     }
 
     /**
@@ -605,7 +636,8 @@ class TestAccessibilityService : AccessibilityService() {
     data class InputTarget(val windowId: Int, val packageName: String)
 
     private var switchAttempt: com.suzu.test.ime.ImeSwitchAttempt? = null
-    private var switchCheck: Runnable? = null
+    private var switchJob: Job? = null
+    private var switchTimeout: Runnable? = null
 
     fun captureInputTarget(): InputTarget? {
         val targetWindow = windows.firstOrNull {
@@ -621,77 +653,101 @@ class TestAccessibilityService : AccessibilityService() {
     fun isImeSwitchPending(): Boolean = switchAttempt != null
 
     fun cancelImeSwitch(reason: String) {
+        switchTimeout?.let { mainHandler.removeCallbacks(it) }
+        switchTimeout = null
         switchAttempt?.cancel()
         switchAttempt = null
-        switchCheck?.let { mainHandler.removeCallbacks(it) }
-        switchCheck = null
+        switchJob?.cancel()
+        switchJob = null
         TestLog.i(MODULE, "结束 IME 显示请求: $reason")
     }
 
     /** Search passes the chat window captured before the overlay took focus. */
-    fun switchToTestImeAndEnsureShown(target: InputTarget? = captureInputTarget()): Boolean {
+    fun switchToTestImeAndEnsureShown(target: InputTarget?): Boolean {
         cancelImeSwitch("新请求")
         if (target == null) {
-            TestLog.w(MODULE, "无法切入 IME: 未记录目标输入窗口")
             com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+            TestLog.w(MODULE, "无法恢复宿主输入焦点：缺少目标窗口")
             return false
         }
-        val attempt = com.suzu.test.ime.ImeSwitchAttempt(android.os.SystemClock.uptimeMillis())
+        val attempt = com.suzu.test.ime.ImeSwitchAttempt(SystemClock.uptimeMillis())
         switchAttempt = attempt
-        val initialIme = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-        var switched = switchToTestIme()
-        if (!switched) {
-            cancelImeSwitch("系统未接受切换请求")
-            com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
-            return false
-        }
-        var ownImeObserved = false
-        val check = object : Runnable {
-            override fun run() {
-                if (switchAttempt !== attempt || attempt.cancelled) return
-                val now = android.os.SystemClock.uptimeMillis()
-                val current = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-                val own = isSelfIme(current)
-                if (own) ownImeObserved = true
-                if (!own && (ownImeObserved || current != initialIme)) {
-                    cancelImeSwitch("用户已选择其他输入法")
-                    com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
-                    return
-                }
-                val focusedWindow = windows.firstOrNull { it.isFocused }
-                val root = focusedWindow?.root
-                var focused: AccessibilityNodeInfo? = null
-                try {
-                    val matches = root != null && root.windowId == target.windowId &&
-                        root.packageName?.toString() == target.packageName
-                    if (matches) focused = root?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-                    val ready = matches && focused?.isEditable == true && focused?.isVisibleToUser == true
-                    val visible = own && ready && TestImageIME.instance?.isShowingFor(target.packageName) == true
-                    if (attempt.stable(now, visible)) {
-                        cancelImeSwitch("目标 IME 已稳定显示")
-                        com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
-                        return
-                    }
-                    if (attempt.expired(now)) {
-                        TestLog.w(MODULE, "IME 显示超时: target=$target default=$current focusReady=$ready visible=$visible")
-                        cancelImeSwitch("超过 1000ms")
-                        com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
-                        return
-                    }
-                    if (attempt.takeClick(now, switched && own && ready, visible)) {
-                        val clicked = focused?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
-                        TestLog.i(MODULE, "目标输入框补救点击: accepted=$clicked，继续验证显示")
-                    }
-                } finally {
-                    if (focused !== root) focused?.recycle()
-                    root?.recycle()
-                }
-                mainHandler.postDelayed(this, 50L)
+        val timeout = Runnable {
+            if (switchAttempt === attempt) {
+                cancelImeSwitch("IME 交接超过 2500ms")
+                com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
             }
         }
-        switchCheck = check
-        mainHandler.post(check)
-        return true // Request queued; completion is verified asynchronously.
+        switchTimeout = timeout
+        mainHandler.postDelayed(timeout, 2500L)
+        switchJob = windowScope.launch {
+            try {
+                val initialIme = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+                val switched = withContext(Dispatchers.IO) { switchToTestIme() }
+                if (!switched) {
+                    com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+                    return@launch
+                }
+                var ownObserved = false
+                while (switchAttempt === attempt && !attempt.cancelled && !attempt.expired(SystemClock.uptimeMillis())) {
+                    val current = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+                    val own = isSelfIme(current)
+                    if (!own && (ownObserved || current != initialIme)) {
+                        com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+                        return@launch
+                    }
+                    if (own) ownObserved = true
+                    val ready = withContext(Dispatchers.IO) { targetEditorReady(target) }
+                    if (switchAttempt !== attempt || attempt.cancelled) return@launch
+                    val now = SystemClock.uptimeMillis()
+                    val visible = own && ready && TestImageIME.instance?.isShowingFor(target.packageName) == true
+                    if (attempt.stable(now, visible)) return@launch
+                    if (attempt.takeClick(now, own && ready, visible)) {
+                        withContext(Dispatchers.IO) {
+                            // Re-check focus on the worker just before touching the editor.
+                            if (!attempt.cancelled) targetEditorReady(target, attempt)
+                        }
+                    }
+                    kotlinx.coroutines.delay(50L)
+                }
+                TestLog.w(MODULE, "IME 交接超时: target=$target elapsed=${SystemClock.uptimeMillis() - attempt.startedAt}ms")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                TestLog.e(MODULE, "IME 交接失败", e)
+                com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+            } finally {
+                if (switchAttempt === attempt) {
+                    mainHandler.removeCallbacks(timeout)
+                    switchTimeout = null
+                    attempt.cancel()
+                    switchAttempt = null
+                    switchJob = null
+                    com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
+                }
+            }
+        }
+        return true
+    }
+
+    private fun targetEditorReady(target: InputTarget, clickAttempt: com.suzu.test.ime.ImeSwitchAttempt? = null): Boolean {
+        val window = windows.firstOrNull { it.isFocused && it.id == target.windowId } ?: return false
+        val root = window.root ?: return false
+        var editor: AccessibilityNodeInfo? = null
+        try {
+            if (root.packageName?.toString() != target.packageName) return false
+            editor = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            val ready = editor?.isEditable == true && editor?.isVisibleToUser == true
+            if (ready && clickAttempt != null && !clickAttempt.cancelled &&
+                !clickAttempt.expired(SystemClock.uptimeMillis()) &&
+                isSelfIme(Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD))) {
+                editor?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            }
+            return ready
+        } finally {
+            if (editor !== root) editor?.recycle()
+            root.recycle()
+        }
     }
 
     /**
@@ -729,5 +785,12 @@ class TestAccessibilityService : AccessibilityService() {
         }, 200)
 
         return switchResult
+    }
+
+    /** Called on the search worker, before the overlay takes focus. */
+    fun requestTextImeForSearch(): Boolean {
+        val previous = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE).getString(KEY_PREV_IME, null)
+        if (previous.isNullOrEmpty() || isSelfIme(previous) || Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false
+        return softKeyboardController.switchToInputMethod(previous)
     }
 }

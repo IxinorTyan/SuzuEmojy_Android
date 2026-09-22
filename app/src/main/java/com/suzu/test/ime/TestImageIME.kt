@@ -482,7 +482,9 @@ class TestImageIME : InputMethodService() {
         imeWindowVisible = false
         TestAccessibilityService.notifyImeLifecycle(false)
         super.onFinishInputView(finishingInput)
-        restorePreviousKeyboard("onFinishInputView(finishing=$finishingInput)")
+        if (TestAccessibilityService.instance?.isImeSwitchPending() != true) {
+            restorePreviousKeyboard("onFinishInputView(finishing=$finishingInput)")
+        }
     }
 
     override fun onFinishInput() {
@@ -492,7 +494,9 @@ class TestImageIME : InputMethodService() {
         imeWindowVisible = false
         TestAccessibilityService.notifyImeLifecycle(false)
         super.onFinishInput()
-        restorePreviousKeyboard("onFinishInput")
+        if (TestAccessibilityService.instance?.isImeSwitchPending() != true) {
+            restorePreviousKeyboard("onFinishInput")
+        }
     }
 
     private fun isSelfIme(imeId: String?): Boolean {

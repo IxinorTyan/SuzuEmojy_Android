@@ -1,7 +1,6 @@
 package com.suzu.test.ui.library
 
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -14,107 +13,96 @@ import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.entity.CategoryEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.Collections
 
+/** Position zero is the fixed All tile; all other positions are editable categories. */
 class CategoryReorderAdapter(
     private val scope: CoroutineScope,
-    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit
+    categories: List<CategoryEntity>,
+    private val selectedId: Long?
 ) : RecyclerView.Adapter<CategoryReorderAdapter.ViewHolder>() {
+    private val categories = categories.toMutableList()
+    val orderedIds: List<Long> get() = categories.map { it.id }
 
-    val items = mutableListOf<CategoryEntity>()
+    init { setHasStableIds(true) }
 
-    fun setData(newItems: List<CategoryEntity>) {
-        items.clear()
-        items.addAll(newItems)
-        notifyDataSetChanged()
+    fun isMovable(position: Int): Boolean = position in 1..categories.size
+
+    fun move(from: Int, to: Int): Boolean {
+        if (!isMovable(from) || !isMovable(to) || from == to) return false
+        // Insert, rather than swap: crossing a row must shift every intervening tile.
+        categories.add(to - 1, categories.removeAt(from - 1))
+        notifyItemMoved(from, to)
+        return true
     }
 
-    fun onItemMove(fromPosition: Int, toPosition: Int) {
-        if (fromPosition in 0 until items.size && toPosition in 0 until items.size) {
-            Collections.swap(items, fromPosition, toPosition)
-            notifyItemMoved(fromPosition, toPosition)
+    override fun getItemId(position: Int): Long = if (position == 0) Long.MIN_VALUE else categories[position - 1].id
+    override fun getItemCount(): Int = categories.size + 1
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = ViewHolder(
+        ItemCategoryReorderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+    )
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) = holder.bind(categories.getOrNull(position - 1))
+    override fun onViewRecycled(holder: ViewHolder) { holder.clear(); super.onViewRecycled(holder) }
+
+    inner class ViewHolder(private val binding: ItemCategoryReorderBinding) : RecyclerView.ViewHolder(binding.root) {
+        private var iconJob: Job? = null
+        private var boundId: Long? = null
+
+        fun clear() {
+            iconJob?.cancel()
+            iconJob = null
+            Glide.with(binding.ivCategoryIcon).clear(binding.ivCategoryIcon)
         }
-    }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemCategoryReorderBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
-        return ViewHolder(binding)
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(items[position])
-    }
-
-    override fun getItemCount(): Int = items.size
-
-    inner class ViewHolder(
-        private val binding: ItemCategoryReorderBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
-
-        init {
-            binding.ivDragHandle.setOnTouchListener { _, event ->
-                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                    onStartDrag(this)
-                }
-                false
+        fun bind(category: CategoryEntity?) {
+            clear()
+            boundId = category?.id
+            binding.root.isSelected = selectedId == category?.id
+            binding.tvCategoryName.text = category?.name ?: "全部"
+            binding.tvCategoryStatus.text = when {
+                category == null -> "固定位置"
+                category.id == selectedId -> "当前分类"
+                else -> ""
             }
-        }
+            binding.root.contentDescription = "${category?.name ?: "全部"}，${binding.tvCategoryStatus.text}"
+            binding.ivCategoryIcon.visibility = View.VISIBLE
+            binding.tvCategoryTextIcon.visibility = View.GONE
+            binding.ivCategoryIcon.imageTintList = null
+            binding.ivCategoryIcon.setImageResource(if (category == null) R.drawable.ic_tab_all else R.drawable.ic_category_default)
+            if (category == null) return
 
-        fun bind(category: CategoryEntity) {
-            binding.tvCategoryName.text = category.name
-
-            when (val result = CategoryIconResolver.resolve(category.iconPath)) {
-                is CategoryIconResult.Default -> {
-                    binding.ivCategoryIcon.visibility = View.VISIBLE
-                    binding.tvCategoryTextIcon.visibility = View.GONE
-                    binding.ivCategoryIcon.setImageResource(R.drawable.ic_category_default)
-                }
+            when (val icon = CategoryIconResolver.resolve(category.iconPath)) {
                 is CategoryIconResult.Text -> {
                     binding.ivCategoryIcon.visibility = View.GONE
                     binding.tvCategoryTextIcon.visibility = View.VISIBLE
-                    binding.tvCategoryTextIcon.text = result.content
+                    binding.tvCategoryTextIcon.text = icon.content
                 }
-                is CategoryIconResult.ImageFile -> {
-                    binding.ivCategoryIcon.visibility = View.VISIBLE
-                    binding.tvCategoryTextIcon.visibility = View.GONE
-                    binding.ivCategoryIcon.imageTintList = null
-                    Glide.with(binding.ivCategoryIcon).asBitmap()
-                        .load(File(binding.ivCategoryIcon.context.filesDir, result.relativePath))
-                        .error(R.drawable.ic_category_default).centerCrop().into(binding.ivCategoryIcon)
-                }
-                is CategoryIconResult.Resource -> {
-                    binding.ivCategoryIcon.visibility = View.VISIBLE
-                    binding.tvCategoryTextIcon.visibility = View.GONE
-                    loadResourceIcon(result.resourceId)
+                is CategoryIconResult.ImageFile -> loadFile(File(binding.root.context.filesDir, icon.relativePath))
+                else -> {
+                    val context = binding.root.context
+                    iconJob = scope.launch {
+                        val file = withContext(Dispatchers.IO) {
+                            val db = DatabaseProvider.getDatabase(context)
+                            val resource = if (icon is CategoryIconResult.Resource) {
+                                db.resourceDao().getById(icon.resourceId)
+                            } else {
+                                db.resourceCategoryDao().getThumbnailPreloadResources(category.id, 1).firstOrNull()
+                            }
+                            resource?.let { File(context.filesDir, "resources/${it.filename}") }
+                        }
+                        if (boundId == category.id && file != null) loadFile(file)
+                    }
                 }
             }
         }
 
-        private fun loadResourceIcon(resourceId: Long) {
-            val context = binding.root.context
-            scope.launch {
-                val resource = withContext(Dispatchers.IO) {
-                    val db = DatabaseProvider.getDatabase(context)
-                    db.resourceDao().getById(resourceId)
-                }
-                val file = if (resource != null) File(context.filesDir, "resources/${resource.filename}") else null
-                if (file != null && file.exists()) {
-                    Glide.with(context)
-                        .asBitmap()
-                        .load(file)
-                        .centerCrop()
-                        .into(binding.ivCategoryIcon)
-                } else {
-                    binding.ivCategoryIcon.setImageResource(R.drawable.ic_category_default)
-                }
-            }
+        private fun loadFile(file: File) {
+            Glide.with(binding.ivCategoryIcon).asBitmap().load(file)
+                .placeholder(R.drawable.ic_category_default).error(R.drawable.ic_category_default)
+                .centerCrop().into(binding.ivCategoryIcon)
         }
     }
 }

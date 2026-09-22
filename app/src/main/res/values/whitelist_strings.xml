@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="whitelist_search_hint">搜索应用名称或包名</string>
+    <string name="whitelist_search_no_results">未找到匹配的应用，请尝试其他关键词</string>
+</resources>
