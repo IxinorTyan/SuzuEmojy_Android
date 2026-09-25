@@ -1,0 +1,607 @@
+[
+  {
+    "dex": "classes.dex",
+    "methods": [],
+    "strings": [
+      "com.huawei.appmarket|com.bbk.appstore|com.heytap.market|com.oppo.market|com.xiaomi.market|com.meizu.mstore|com.tencent.android.qqdownloader|com.qihoo.appstore|com.wandoujia.phoenix2|com.baidu.appsearch|com.sogou.androidtool|com.sec.android.app.samsungapps|com.yingyonghui.market|com.hiapk.marketpho"
+    ]
+  },
+  {
+    "dex": "classes10.dex",
+    "methods": [
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/bytedance/ies/dmt/ui/widget/DmtEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/shortvideo/view/MentionEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/shortvideo/view/MentionEditText;",
+        "method": "onTextContextMenuItem"
+      }
+    ],
+    "strings": []
+  },
+  {
+    "dex": "classes11.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes12.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes13.dex",
+    "methods": [
+      {
+        "class": "LX/0U4I;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "LX/0UD2;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Landroid/widget/EditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/bytedance/android/format/live/rips/interaction/cleanscreen/input/EmojiEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/bytedance/android/livesdk/chatroom/replay/interactionmsg/danmaku/send/view/StablePrefixGradientEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/bytedance/android/xr/business/chat/view/PasteCareMentionEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/bytedance/ies/dmt/ui/widget/DmtEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/im/business/awemereplypage/view/PasteCareMentionEditText;",
+        "method": "onTextContextMenuItem"
+      }
+    ],
+    "strings": []
+  },
+  {
+    "dex": "classes14.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes15.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes16.dex",
+    "methods": [],
+    "strings": [
+      "disable_sogou_inline"
+    ]
+  },
+  {
+    "dex": "classes17.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes18.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes19.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes2.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes20.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes21.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes22.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes23.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes24.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes25.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes26.dex",
+    "methods": [
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/im/sdk/chat/view/RichEditText;",
+        "method": "onCreateInputConnection"
+      }
+    ],
+    "strings": []
+  },
+  {
+    "dex": "classes27.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes28.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes29.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes3.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes30.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes31.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes32.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes33.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes34.dex",
+    "methods": [
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/bytedance/ies/ugc/aweme/classroom/note/view/ClassroomNoteEditText;",
+        "method": "onTextContextMenuItem"
+      }
+    ],
+    "strings": []
+  },
+  {
+    "dex": "classes35.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes36.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes37.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes38.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes39.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes4.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes40.dex",
+    "methods": [
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/bytedance/ies/dmt/ui/widget/DmtEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/google/android/material/textfield/TextInputEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/ui/SearchEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/ui/SearchEditText;",
+        "method": "onTextContextMenuItem"
+      }
+    ],
+    "strings": []
+  },
+  {
+    "dex": "classes41.dex",
+    "methods": [
+      {
+        "class": "LX/1Aln;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroid/webkit/WebView;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/bytedance/webx/core/webview/IWebViewContainer;",
+        "method": "onCreateInputConnection"
+      }
+    ],
+    "strings": []
+  },
+  {
+    "dex": "classes42.dex",
+    "methods": [
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/tt/miniapp/component/nativeview/textarea/Textarea;",
+        "method": "onCreateInputConnection"
+      }
+    ],
+    "strings": []
+  },
+  {
+    "dex": "classes43.dex",
+    "methods": [],
+    "strings": [
+      "{\"appjump\": {\"control\": \"fixed\", \"scheme\": [\"market\"], \"target_pkg\": [\"com.oppo.market\", \"com.tencent.android.qqdownloader\", \"com.qihoo.appstore\", \"com.wandoujia.phoenix2\", \"com.baidu.appsearch\", \"com.sogou.androidtool\", \"com.huawei.appmarket\", \"com.bbk.appstore\", \"com.xiaomi.market\", \"com.meizu.mstore\", \"com.sec.android.app.samsungapps\", \"com.yingyonghui.market\", \"cn.goapk.market\"]}}"
+    ]
+  },
+  {
+    "dex": "classes44.dex",
+    "methods": [
+      {
+        "class": "LX/1Dct;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "LX/1Dct;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "LX/1Dcx;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "LX/1Dcx;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "LX/1E2f;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "LX/1E2g;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "LX/1E2h;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "LX/1E2w;",
+        "method": "performPrivateCommand"
+      },
+      {
+        "class": "LX/1E2x;",
+        "method": "commitContent"
+      },
+      {
+        "class": "LX/1E38;",
+        "method": "onReceiveContent"
+      },
+      {
+        "class": "Landroid/view/inputmethod/InputConnectionWrapper;",
+        "method": "commitContent"
+      },
+      {
+        "class": "Landroid/view/inputmethod/InputConnectionWrapper;",
+        "method": "performPrivateCommand"
+      },
+      {
+        "class": "Landroid/widget/AutoCompleteTextView;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroid/widget/CheckedTextView;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroid/widget/EditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroid/widget/EditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Landroid/widget/MultiAutoCompleteTextView;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroid/widget/TextView;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onReceiveContent"
+      },
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatTextView;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroidx/core/view/OnReceiveContentViewBehavior;",
+        "method": "onReceiveContent"
+      },
+      {
+        "class": "Lcom/bytedance/android/gamecp/business/comment/edit/view/CommentEditText;",
+        "method": "onCreateInputConnection"
+      }
+    ],
+    "strings": [
+      "Lottie doesn't support expressions.",
+      "Unsupported direction expression ",
+      "Unsupported expression ",
+      "android.support.v13.view.inputmethod.InputConnectionCompat.COMMIT_CONTENT",
+      "androidx.core.view.inputmethod.InputConnectionCompat.COMMIT_CONTENT"
+    ]
+  },
+  {
+    "dex": "classes45.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes46.dex",
+    "methods": [
+      {
+        "class": "LX/0U4I;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Landroid/widget/TextView;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroidx/appcompat/widget/AppCompatEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/bytedance/android/livesdk/mention/MentionEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/bytedance/android/livesdk/mention/MentionEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/bytedance/ies/dmt/ui/widget/DmtEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/comment/widget/CommentMentionEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/feed/danmaku/widget/DanAuthorEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/social/at/MentionEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/sticker/interact/animator/mention/MentionEditText;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/sticker/interact/animator/mention/MentionEditText;",
+        "method": "onTextContextMenuItem"
+      },
+      {
+        "class": "Lcom/ss/android/ugc/aweme/views/mention/MentionEditText;",
+        "method": "onCreateInputConnection"
+      }
+    ],
+    "strings": []
+  },
+  {
+    "dex": "classes47.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes48.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes49.dex",
+    "methods": [
+      {
+        "class": "LX/1E2h;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "LX/1HxU;",
+        "method": "onReceiveContent"
+      },
+      {
+        "class": "Landroidx/appcompat/widget/SearchView$SearchAutoComplete;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroidx/core/view/OnReceiveContentViewBehavior;",
+        "method": "onReceiveContent"
+      }
+    ],
+    "strings": []
+  },
+  {
+    "dex": "classes5.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes50.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes51.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes52.dex",
+    "methods": [
+      {
+        "class": "LX/1L1K;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Landroid/webkit/WebView;",
+        "method": "onCreateInputConnection"
+      },
+      {
+        "class": "Lcom/bytedance/webx/core/webview/WebViewContainer;",
+        "method": "onCreateInputConnection"
+      }
+    ],
+    "strings": []
+  },
+  {
+    "dex": "classes53.dex",
+    "methods": [],
+    "strings": [
+      "com.sogou.androidtool"
+    ]
+  },
+  {
+    "dex": "classes54.dex",
+    "methods": [
+      {
+        "class": "LX/0BKa;",
+        "method": "commitContent"
+      },
+      {
+        "class": "LX/0BKa;",
+        "method": "performPrivateCommand"
+      },
+      {
+        "class": "Landroidx/compose/ui/platform/AndroidComposeView;",
+        "method": "onCreateInputConnection"
+      }
+    ],
+    "strings": [
+      "Unsupported Lottie expression function: ",
+      "Unsupported Lottie expression: "
+    ]
+  },
+  {
+    "dex": "classes55.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes56.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes6.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes7.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes8.dex",
+    "methods": [],
+    "strings": []
+  },
+  {
+    "dex": "classes9.dex",
+    "methods": [],
+    "strings": []
+  }
+]

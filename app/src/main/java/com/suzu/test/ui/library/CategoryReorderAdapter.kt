@@ -18,38 +18,46 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/** Position zero is the fixed All tile; all other positions are editable categories. */
 class CategoryReorderAdapter(
     private val scope: CoroutineScope,
-    categories: List<CategoryEntity>,
-    private val selectedId: Long?
+    categories: List<CategoryEntity>
 ) : RecyclerView.Adapter<CategoryReorderAdapter.ViewHolder>() {
     private val categories = categories.toMutableList()
     val orderedIds: List<Long> get() = categories.map { it.id }
 
     init { setHasStableIds(true) }
 
-    fun isMovable(position: Int): Boolean = position in 1..categories.size
+    fun isMovable(position: Int): Boolean = position in categories.indices
 
     fun move(from: Int, to: Int): Boolean {
         if (!isMovable(from) || !isMovable(to) || from == to) return false
         // Insert, rather than swap: crossing a row must shift every intervening tile.
-        categories.add(to - 1, categories.removeAt(from - 1))
+        categories.add(to, categories.removeAt(from))
         notifyItemMoved(from, to)
         return true
     }
 
-    override fun getItemId(position: Int): Long = if (position == 0) Long.MIN_VALUE else categories[position - 1].id
-    override fun getItemCount(): Int = categories.size + 1
+    override fun getItemId(position: Int): Long = categories[position].id
+    override fun getItemCount(): Int = categories.size
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = ViewHolder(
         ItemCategoryReorderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
     )
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) = holder.bind(categories.getOrNull(position - 1))
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) = holder.bind(categories[position])
     override fun onViewRecycled(holder: ViewHolder) { holder.clear(); super.onViewRecycled(holder) }
 
     inner class ViewHolder(private val binding: ItemCategoryReorderBinding) : RecyclerView.ViewHolder(binding.root) {
         private var iconJob: Job? = null
         private var boundId: Long? = null
+
+        init {
+            // Square thumbnails follow the actual cell width, including dense library grids.
+            binding.categoryIconFrame.addOnLayoutChangeListener { view, left, _, right, _, _, _, _, _ ->
+                val size = right - left
+                if (size > 0 && view.layoutParams.height != size) {
+                    view.layoutParams = view.layoutParams.apply { height = size }
+                }
+            }
+        }
 
         fun clear() {
             iconJob?.cancel()
@@ -57,22 +65,15 @@ class CategoryReorderAdapter(
             Glide.with(binding.ivCategoryIcon).clear(binding.ivCategoryIcon)
         }
 
-        fun bind(category: CategoryEntity?) {
+        fun bind(category: CategoryEntity) {
             clear()
-            boundId = category?.id
-            binding.root.isSelected = selectedId == category?.id
-            binding.tvCategoryName.text = category?.name ?: "全部"
-            binding.tvCategoryStatus.text = when {
-                category == null -> "固定位置"
-                category.id == selectedId -> "当前分类"
-                else -> ""
-            }
-            binding.root.contentDescription = "${category?.name ?: "全部"}，${binding.tvCategoryStatus.text}"
+            boundId = category.id
+            binding.tvCategoryName.text = category.name
+            binding.root.contentDescription = category.name
             binding.ivCategoryIcon.visibility = View.VISIBLE
             binding.tvCategoryTextIcon.visibility = View.GONE
             binding.ivCategoryIcon.imageTintList = null
-            binding.ivCategoryIcon.setImageResource(if (category == null) R.drawable.ic_tab_all else R.drawable.ic_category_default)
-            if (category == null) return
+            binding.ivCategoryIcon.setImageResource(R.drawable.ic_category_default)
 
             when (val icon = CategoryIconResolver.resolve(category.iconPath)) {
                 is CategoryIconResult.Text -> {

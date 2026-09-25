@@ -18,6 +18,7 @@ import com.suzu.test.floating.FloatingBallConfig
 import com.suzu.test.floating.FloatingBallController
 import com.suzu.test.floating.BallAppWhitelist
 import com.suzu.test.ime.TestImageIME
+import com.suzu.test.ime.ImeEditorRecovery
 import com.suzu.test.log.TestLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +73,7 @@ class TestAccessibilityService : AccessibilityService() {
     private var cachedDefaultImePackage: String? = null
 
     private fun onImeLifecycleChanged(visible: Boolean) {
+        if (!visible) onImeInputConnectionChanged()
         windowEpoch++
         requestWindowStateSync()
         imeLifecycleHiddenUntil = if (visible) {
@@ -131,6 +133,7 @@ class TestAccessibilityService : AccessibilityService() {
     private val ballScreenReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_SCREEN_OFF) {
+                cancelImeSwitch("屏幕关闭")
                 windowEpoch++
                 previousVerifiedHost = null
                 mainHandler.removeCallbacks(ballForegroundRecheck)
@@ -286,6 +289,9 @@ class TestAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        serviceInfo = serviceInfo.apply {
+            flags = flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+        }
         instance = this
         verifiedBallForeground = null
         val screenFilter = android.content.IntentFilter().apply {
@@ -639,10 +645,13 @@ class TestAccessibilityService : AccessibilityService() {
     private var switchJob: Job? = null
     private var switchTimeout: Runnable? = null
 
-    fun captureInputTarget(): InputTarget? {
+    fun captureInputTarget(knownTarget: InputTarget? = null): InputTarget? {
         val targetWindow = windows.firstOrNull {
             it.type == AccessibilityWindowInfo.TYPE_APPLICATION && it.isFocused
         } ?: return null
+        // A window ID identifies the already verified host. Avoid fetching its
+        // remote node tree every 50 ms; only recovery clicks need editor nodes.
+        if (knownTarget?.windowId == targetWindow.id) return knownTarget
         val root = targetWindow.root ?: return null
         try {
             val pkg = root.packageName?.toString() ?: return null
@@ -650,7 +659,13 @@ class TestAccessibilityService : AccessibilityService() {
         } finally { root.recycle() }
     }
 
-    fun isImeSwitchPending(): Boolean = switchAttempt != null
+    fun isImeSwitchPending(): Boolean =
+        switchAttempt?.isActive(SystemClock.uptimeMillis()) == true
+
+    fun onImeInputConnectionChanged() {
+        // Lifecycle events can occur entirely between two accessibility polls.
+        switchAttempt?.onHidden(SystemClock.uptimeMillis())
+    }
 
     fun cancelImeSwitch(reason: String) {
         switchTimeout?.let { mainHandler.removeCallbacks(it) }
@@ -663,49 +678,118 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     /** Search passes the chat window captured before the overlay took focus. */
-    fun switchToTestImeAndEnsureShown(target: InputTarget?): Boolean {
+    fun switchToTestImeAndEnsureShown(target: InputTarget?): Boolean =
+        startImeSwitch(target, fromSearch = true)
+
+    /** Capture on the worker, within the same cancellable handoff as the switch. */
+    fun switchToTestImeFromCurrentEditor(): Boolean =
+        startImeSwitch(null, fromSearch = false)
+
+    fun restorePreviousImeAndEnsureShown(): Boolean {
+        val previous = savedPreviousIme() ?: return false
+        return startImeSwitch(null, fromSearch = false, destinationImeId = previous)
+    }
+
+    private fun startImeSwitch(savedTarget: InputTarget?, fromSearch: Boolean, destinationImeId: String? = null): Boolean {
         cancelImeSwitch("新请求")
-        if (target == null) {
+        if (fromSearch && savedTarget == null) {
             com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
             TestLog.w(MODULE, "无法恢复宿主输入焦点：缺少目标窗口")
             return false
         }
         val attempt = com.suzu.test.ime.ImeSwitchAttempt(SystemClock.uptimeMillis())
+        val toOwnIme = destinationImeId == null
+        val expectedImeId = destinationImeId ?: findTestImeId()
+        val matchesDestination: (String?) -> Boolean = { current ->
+            if (toOwnIme) isSelfIme(current) else current == expectedImeId
+        }
+        fun restoreIfHandoffFailed() {
+            val current = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+            if (attempt.shouldRestoreOnFinish(toOwnIme, matchesDestination(current), TestImageIME.isShowing())) {
+                TestLog.i(MODULE, "IME 交接未显示，补做被保护期跳过的自动恢复（不请求弹出）")
+                com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+                restorePreviousIme()
+            }
+        }
         switchAttempt = attempt
         val timeout = Runnable {
             if (switchAttempt === attempt) {
                 cancelImeSwitch("IME 交接超过 2500ms")
-                com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
+                if (fromSearch) com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+                restoreIfHandoffFailed()
             }
         }
         switchTimeout = timeout
         mainHandler.postDelayed(timeout, 2500L)
         switchJob = windowScope.launch {
             try {
-                val initialIme = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-                val switched = withContext(Dispatchers.IO) { switchToTestIme() }
-                if (!switched) {
-                    com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+                val target = savedTarget ?: withContext(Dispatchers.IO) { captureInputTarget() }
+                if (!attempt.isActive(SystemClock.uptimeMillis())) return@launch
+                if (target == null) {
+                    TestLog.w(MODULE, "取消 IME 切换：当前没有可用的宿主窗口")
+                    if (!toOwnIme) withContext(Dispatchers.IO) { selectPreviousIme(expectedImeId) }
                     return@launch
                 }
-                var ownObserved = false
+                TestLog.i(MODULE, "开始 IME 交接: target=$target fromSearch=$fromSearch destination=$expectedImeId")
+                // Capture before switching: some hosts clear FOCUS_INPUT as the
+                // outgoing IME disappears, despite keeping the same editor on screen.
+                val savedEditor = if (!toOwnIme) withContext(Dispatchers.IO) {
+                    captureEditorIdentity(target)
+                } else null
+                if (!attempt.isActive(SystemClock.uptimeMillis())) return@launch
+                val initialIme = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
+                val switched = withContext(Dispatchers.IO) {
+                    if (toOwnIme) switchToTestIme() else selectPreviousIme(expectedImeId)
+                }
+                if (!switched) {
+                    if (fromSearch) com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+                    return@launch
+                }
+                var destinationObserved = false
+                var verifiedImeWindowId: Int? = null
                 while (switchAttempt === attempt && !attempt.cancelled && !attempt.expired(SystemClock.uptimeMillis())) {
                     val current = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
-                    val own = isSelfIme(current)
-                    if (!own && (ownObserved || current != initialIme)) {
-                        com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+                    val selected = matchesDestination(current)
+                    if (!selected && (destinationObserved || current != initialIme)) {
+                        if (fromSearch) com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
                         return@launch
                     }
-                    if (own) ownObserved = true
-                    val ready = withContext(Dispatchers.IO) { targetEditorReady(target) }
+                    if (selected) destinationObserved = true
+                    val (focused, imeWindowId) = withContext(Dispatchers.IO) {
+                        val focusedHost = captureInputTarget(target)
+                        val visibleWindow = if (!toOwnIme && selected && focusedHost == target) {
+                            visibleImeWindowId(expectedImeId.substringBefore('/'), verifiedImeWindowId)
+                        } else null
+                        focusedHost to visibleWindow
+                    }
+                    verifiedImeWindowId = imeWindowId
                     if (switchAttempt !== attempt || attempt.cancelled) return@launch
+                    // Search briefly owns focus before returning it to the saved host.
+                    if (focused != null && focused != target &&
+                        !(fromSearch && focused.packageName == packageName)) {
+                        TestLog.i(MODULE, "取消 IME 交接：宿主窗口已切换 target=$target focused=$focused")
+                        if (fromSearch) com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+                        return@launch
+                    }
                     val now = SystemClock.uptimeMillis()
-                    val visible = own && ready && TestImageIME.instance?.isShowingFor(target.packageName) == true
-                    if (attempt.stable(now, visible)) return@launch
-                    if (attempt.takeClick(now, own && ready, visible)) {
+                    // Custom editors may not expose an editable accessibility node.
+                    // Require one only for recovery clicks, not for successful display.
+                    val visible = selected && focused == target && if (toOwnIme) {
+                        TestImageIME.instance?.isShowingFor(target.packageName) == true
+                    } else imeWindowId != null
+                    if (attempt.stable(now, visible)) {
+                        TestLog.i(MODULE, "IME 交接完成: target=$target elapsed=${now - attempt.startedAt}ms")
+                        return@launch
+                    }
+                    val ime = TestImageIME.instance
+                    val bound = toOwnIme && selected && focused == target && ime?.canRequestShowFor(target.packageName) == true
+                    if (attempt.takeShowRequest(now, bound, visible)) {
+                        val requested = ime?.requestShowForHost(target.packageName) == true
+                        TestLog.i(MODULE, "IME 交接主动显示: target=$target requested=$requested elapsed=${now - attempt.startedAt}ms")
+                    } else if (attempt.takeClick(now, selected && focused == target, visible)) {
                         withContext(Dispatchers.IO) {
                             // Re-check focus on the worker just before touching the editor.
-                            if (!attempt.cancelled) targetEditorReady(target, attempt)
+                            if (!attempt.cancelled) clickTargetEditor(target, attempt, matchesDestination, savedEditor)
                         }
                     }
                     kotlinx.coroutines.delay(50L)
@@ -715,7 +799,7 @@ class TestAccessibilityService : AccessibilityService() {
                 throw e
             } catch (e: Exception) {
                 TestLog.e(MODULE, "IME 交接失败", e)
-                com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
+                if (fromSearch) com.suzu.test.floating.ImeSearchStateHolder.clearSearch()
             } finally {
                 if (switchAttempt === attempt) {
                     mainHandler.removeCallbacks(timeout)
@@ -723,29 +807,90 @@ class TestAccessibilityService : AccessibilityService() {
                     attempt.cancel()
                     switchAttempt = null
                     switchJob = null
-                    com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
+                    if (fromSearch) com.suzu.test.floating.ImeSearchStateHolder.onSearchImeShown()
+                    restoreIfHandoffFailed()
                 }
             }
         }
         return true
     }
 
-    private fun targetEditorReady(target: InputTarget, clickAttempt: com.suzu.test.ime.ImeSwitchAttempt? = null): Boolean {
-        val window = windows.firstOrNull { it.isFocused && it.id == target.windowId } ?: return false
-        val root = window.root ?: return false
+    private fun visibleImeWindowId(expectedPackage: String, verifiedId: Int?): Int? {
+        val screenHeight = getScreenHeight()
+        for (window in windows) {
+            if (window.type != AccessibilityWindowInfo.TYPE_INPUT_METHOD) continue
+            val bounds = android.graphics.Rect().also { window.getBoundsInScreen(it) }
+            if (!isImeWindowValid(bounds, screenHeight)) continue
+            if (window.id == verifiedId) return verifiedId
+            val root = window.root ?: continue
+            try {
+                if (root.packageName?.toString() == expectedPackage && root.isVisibleToUser) return window.id
+            } finally { root.recycle() }
+        }
+        return null
+    }
+
+    private fun captureEditorIdentity(target: InputTarget): ImeEditorRecovery.Identity? {
+        val window = windows.firstOrNull { it.isFocused && it.id == target.windowId } ?: return null
+        val root = window.root ?: return null
         var editor: AccessibilityNodeInfo? = null
         try {
-            if (root.packageName?.toString() != target.packageName) return false
+            if (root.packageName?.toString() != target.packageName) return null
             editor = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-            val ready = editor?.isEditable == true && editor?.isVisibleToUser == true
-            if (ready && clickAttempt != null && !clickAttempt.cancelled &&
-                !clickAttempt.expired(SystemClock.uptimeMillis()) &&
-                isSelfIme(Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD))) {
-                editor?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            }
-            return ready
+            val viewId = editor?.viewIdResourceName
+            val saved = if (editor?.isEditable == true && !viewId.isNullOrEmpty()) {
+                ImeEditorRecovery.Identity(viewId, editor?.className?.toString())
+            } else null
+            TestLog.i(MODULE, "切回前记录输入框: target=$target editor=$saved")
+            return saved
         } finally {
             if (editor !== root) editor?.recycle()
+            root.recycle()
+        }
+    }
+
+    private fun editorCandidate(node: AccessibilityNodeInfo): ImeEditorRecovery.Candidate =
+        ImeEditorRecovery.Candidate(node.viewIdResourceName, node.className?.toString(),
+            node.isEditable, node.isVisibleToUser, node.isEnabled)
+
+    private fun clickTargetEditor(
+        target: InputTarget,
+        clickAttempt: com.suzu.test.ime.ImeSwitchAttempt,
+        matchesDestination: (String?) -> Boolean,
+        savedEditor: ImeEditorRecovery.Identity?
+    ): Boolean {
+        val window = windows.firstOrNull { it.isFocused && it.id == target.windowId } ?: return false
+        val root = window.root ?: return false
+        var focused: AccessibilityNodeInfo? = null
+        var candidates: List<AccessibilityNodeInfo> = emptyList()
+        try {
+            if (root.packageName?.toString() != target.packageName) return false
+            focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            val editor = if (savedEditor != null) {
+                candidates = root.findAccessibilityNodeInfosByViewId(savedEditor.viewId)
+                val index = ImeEditorRecovery.choose(savedEditor, focused?.let(::editorCandidate),
+                    candidates.map(::editorCandidate))
+                index?.let { candidates[it] }
+            } else focused
+            val ready = editor?.isEditable == true && editor?.isVisibleToUser == true && editor?.isEnabled == true
+            if (ready && !clickAttempt.cancelled &&
+                !clickAttempt.expired(SystemClock.uptimeMillis()) &&
+                matchesDestination(Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD))) {
+                // Node lookup can block; re-check host focus after lookup as well.
+                if (windows.none { it.isFocused && it.id == target.windowId }) return false
+                val clicked = editor?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                TestLog.i(MODULE, "IME 交接补充点击: target=$target accepted=$clicked savedEditor=$savedEditor focused=${editor?.isFocused}")
+                return clicked == true
+            }
+            TestLog.i(MODULE, "IME 交接跳过点击: target=$target ready=$ready focused=${focused != null} savedEditor=$savedEditor matches=${candidates.size}")
+            return false
+        } finally {
+            // Node wrappers may be shared by findFocus and ID lookup.
+            val recycled = java.util.Collections.newSetFromMap(
+                java.util.IdentityHashMap<AccessibilityNodeInfo, Boolean>())
+            for (node in candidates + listOfNotNull(focused)) {
+                if (node !== root && recycled.add(node)) node.recycle()
+            }
             root.recycle()
         }
     }
@@ -756,14 +901,22 @@ class TestAccessibilityService : AccessibilityService() {
     fun restorePreviousIme(): Boolean {
         cancelImeSwitch("恢复原输入法")
         TestLog.i(MODULE, "<<< 开始执行 restorePreviousIme")
+        val previous = savedPreviousIme() ?: return false
+        return selectPreviousIme(previous)
+    }
+
+    private fun savedPreviousIme(): String? {
         val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
         val prevImeId = sp.getString(KEY_PREV_IME, null)
 
         if (prevImeId.isNullOrEmpty() || isSelfIme(prevImeId)) {
             TestLog.e(MODULE, "无法切回：SharedPreferences 中未找到有效的 previous_ime_id (prevImeId=$prevImeId)")
-            return false
+            return null
         }
+        return prevImeId
+    }
 
+    private fun selectPreviousIme(prevImeId: String): Boolean {
         val currentIme = Settings.Secure.getString(contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
         TestLog.i(MODULE, "当前 DEFAULT_INPUT_METHOD = $currentIme, 准备恢复至 previous_ime_id = $prevImeId")
 

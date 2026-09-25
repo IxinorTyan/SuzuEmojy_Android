@@ -1134,12 +1134,13 @@ class FloatingBallController(private val context: Context) {
             if (ime != null) {
                 ime.exitAndRestoreIme()
             } else {
-                accessibility.restorePreviousIme()
+                accessibility.restorePreviousImeAndEnsureShown()
             }
         } else {
             TestLog.i(MODULE, "当前非 SuzuEmojy，静默切换到 SuzuEmojy...")
-            accessibility.cancelImeSwitch("用户主动切换键盘")
-            accessibility.switchToTestIme()
+            if (searchBarController?.handOffToHostIme() != true) {
+                accessibility.switchToTestImeFromCurrentEditor()
+            }
         }
     }
 }

@@ -439,8 +439,15 @@ class FloatingSearchBarController(private val context: Context) {
         val current = Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
         if (TestAccessibilityService.instance?.isSelfIme(current) != true) return
         TestLog.i(MODULE, "自研 IME 接管输入，关闭搜索浮窗")
+        handOffToHostIme()
+    }
+
+    /** A direct switch while search owns focus must use the saved host window. */
+    fun handOffToHostIme(): Boolean {
+        if (!isShowing) return false
         hide(hideKeyboard = false)
         TestAccessibilityService.instance?.switchToTestImeAndEnsureShown(searchTarget)
+        return true
     }
 
     fun onImeBoundsChanged(topPx: Int?) {

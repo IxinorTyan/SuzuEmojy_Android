@@ -261,7 +261,7 @@ class LibraryActivity : AppCompatActivity() {
                 return@launch
             }
             val bottomSheet = CategoryReorderBottomSheet(
-                this@LibraryActivity, lifecycleScope, categories, categoryController.currentSelection
+                this@LibraryActivity, lifecycleScope, categories, libraryPagerAdapter.spanCount
             ) {
                 categoryReorderOpening = false
             }

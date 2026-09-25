@@ -8,6 +8,7 @@ import android.inputmethodservice.InputMethodService
 import android.os.Build
 import android.provider.Settings
 import android.view.View
+import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import androidx.viewpager2.widget.ViewPager2
 import com.suzu.test.BuildConfig
@@ -70,6 +71,18 @@ class TestImageIME : InputMethodService() {
 
     fun isShowingFor(targetPackage: String): Boolean =
         imeWindowVisible && isInputViewShown && currentInputEditorInfo?.packageName == targetPackage
+
+    fun canRequestShowFor(targetPackage: String): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && currentInputStarted &&
+            currentInputEditorInfo?.packageName == targetPackage &&
+            currentInputEditorInfo?.inputType != android.text.InputType.TYPE_NULL &&
+            currentInputConnection != null
+
+    fun requestShowForHost(targetPackage: String): Boolean {
+        if (!canRequestShowFor(targetPackage)) return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) requestShowSelf(0)
+        return true
+    }
 
     fun toggleFavoritesIfShowing() {
         if (!isImeShowing || !imeWindowVisible || !isInputViewShown) return
@@ -295,6 +308,7 @@ class TestImageIME : InputMethodService() {
 
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
         super.onStartInput(attribute, restarting)
+        TestAccessibilityService.instance?.onImeInputConnectionChanged()
         TestLog.i(MODULE, "onStartInput: pkg=${attribute?.packageName}, inputType=${attribute?.inputType}, restarting=$restarting")
     }
 
@@ -312,8 +326,10 @@ class TestImageIME : InputMethodService() {
         applyKeyboardConfigLayout()
         applyTheme()
 
-        // 保留旧版仅在输入视图启动后请求显示的行为。
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        // The handoff coordinator retries after transient hides settle. Reissuing
+        // show from every start callback races the host's concurrent hide request.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+            TestAccessibilityService.instance?.isImeSwitchPending() != true) {
             requestShowSelf(0)
         }
 
@@ -474,6 +490,13 @@ class TestImageIME : InputMethodService() {
         }
     }
 
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK && TestAccessibilityService.instance?.isImeSwitchPending() == true) {
+            TestAccessibilityService.instance?.cancelImeSwitch("用户按返回键")
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
     override fun onFinishInputView(finishingInput: Boolean) {
         tabBar?.saveNavigationState()
         previewPopup?.dismiss()
@@ -484,6 +507,8 @@ class TestImageIME : InputMethodService() {
         super.onFinishInputView(finishingInput)
         if (TestAccessibilityService.instance?.isImeSwitchPending() != true) {
             restorePreviousKeyboard("onFinishInputView(finishing=$finishingInput)")
+        } else {
+            TestLog.i(MODULE, "IME 交接中，跳过短暂收起的自动恢复 (finishing=$finishingInput)")
         }
     }
 
@@ -496,6 +521,8 @@ class TestImageIME : InputMethodService() {
         super.onFinishInput()
         if (TestAccessibilityService.instance?.isImeSwitchPending() != true) {
             restorePreviousKeyboard("onFinishInput")
+        } else {
+            TestLog.i(MODULE, "IME 交接中，跳过输入连接重建的自动恢复")
         }
     }
 
@@ -510,7 +537,7 @@ class TestImageIME : InputMethodService() {
     /**
      * 统一恢复先前输入法入口
      */
-    fun restorePreviousKeyboard(reason: String = ""): Boolean {
+    fun restorePreviousKeyboard(reason: String = "", ensureShown: Boolean = false): Boolean {
         tabBar?.saveNavigationState()
         TestAccessibilityService.instance?.cancelImeSwitch("恢复原输入法: $reason")
         TestLog.i(MODULE, ">>> 执行恢复原输入法 ($reason)")
@@ -528,7 +555,7 @@ class TestImageIME : InputMethodService() {
 
         val service = TestAccessibilityService.instance
         if (service != null && TestAccessibilityService.isAlive()) {
-            val restored = service.restorePreviousIme()
+            val restored = if (ensureShown) service.restorePreviousImeAndEnsureShown() else service.restorePreviousIme()
             TestLog.i(MODULE, "restorePreviousKeyboard: 无障碍服务 restorePreviousIme 返回值 = $restored")
             if (restored) return true
         }
@@ -577,7 +604,7 @@ class TestImageIME : InputMethodService() {
 
     fun exitAndRestoreIme() {
         TestLog.i(MODULE, ">>> 触发 [退出] 恢复原输入法")
-        restorePreviousKeyboard("退出按钮")
+        restorePreviousKeyboard("退出按钮", ensureShown = true)
     }
 
     override fun onDestroy() {

@@ -1,0 +1,469 @@
+--------- beginning of main
+09-25 15:09:49.024 16690 16690 I TestPoC : [15:09:49.024][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:09:49.359 16690 16690 I TestPoC : [15:09:49.358][AccessibilityService] 前台应用变更信号: com.miui.personalassistant
+09-25 15:09:49.499 16690 16690 I TestPoC : [15:09:49.499][AccessibilityService] 悬浮球白名单窗口核验: com.miui.home
+09-25 15:09:49.568 16690 16690 I TestPoC : [15:09:49.568][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:09:49.974 16690 16690 I TestPoC : [15:09:49.974][AccessibilityService] 前台应用变更信号: com.smile.gifmaker
+09-25 15:09:50.022 16690 16690 W TestPoC : [15:09:50.022][AccessibilityService] 窗口快照耗时=105ms epoch=253 pid=16690
+09-25 15:09:50.111 16690 16690 I TestPoC : [15:09:50.111][AccessibilityService] 悬浮球白名单窗口核验: com.smile.gifmaker
+09-25 15:09:50.314 16690 16690 I TestPoC : [15:09:50.311][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:09:51.072 16690 16690 I TestPoC : [15:09:51.071][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:09:51.455 16690 16690 I TestPoC : [15:09:51.455][AccessibilityService] 前台应用变更信号: com.miui.securitycenter
+09-25 15:09:51.879 16690 16690 I TestPoC : [15:09:51.879][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:09:52.008 16690 16690 I TestPoC : [15:09:52.008][AccessibilityService] 悬浮球白名单窗口核验: com.miui.home
+09-25 15:09:52.122 16690 16690 I TestPoC : [15:09:52.122][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:09:52.297 16690 16690 I TestPoC : [15:09:52.296][AccessibilityService] 前台应用变更信号: com.miui.personalassistant
+09-25 15:09:52.691 16690 16690 I TestPoC : [15:09:52.691][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:14.817 16690 16690 I TestPoC : [15:11:14.816][AccessibilityService] 前台应用变更信号: com.smile.gifmaker
+09-25 15:11:15.288 16690 16690 W TestPoC : [15:11:15.288][AccessibilityService] 窗口快照耗时=390ms epoch=354 pid=16690
+09-25 15:11:15.526 16690 16690 I TestPoC : [15:11:15.525][AccessibilityService] 悬浮球白名单窗口核验: com.smile.gifmaker
+09-25 15:11:15.536 16690 16690 I TestPoC : [15:11:15.536][AccessibilityService] 前台应用变更信号: com.miui.securitycenter
+09-25 15:11:16.178 16690 16690 I TestPoC : [15:11:16.177][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:16.594 16690 16690 I TestPoC : [15:11:16.593][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 15:11:16.594 16690 16690 I TestPoC : [15:11:16.594][FloatingBallController] 当前默认 IME = com.baidu.input/.ImeService, isCurrentOwnIme = false
+09-25 15:11:16.594 16690 16690 I TestPoC : [15:11:16.594][FloatingBallController] 当前非 SuzuEmojy，静默切换到 SuzuEmojy...
+09-25 15:11:16.594 16690 16690 I TestPoC : [15:11:16.594][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 15:11:16.597 16690 16690 I TestPoC : [15:11:16.597][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145447, packageName=com.smile.gifmaker) fromSearch=false destination=com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:16.597 16690 16726 I TestPoC : [15:11:16.597][AccessibilityService] >>> 开始执行 switchToTestIme
+09-25 15:11:16.598 16690 16726 I TestPoC : [15:11:16.598][AccessibilityService] 当前系统 DEFAULT_INPUT_METHOD = com.baidu.input/.ImeService
+09-25 15:11:16.598 16690 16726 I TestPoC : [15:11:16.598][AccessibilityService] 解析出本App的真实 IME ID = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:16.599 16690 16726 I TestPoC : [15:11:16.599][AccessibilityService] 记录原输入法 previous_ime_id = com.baidu.input/.ImeService 到 SharedPreferences
+09-25 15:11:16.601 16690 16726 I TestPoC : [15:11:16.601][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 15:11:16.677 16690 16690 I TestPoC : [15:11:16.676][SuzuEmojy] onCreate: SuzuEmojy 启动 (AppId: com.tencent.qqpinyin.suzu, authority: com.tencent.qqpinyin.suzu.provider, androidx.core: 1.12.0)
+09-25 15:11:16.677 16690 16726 I TestPoC : [15:11:16.677][CacheCleanManager] cleanExpired 完成: 删除了 0 个过期文件, 失败 0 个, 释放 0 B (阈值: 600s)
+09-25 15:11:16.678 16690 16726 I TestPoC : [15:11:16.678][SuzuEmojy] IME 自动清理完成: 删除了 0 个过期暂存文件, 释放 0 B
+09-25 15:11:16.731 16690 16690 I TestPoC : [15:11:16.731][SuzuEmojy] onStartInput: pkg=com.smile.gifmaker, inputType=131073, restarting=false
+09-25 15:11:16.780 16690 16690 I TestPoC : [15:11:16.779][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:16.820 16690 16690 I TestPoC : [15:11:16.820][AccessibilityService] [切换验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:16.846 16690 16690 I TestPoC : [15:11:16.846][AccessibilityService] IME 交接主动显示: target=InputTarget(windowId=145447, packageName=com.smile.gifmaker) requested=true elapsed=245ms
+09-25 15:11:16.847 16690 16690 I TestPoC : [15:11:16.846][SuzuEmojy] onCreateInputView: 创建 SuzuEmojy 键盘界面
+09-25 15:11:16.864 16690 16690 I TestPoC : [15:11:16.863][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:16.864 16690 16690 I TestPoC : [15:11:16.864][SuzuEmojy] 应用键盘网格高度配置: heightDp=300, heightPx=1050
+09-25 15:11:16.864 16690 16690 I TestPoC : [15:11:16.864][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:16.869 16690 16690 I TestPoC : [15:11:16.869][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 15:11:16.870 16690 16690 I TestPoC : [15:11:16.869][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:16.870 16690 16690 I TestPoC : [15:11:16.870][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:16.870 16690 16690 I TestPoC : [15:11:16.870][SuzuEmojy] [EditorInfo 全量 Dump 取证]
+09-25 15:11:16.870 16690 16690 I TestPoC : - 当前 AppId: com.tencent.qqpinyin.suzu
+09-25 15:11:16.870 16690 16690 I TestPoC : - 当前 FileProvider Authority: com.tencent.qqpinyin.suzu.provider
+09-25 15:11:16.870 16690 16690 I TestPoC : - 当前系统 DEFAULT_INPUT_METHOD: com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:16.870 16690 16690 I TestPoC : - 目标应用包名: com.smile.gifmaker
+09-25 15:11:16.870 16690 16690 I TestPoC : - 原生 info.contentMimeTypes: null
+09-25 15:11:16.870 16690 16690 I TestPoC : - EditorInfoCompat.getContentMimeTypes: [](size=0)
+09-25 15:11:16.870 16690 16690 I TestPoC : - ★ SOGOU_EXPRESSION: -999, SUPPORT_SOGOU_EXPRESSION: -999, SOGOU_EXPRESSION_WEBP: -999
+09-25 15:11:16.870 16690 16690 I TestPoC : - extras 全量键名列表: [hand_writing_keyboard_type]
+09-25 15:11:16.922 16690 16690 I TestPoC : [15:11:16.922][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:16.996 16690 16690 W TestPoC : [15:11:16.996][AccessibilityService] 窗口快照耗时=104ms epoch=376 pid=16690
+09-25 15:11:16.998 16690 16690 I TestPoC : [15:11:16.998][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:17.036 16690 16824 I TestPoC : [15:11:17.036][KeyboardDataSource] loadResources: tabKey=cat:3, 加载到 33 张表情
+09-25 15:11:17.046 16690 16826 I TestPoC : [15:11:17.046][KeyboardDataSource] loadResources: tabKey=cat:4, 加载到 78 张表情
+09-25 15:11:17.108 16690 16690 I TestPoC : [15:11:17.108][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:17.125 16690 16789 I TestPoC : [15:11:17.125][KeyboardDataSource] loadResources: tabKey=cat:1, 加载到 199 张表情
+09-25 15:11:17.346 16690 16690 I TestPoC : [15:11:17.346][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145447, packageName=com.smile.gifmaker) elapsed=752ms
+09-25 15:11:18.438 16690 16690 I TestPoC : [15:11:18.438][SuzuEmojy] ========== [点击直发] targetPkg=com.smile.gifmaker, item=20260915095133733000036.png ==========
+09-25 15:11:18.438 16690 16690 I TestPoC : [15:11:18.438][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.smile.gifmaker)，走剪贴板注入与标准粘贴
+09-25 15:11:18.439 16690 18701 I TestPoC : [15:11:18.439][ImageSender] [1790320278439-1] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:18.735 16690 16690 I TestPoC : [15:11:18.735][SuzuEmojy] ========== [点击直发] targetPkg=com.smile.gifmaker, item=20260915095133733000036.png ==========
+09-25 15:11:18.736 16690 16690 I TestPoC : [15:11:18.736][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.smile.gifmaker)，走剪贴板注入与标准粘贴
+09-25 15:11:18.841 16690 18701 I TestPoC : [15:11:18.841][PngToGifConverter] PNG 成功转换为单帧 GIF: png2gif_v2_20260915095133733000036.gif, size=131815 bytes, elapsedMs=401
+09-25 15:11:18.845 16690 18701 I TestPoC : [15:11:18.845][DiagnosticFileProvider] openFile | timestamp=1790320278845, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320278439-1, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:18.845 16690 18701 I TestPoC : [15:11:18.845][DiagnosticFileProvider] openAssetFile | timestamp=1790320278845, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320278439-1, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:18.849 16690 18701 I TestPoC : [15:11:18.849][DiagnosticFileProvider] getType | timestamp=1790320278849, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320278439-1, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:18.867 16690 18701 I TestPoC : [15:11:18.866][ImageSender] [1790320278866-2] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:18.867 16690 18701 I TestPoC : [15:11:18.867][DiagnosticFileProvider] openFile | timestamp=1790320278867, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320278866-2, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:18.867 16690 18701 I TestPoC : [15:11:18.867][DiagnosticFileProvider] openAssetFile | timestamp=1790320278867, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320278866-2, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:18.868 16690 18701 I TestPoC : [15:11:18.868][DiagnosticFileProvider] getType | timestamp=1790320278868, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320278866-2, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:18.889 16690 18707 I TestPoC : [15:11:18.889][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=36
+09-25 15:11:18.891 16690 18707 I TestPoC : [15:11:18.891][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=36
+09-25 15:11:19.371 16690 16690 I TestPoC : [15:11:19.370][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:19.591 16690 16690 I TestPoC : [15:11:19.591][AccessibilityService] 悬浮球白名单窗口核验: com.miui.home
+09-25 15:11:19.803 16690 16690 I TestPoC : [15:11:19.803][AccessibilityService] 前台应用变更信号: com.miui.personalassistant
+09-25 15:11:20.046 16690 16690 I TestPoC : [15:11:20.046][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:20.184 16690 16690 I TestPoC : [15:11:20.184][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: onFinishInputView(finishing=false)
+09-25 15:11:20.184 16690 16690 I TestPoC : [15:11:20.184][SuzuEmojy] >>> 执行恢复原输入法 (onFinishInputView(finishing=false))
+09-25 15:11:20.188 16690 16690 I TestPoC : [15:11:20.188][AccessibilityService] 结束 IME 显示请求: 恢复原输入法
+09-25 15:11:20.188 16690 16690 I TestPoC : [15:11:20.188][AccessibilityService] <<< 开始执行 restorePreviousIme
+09-25 15:11:20.188 16690 16690 I TestPoC : [15:11:20.188][AccessibilityService] 当前 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, 准备恢复至 previous_ime_id = com.baidu.input/.ImeService
+09-25 15:11:20.202 16690 16690 I TestPoC : [15:11:20.201][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 15:11:20.203 16690 16690 I TestPoC : [15:11:20.203][SuzuEmojy] restorePreviousKeyboard: 无障碍服务 restorePreviousIme 返回值 = true
+09-25 15:11:20.230 16690 16690 I TestPoC : [15:11:20.230][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: onFinishInput
+09-25 15:11:20.238 16690 16690 I TestPoC : [15:11:20.230][SuzuEmojy] >>> 执行恢复原输入法 (onFinishInput)
+09-25 15:11:20.245 16690 16690 I TestPoC : [15:11:20.244][SuzuEmojy] restorePreviousKeyboard: 当前默认输入法已非自研 IME (com.baidu.input/.ImeService)，跳过恢复
+09-25 15:11:20.387 16690 16690 I TestPoC : [15:11:20.386][SuzuEmojy] onDestroy: SuzuEmojy 销毁
+09-25 15:11:20.399 16690 16690 I TestPoC : [15:11:20.399][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:20.484 16690 16690 I TestPoC : [15:11:20.484][AccessibilityService] [切回验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.baidu.input/.ImeService
+09-25 15:11:20.495 16690 16690 W TestPoC : [15:11:20.495][AccessibilityService] 窗口快照耗时=277ms epoch=514 pid=16690
+09-25 15:11:21.301 16690 16690 I TestPoC : [15:11:21.301][AccessibilityService] 悬浮球白名单窗口核验: 未知或受限窗口
+09-25 15:11:22.087 16690 16690 I TestPoC : [15:11:22.087][AccessibilityService] 前台应用变更信号: com.miui.securitycenter
+09-25 15:11:22.400 16690 16690 I TestPoC : [15:11:22.400][AccessibilityService] 前台应用变更信号: com.ss.android.ugc.aweme
+09-25 15:11:22.575 16690 16690 I TestPoC : [15:11:22.575][AccessibilityService] 悬浮球白名单窗口核验: com.ss.android.ugc.aweme
+09-25 15:11:22.576 16690 16690 W TestPoC : [15:11:22.576][AccessibilityService] 窗口快照耗时=125ms epoch=534 pid=16690
+09-25 15:11:25.492 16690 16690 I TestPoC : [15:11:25.492][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:25.504 16690 16690 I TestPoC : [15:11:25.504][FloatingBallController] 悬浮球可见性跃迁: 显示 (pkg=com.ss.android.ugc.aweme, imeVisible=true, alpha=0.8, duration=100ms)
+09-25 15:11:25.601 16690 16690 I TestPoC : [15:11:25.601][AccessibilityService] 前台应用变更信号: com.tencent.qqpinyin.suzu
+09-25 15:11:26.525 16690 16690 I TestPoC : [15:11:26.525][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 15:11:26.526 16690 16690 I TestPoC : [15:11:26.526][FloatingBallController] 当前默认 IME = com.baidu.input/.ImeService, isCurrentOwnIme = false
+09-25 15:11:26.526 16690 16690 I TestPoC : [15:11:26.526][FloatingBallController] 当前非 SuzuEmojy，静默切换到 SuzuEmojy...
+09-25 15:11:26.526 16690 16690 I TestPoC : [15:11:26.526][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 15:11:26.533 16690 16690 I TestPoC : [15:11:26.533][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:26.533 16690 16826 I TestPoC : [15:11:26.533][AccessibilityService] >>> 开始执行 switchToTestIme
+09-25 15:11:26.533 16690 16826 I TestPoC : [15:11:26.533][AccessibilityService] 当前系统 DEFAULT_INPUT_METHOD = com.baidu.input/.ImeService
+09-25 15:11:26.534 16690 16826 I TestPoC : [15:11:26.534][AccessibilityService] 解析出本App的真实 IME ID = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:26.535 16690 16826 I TestPoC : [15:11:26.535][AccessibilityService] 记录原输入法 previous_ime_id = com.baidu.input/.ImeService 到 SharedPreferences
+09-25 15:11:26.536 16690 16826 I TestPoC : [15:11:26.536][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 15:11:26.570 16690 16690 I TestPoC : [15:11:26.570][SuzuEmojy] onCreate: SuzuEmojy 启动 (AppId: com.tencent.qqpinyin.suzu, authority: com.tencent.qqpinyin.suzu.provider, androidx.core: 1.12.0)
+09-25 15:11:26.579 16690 16824 I TestPoC : [15:11:26.579][CacheCleanManager] cleanExpired 完成: 删除了 0 个过期文件, 失败 0 个, 释放 0 B (阈值: 600s)
+09-25 15:11:26.580 16690 16824 I TestPoC : [15:11:26.580][SuzuEmojy] IME 自动清理完成: 删除了 0 个过期暂存文件, 释放 0 B
+09-25 15:11:26.634 16690 16690 I TestPoC : [15:11:26.634][SuzuEmojy] onStartInput: pkg=com.ss.android.ugc.aweme, inputType=131073, restarting=false
+09-25 15:11:26.635 16690 16690 I TestPoC : [15:11:26.635][SuzuEmojy] onCreateInputView: 创建 SuzuEmojy 键盘界面
+09-25 15:11:26.647 16690 16690 I TestPoC : [15:11:26.647][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:26.647 16690 16690 I TestPoC : [15:11:26.647][SuzuEmojy] 应用键盘网格高度配置: heightDp=300, heightPx=1050
+09-25 15:11:26.648 16690 16690 I TestPoC : [15:11:26.648][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:26.649 16690 16690 I TestPoC : [15:11:26.649][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 15:11:26.649 16690 16690 I TestPoC : [15:11:26.649][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:26.649 16690 16690 I TestPoC : [15:11:26.649][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:26.650 16690 16690 I TestPoC : [15:11:26.649][SuzuEmojy] [EditorInfo 全量 Dump 取证]
+09-25 15:11:26.650 16690 16690 I TestPoC : - 当前 AppId: com.tencent.qqpinyin.suzu
+09-25 15:11:26.650 16690 16690 I TestPoC : - 当前 FileProvider Authority: com.tencent.qqpinyin.suzu.provider
+09-25 15:11:26.650 16690 16690 I TestPoC : - 当前系统 DEFAULT_INPUT_METHOD: com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:26.650 16690 16690 I TestPoC : - 目标应用包名: com.ss.android.ugc.aweme
+09-25 15:11:26.650 16690 16690 I TestPoC : - 原生 info.contentMimeTypes: null
+09-25 15:11:26.650 16690 16690 I TestPoC : - EditorInfoCompat.getContentMimeTypes: [](size=0)
+09-25 15:11:26.650 16690 16690 I TestPoC : - ★ SOGOU_EXPRESSION: -999, SUPPORT_SOGOU_EXPRESSION: -999, SOGOU_EXPRESSION_WEBP: -999
+09-25 15:11:26.650 16690 16690 I TestPoC : - extras 全量键名列表: [hand_writing_keyboard_type]
+09-25 15:11:26.681 16690 16690 I TestPoC : [15:11:26.681][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=false)
+09-25 15:11:26.726 16690 16690 I TestPoC : [15:11:26.725][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:26.726 16690 16690 I TestPoC : [15:11:26.726][FloatingBallController] 悬浮球可见性跃迁: 隐藏 (pkg=com.tencent.qqpinyin.suzu, imeVisible=false, alpha=0.0, duration=100ms)
+09-25 15:11:26.747 16690 16789 I TestPoC : [15:11:26.747][KeyboardDataSource] loadResources: tabKey=cat:3, 加载到 33 张表情
+09-25 15:11:26.760 16690 16690 I TestPoC : [15:11:26.759][AccessibilityService] [切换验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:26.789 16690 16690 I TestPoC : [15:11:26.789][AccessibilityService] IME 交接主动显示: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) requested=true elapsed=261ms
+09-25 15:11:26.790 16690 16690 I TestPoC : [15:11:26.790][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 15:11:26.790 16690 16690 I TestPoC : [15:11:26.790][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:26.803 16690 16690 I TestPoC : [15:11:26.803][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:26.803 16690 16690 I TestPoC : [15:11:26.803][SuzuEmojy] [EditorInfo 全量 Dump 取证]
+09-25 15:11:26.803 16690 16690 I TestPoC : - 当前 AppId: com.tencent.qqpinyin.suzu
+09-25 15:11:26.803 16690 16690 I TestPoC : - 当前 FileProvider Authority: com.tencent.qqpinyin.suzu.provider
+09-25 15:11:26.803 16690 16690 I TestPoC : - 当前系统 DEFAULT_INPUT_METHOD: com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:26.803 16690 16690 I TestPoC : - 目标应用包名: com.ss.android.ugc.aweme
+09-25 15:11:26.803 16690 16690 I TestPoC : - 原生 info.contentMimeTypes: null
+09-25 15:11:26.803 16690 16690 I TestPoC : - EditorInfoCompat.getContentMimeTypes: [](size=0)
+09-25 15:11:26.803 16690 16690 I TestPoC : - ★ SOGOU_EXPRESSION: -999, SUPPORT_SOGOU_EXPRESSION: -999, SOGOU_EXPRESSION_WEBP: -999
+09-25 15:11:26.803 16690 16690 I TestPoC : - extras 全量键名列表: [hand_writing_keyboard_type]
+09-25 15:11:26.804 16690 16690 W TestPoC : [15:11:26.804][AccessibilityService] 窗口快照耗时=124ms epoch=556 pid=16690
+09-25 15:11:26.828 16690 16825 I TestPoC : [15:11:26.828][KeyboardDataSource] loadResources: tabKey=cat:4, 加载到 78 张表情
+09-25 15:11:26.841 16690 16690 I TestPoC : [15:11:26.841][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:26.842 16690 16690 I TestPoC : [15:11:26.842][FloatingBallController] 悬浮球可见性跃迁: 显示 (pkg=com.tencent.qqpinyin.suzu, imeVisible=true, alpha=0.8, duration=100ms)
+09-25 15:11:26.894 16690 16726 I TestPoC : [15:11:26.892][KeyboardDataSource] loadResources: tabKey=cat:1, 加载到 199 张表情
+09-25 15:11:27.183 16690 16690 I TestPoC : [15:11:27.183][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) elapsed=657ms
+09-25 15:11:28.060 16690 16690 I TestPoC : [15:11:28.060][SuzuEmojy] ========== [点击直发] targetPkg=com.ss.android.ugc.aweme, item=20260915095134311000040.png ==========
+09-25 15:11:28.061 16690 16690 I TestPoC : [15:11:28.061][SuzuEmojy] 智能路由 -> 命中分享白名单 (com.ss.android.ugc.aweme)，拉起系统分享选择器
+09-25 15:11:28.066 16690 19248 I TestPoC : [15:11:28.066][ImageSender] [1790320288063-3] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:28.075 16690 19248 I TestPoC : [15:11:28.075][DiagnosticFileProvider] openFile | timestamp=1790320288075, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134311000040.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320288063-3, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134311000040.gif, fileExists=true, fileLength=305016, result=SUCCESS
+09-25 15:11:28.075 16690 19248 I TestPoC : [15:11:28.075][DiagnosticFileProvider] openAssetFile | timestamp=1790320288075, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134311000040.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320288063-3, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134311000040.gif, fileExists=true, fileLength=305016, result=SUCCESS
+09-25 15:11:28.076 16690 19248 I TestPoC : [15:11:28.076][DiagnosticFileProvider] getType | timestamp=1790320288076, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134311000040.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320288063-3, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134311000040.gif, fileExists=true, fileLength=305016, result=SUCCESS
+09-25 15:11:28.134 16690 16690 I TestPoC : [15:11:28.133][ImageSender] [1790320288063-3] 已拉起系统分享选择器
+09-25 15:11:28.137 16690 19251 I TestPoC : [15:11:28.137][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=40
+09-25 15:11:28.406 16690 16690 I TestPoC : [15:11:28.406][AccessibilityService] 悬浮球白名单窗口核验: 未知或受限窗口
+09-25 15:11:28.418 16690 16690 I TestPoC : [15:11:28.418][SuzuEmojy] ========== [点击直发] targetPkg=com.ss.android.ugc.aweme, item=20260915095134311000040.png ==========
+09-25 15:11:28.418 16690 16690 I TestPoC : [15:11:28.418][SuzuEmojy] 智能路由 -> 命中分享白名单 (com.ss.android.ugc.aweme)，拉起系统分享选择器
+09-25 15:11:28.419 16690 19248 I TestPoC : [15:11:28.419][ImageSender] [1790320288419-4] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:28.421 16690 19248 I TestPoC : [15:11:28.421][DiagnosticFileProvider] openFile | timestamp=1790320288421, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134311000040.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320288419-4, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134311000040.gif, fileExists=true, fileLength=305016, result=SUCCESS
+09-25 15:11:28.421 16690 19248 I TestPoC : [15:11:28.421][DiagnosticFileProvider] openAssetFile | timestamp=1790320288421, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134311000040.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320288419-4, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134311000040.gif, fileExists=true, fileLength=305016, result=SUCCESS
+09-25 15:11:28.421 16690 19248 I TestPoC : [15:11:28.421][DiagnosticFileProvider] getType | timestamp=1790320288421, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134311000040.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320288419-4, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134311000040.gif, fileExists=true, fileLength=305016, result=SUCCESS
+09-25 15:11:28.444 16690 16690 I TestPoC : [15:11:28.444][ImageSender] [1790320288419-4] 已拉起系统分享选择器
+09-25 15:11:28.450 16690 19251 I TestPoC : [15:11:28.450][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=40
+09-25 15:11:28.529 16690 16690 I TestPoC : [15:11:28.529][AccessibilityService] 前台应用变更信号: android
+09-25 15:11:28.585 16690 16690 I TestPoC : [15:11:28.584][AccessibilityService] 悬浮球白名单窗口核验: android
+09-25 15:11:28.585 16690 16690 I TestPoC : [15:11:28.585][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:30.700 16690 16690 I TestPoC : [15:11:30.699][AccessibilityService] 悬浮球白名单窗口核验: com.ss.android.ugc.aweme
+09-25 15:11:30.737 16690 16690 I TestPoC : [15:11:30.737][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:30.738 16690 16690 I TestPoC : [15:11:30.738][FloatingBallController] 悬浮球可见性跃迁: 显示 (pkg=android, imeVisible=true, alpha=0.8, duration=100ms)
+09-25 15:11:30.739 16690 16690 I TestPoC : [15:11:30.739][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: onFinishInputView(finishing=false)
+09-25 15:11:30.739 16690 16690 I TestPoC : [15:11:30.739][SuzuEmojy] >>> 执行恢复原输入法 (onFinishInputView(finishing=false))
+09-25 15:11:30.740 16690 16690 I TestPoC : [15:11:30.740][AccessibilityService] 结束 IME 显示请求: 恢复原输入法
+09-25 15:11:30.740 16690 16690 I TestPoC : [15:11:30.740][AccessibilityService] <<< 开始执行 restorePreviousIme
+09-25 15:11:30.740 16690 16690 I TestPoC : [15:11:30.740][AccessibilityService] 当前 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, 准备恢复至 previous_ime_id = com.baidu.input/.ImeService
+09-25 15:11:30.743 16690 16690 I TestPoC : [15:11:30.743][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 15:11:30.744 16690 16690 I TestPoC : [15:11:30.744][SuzuEmojy] restorePreviousKeyboard: 无障碍服务 restorePreviousIme 返回值 = true
+09-25 15:11:30.746 16690 16690 I TestPoC : [15:11:30.746][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: onFinishInput
+09-25 15:11:30.746 16690 16690 I TestPoC : [15:11:30.746][SuzuEmojy] >>> 执行恢复原输入法 (onFinishInput)
+09-25 15:11:30.757 16690 16690 I TestPoC : [15:11:30.757][SuzuEmojy] restorePreviousKeyboard: 当前默认输入法已非自研 IME (com.baidu.input/.ImeService)，跳过恢复
+09-25 15:11:30.757 16690 16690 I TestPoC : [15:11:30.757][SuzuEmojy] onStartInput: pkg=com.ss.android.ugc.aweme, inputType=0, restarting=false
+09-25 15:11:30.911 16690 16690 I TestPoC : [15:11:30.911][AccessibilityService] 前台应用变更信号: com.ss.android.ugc.aweme
+09-25 15:11:30.960 16690 16690 I TestPoC : [15:11:30.959][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: onFinishInput
+09-25 15:11:30.960 16690 16690 I TestPoC : [15:11:30.960][SuzuEmojy] >>> 执行恢复原输入法 (onFinishInput)
+09-25 15:11:30.963 16690 16690 I TestPoC : [15:11:30.963][SuzuEmojy] restorePreviousKeyboard: 当前默认输入法已非自研 IME (com.baidu.input/.ImeService)，跳过恢复
+09-25 15:11:31.040 16690 16690 I TestPoC : [15:11:31.040][SuzuEmojy] onDestroy: SuzuEmojy 销毁
+09-25 15:11:31.053 16690 16690 I TestPoC : [15:11:31.053][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:31.054 16690 16690 I TestPoC : [15:11:31.054][FloatingBallController] 悬浮球可见性跃迁: 隐藏 (pkg=android, imeVisible=false, alpha=0.0, duration=100ms)
+09-25 15:11:31.061 16690 16690 I TestPoC : [15:11:31.061][AccessibilityService] [切回验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.baidu.input/.ImeService
+09-25 15:11:31.062 16690 16690 I TestPoC : [15:11:31.062][AccessibilityService] 前台应用变更信号: com.tencent.qqpinyin.suzu
+09-25 15:11:31.200 16690 16690 I TestPoC : [15:11:31.200][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:31.255 16690 16690 I TestPoC : [15:11:31.255][AccessibilityService] 悬浮球白名单窗口核验: com.miui.home
+09-25 15:11:31.490 16690 16690 I TestPoC : [15:11:31.490][AccessibilityService] 前台应用变更信号: com.miui.personalassistant
+09-25 15:11:32.071 16690 16690 I TestPoC : [15:11:32.070][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:34.413 16690 16690 I TestPoC : [15:11:34.413][MainActivity] onCreate: MainActivity 启动
+09-25 15:11:34.415 16690 16726 I TestPoC : [15:11:34.415][CacheCleanManager] cleanExpired 完成: 删除了 0 个过期文件, 失败 0 个, 释放 0 B (阈值: 600s)
+09-25 15:11:34.421 16690 16726 I TestPoC : [15:11:34.421][MainActivity] MainActivity 自动清理完成: 删除了 0 个过期暂存文件, 释放 0 B
+09-25 15:11:34.573 16690 16690 I TestPoC : [15:11:34.572][AccessibilityService] 前台应用变更信号: com.tencent.qqpinyin.suzu
+09-25 15:11:34.630 16690 16690 I TestPoC : [15:11:34.630][AccessibilityService] 悬浮球白名单窗口核验: com.tencent.qqpinyin.suzu
+09-25 15:11:34.631 16690 16690 I TestPoC : [15:11:34.631][FloatingBallController] 悬浮球可见性跃迁: 显示 (pkg=com.tencent.qqpinyin.suzu, imeVisible=false, alpha=0.8, duration=100ms)
+09-25 15:11:35.574 16690 16690 I TestPoC : [15:11:35.574][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:35.609 16690 16690 I TestPoC : [15:11:35.609][AccessibilityService] 前台应用变更信号: com.tencent.qqpinyin.suzu
+09-25 15:11:38.234 16690 16726 I TestPoC : [15:11:38.234][KeyboardDataSource] loadResources: tabKey=ALL, 加载到 1436 张表情
+09-25 15:11:40.680 16690 16690 I TestPoC : [15:11:40.680][AppWhitelist] 已移出白名单: com.ss.android.ugc.aweme
+09-25 15:11:41.457 16690 16690 I TestPoC : [15:11:41.457][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:41.626 16690 16690 I TestPoC : [15:11:41.625][AccessibilityService] 悬浮球白名单窗口核验: com.miui.home
+09-25 15:11:41.767 16690 16690 I TestPoC : [15:11:41.766][AccessibilityService] 前台应用变更信号: com.miui.personalassistant
+09-25 15:11:41.874 16690 16690 I TestPoC : [15:11:41.874][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:42.030 16690 16690 W TestPoC : [15:11:42.030][AccessibilityService] 窗口快照耗时=103ms epoch=707 pid=16690
+09-25 15:11:42.211 16690 16690 I TestPoC : [15:11:42.211][AccessibilityService] 悬浮球白名单窗口核验: 未知或受限窗口
+09-25 15:11:42.232 16690 16690 I TestPoC : [15:11:42.231][AccessibilityService] 前台应用变更信号: com.ss.android.ugc.aweme
+09-25 15:11:42.303 16690 16690 I TestPoC : [15:11:42.303][AccessibilityService] 悬浮球白名单窗口核验: com.ss.android.ugc.aweme
+09-25 15:11:42.758 16690 16690 W TestPoC : [15:11:42.758][AccessibilityService] 窗口快照耗时=105ms epoch=721 pid=16690
+09-25 15:11:43.048 16690 16690 I TestPoC : [15:11:43.048][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:43.049 16690 16690 I TestPoC : [15:11:43.049][FloatingBallController] 悬浮球可见性跃迁: 显示 (pkg=com.ss.android.ugc.aweme, imeVisible=true, alpha=0.8, duration=100ms)
+09-25 15:11:43.135 16690 16690 I TestPoC : [15:11:43.135][AccessibilityService] 前台应用变更信号: com.tencent.qqpinyin.suzu
+09-25 15:11:43.187 16690 16690 I TestPoC : [15:11:43.187][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:43.447 16690 16690 I TestPoC : [15:11:43.447][AccessibilityService] 前台应用变更信号: com.miui.securitycenter
+09-25 15:11:43.612 16690 16690 I TestPoC : [15:11:43.612][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 15:11:43.612 16690 16690 I TestPoC : [15:11:43.612][FloatingBallController] 当前默认 IME = com.baidu.input/.ImeService, isCurrentOwnIme = false
+09-25 15:11:43.612 16690 16690 I TestPoC : [15:11:43.612][FloatingBallController] 当前非 SuzuEmojy，静默切换到 SuzuEmojy...
+09-25 15:11:43.612 16690 16690 I TestPoC : [15:11:43.612][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 15:11:43.623 16690 16690 I TestPoC : [15:11:43.622][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:43.623 16690 16726 I TestPoC : [15:11:43.623][AccessibilityService] >>> 开始执行 switchToTestIme
+09-25 15:11:43.623 16690 16726 I TestPoC : [15:11:43.623][AccessibilityService] 当前系统 DEFAULT_INPUT_METHOD = com.baidu.input/.ImeService
+09-25 15:11:43.624 16690 16726 I TestPoC : [15:11:43.624][AccessibilityService] 解析出本App的真实 IME ID = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:43.624 16690 16726 I TestPoC : [15:11:43.624][AccessibilityService] 记录原输入法 previous_ime_id = com.baidu.input/.ImeService 到 SharedPreferences
+09-25 15:11:43.626 16690 16726 I TestPoC : [15:11:43.626][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 15:11:43.682 16690 16690 I TestPoC : [15:11:43.682][SuzuEmojy] onCreate: SuzuEmojy 启动 (AppId: com.tencent.qqpinyin.suzu, authority: com.tencent.qqpinyin.suzu.provider, androidx.core: 1.12.0)
+09-25 15:11:43.686 16690 16726 I TestPoC : [15:11:43.685][CacheCleanManager] cleanExpired 完成: 删除了 0 个过期文件, 失败 0 个, 释放 0 B (阈值: 600s)
+09-25 15:11:43.686 16690 16726 I TestPoC : [15:11:43.686][SuzuEmojy] IME 自动清理完成: 删除了 0 个过期暂存文件, 释放 0 B
+09-25 15:11:43.729 16690 16690 I TestPoC : [15:11:43.729][SuzuEmojy] onStartInput: pkg=com.ss.android.ugc.aweme, inputType=131073, restarting=false
+09-25 15:11:43.730 16690 16690 I TestPoC : [15:11:43.730][SuzuEmojy] onCreateInputView: 创建 SuzuEmojy 键盘界面
+09-25 15:11:43.742 16690 16690 I TestPoC : [15:11:43.742][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:43.742 16690 16690 I TestPoC : [15:11:43.742][SuzuEmojy] 应用键盘网格高度配置: heightDp=300, heightPx=1050
+09-25 15:11:43.743 16690 16690 I TestPoC : [15:11:43.743][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:43.743 16690 16690 I TestPoC : [15:11:43.743][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 15:11:43.744 16690 16690 I TestPoC : [15:11:43.744][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:43.744 16690 16690 I TestPoC : [15:11:43.744][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:43.744 16690 16690 I TestPoC : [15:11:43.744][SuzuEmojy] [EditorInfo 全量 Dump 取证]
+09-25 15:11:43.744 16690 16690 I TestPoC : - 当前 AppId: com.tencent.qqpinyin.suzu
+09-25 15:11:43.744 16690 16690 I TestPoC : - 当前 FileProvider Authority: com.tencent.qqpinyin.suzu.provider
+09-25 15:11:43.744 16690 16690 I TestPoC : - 当前系统 DEFAULT_INPUT_METHOD: com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:43.744 16690 16690 I TestPoC : - 目标应用包名: com.ss.android.ugc.aweme
+09-25 15:11:43.744 16690 16690 I TestPoC : - 原生 info.contentMimeTypes: null
+09-25 15:11:43.744 16690 16690 I TestPoC : - EditorInfoCompat.getContentMimeTypes: [](size=0)
+09-25 15:11:43.744 16690 16690 I TestPoC : - ★ SOGOU_EXPRESSION: -999, SUPPORT_SOGOU_EXPRESSION: -999, SOGOU_EXPRESSION_WEBP: -999
+09-25 15:11:43.744 16690 16690 I TestPoC : - extras 全量键名列表: [hand_writing_keyboard_type]
+09-25 15:11:43.785 16690 16690 I TestPoC : [15:11:43.785][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=false)
+09-25 15:11:43.792 16690 16690 W TestPoC : [15:11:43.792][AccessibilityService] 窗口快照耗时=105ms epoch=737 pid=16690
+09-25 15:11:43.796 16690 16726 I TestPoC : [15:11:43.796][KeyboardDataSource] loadResources: tabKey=cat:4, 加载到 78 张表情
+09-25 15:11:43.797 16690 16793 I TestPoC : [15:11:43.797][KeyboardDataSource] loadResources: tabKey=cat:1, 加载到 199 张表情
+09-25 15:11:43.802 16690 16792 I TestPoC : [15:11:43.802][KeyboardDataSource] loadResources: tabKey=cat:3, 加载到 33 张表情
+09-25 15:11:43.813 16690 16690 I TestPoC : [15:11:43.813][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:43.813 16690 16690 I TestPoC : [15:11:43.813][FloatingBallController] 悬浮球可见性跃迁: 隐藏 (pkg=com.miui.securitycenter, imeVisible=false, alpha=0.0, duration=100ms)
+09-25 15:11:43.846 16690 16690 I TestPoC : [15:11:43.845][AccessibilityService] [切换验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:43.902 16690 16690 I TestPoC : [15:11:43.902][AccessibilityService] IME 交接主动显示: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) requested=true elapsed=285ms
+09-25 15:11:43.903 16690 16690 I TestPoC : [15:11:43.903][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 15:11:43.903 16690 16690 I TestPoC : [15:11:43.903][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:43.915 16690 16690 I TestPoC : [15:11:43.915][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:43.916 16690 16690 I TestPoC : [15:11:43.916][SuzuEmojy] [EditorInfo 全量 Dump 取证]
+09-25 15:11:43.916 16690 16690 I TestPoC : - 当前 AppId: com.tencent.qqpinyin.suzu
+09-25 15:11:43.916 16690 16690 I TestPoC : - 当前 FileProvider Authority: com.tencent.qqpinyin.suzu.provider
+09-25 15:11:43.916 16690 16690 I TestPoC : - 当前系统 DEFAULT_INPUT_METHOD: com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:43.916 16690 16690 I TestPoC : - 目标应用包名: com.ss.android.ugc.aweme
+09-25 15:11:43.916 16690 16690 I TestPoC : - 原生 info.contentMimeTypes: null
+09-25 15:11:43.916 16690 16690 I TestPoC : - EditorInfoCompat.getContentMimeTypes: [](size=0)
+09-25 15:11:43.916 16690 16690 I TestPoC : - ★ SOGOU_EXPRESSION: -999, SUPPORT_SOGOU_EXPRESSION: -999, SOGOU_EXPRESSION_WEBP: -999
+09-25 15:11:43.916 16690 16690 I TestPoC : - extras 全量键名列表: [hand_writing_keyboard_type]
+09-25 15:11:43.974 16690 16690 I TestPoC : [15:11:43.974][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:43.974 16690 16690 I TestPoC : [15:11:43.974][FloatingBallController] 悬浮球可见性跃迁: 显示 (pkg=com.miui.securitycenter, imeVisible=true, alpha=0.8, duration=100ms)
+09-25 15:11:44.304 16690 16690 I TestPoC : [15:11:44.304][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) elapsed=691ms
+09-25 15:11:44.724 16690 16690 I TestPoC : [15:11:44.724][SuzuEmojy] ========== [点击直发] targetPkg=com.ss.android.ugc.aweme, item=20260915095133733000036.png ==========
+09-25 15:11:44.724 16690 16690 I TestPoC : [15:11:44.724][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.ss.android.ugc.aweme)，走剪贴板注入与标准粘贴
+09-25 15:11:44.725 16690 19616 I TestPoC : [15:11:44.725][ImageSender] [1790320304725-5] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:44.726 16690 19616 I TestPoC : [15:11:44.726][DiagnosticFileProvider] openFile | timestamp=1790320304726, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320304725-5, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:44.727 16690 19616 I TestPoC : [15:11:44.727][DiagnosticFileProvider] openAssetFile | timestamp=1790320304727, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320304725-5, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:44.727 16690 19616 I TestPoC : [15:11:44.727][DiagnosticFileProvider] getType | timestamp=1790320304727, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320304725-5, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:44.741 16690 19617 I TestPoC : [15:11:44.740][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=36
+09-25 15:11:44.886 16690 16690 I TestPoC : [15:11:44.886][SuzuEmojy] ========== [点击直发] targetPkg=com.ss.android.ugc.aweme, item=20260915095133733000036.png ==========
+09-25 15:11:44.887 16690 16690 I TestPoC : [15:11:44.886][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.ss.android.ugc.aweme)，走剪贴板注入与标准粘贴
+09-25 15:11:44.887 16690 19616 I TestPoC : [15:11:44.887][ImageSender] [1790320304887-6] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:44.888 16690 19616 I TestPoC : [15:11:44.888][DiagnosticFileProvider] openFile | timestamp=1790320304888, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320304887-6, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:44.888 16690 19616 I TestPoC : [15:11:44.888][DiagnosticFileProvider] openAssetFile | timestamp=1790320304888, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320304887-6, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:44.888 16690 19616 I TestPoC : [15:11:44.888][DiagnosticFileProvider] getType | timestamp=1790320304888, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320304887-6, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:44.894 16690 19617 I TestPoC : [15:11:44.894][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=36
+09-25 15:11:45.025 16690 16690 I TestPoC : [15:11:45.025][SuzuEmojy] ========== [点击直发] targetPkg=com.ss.android.ugc.aweme, item=20260915095133733000036.png ==========
+09-25 15:11:45.026 16690 16690 I TestPoC : [15:11:45.025][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.ss.android.ugc.aweme)，走剪贴板注入与标准粘贴
+09-25 15:11:45.026 16690 19616 I TestPoC : [15:11:45.026][ImageSender] [1790320305026-7] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:45.028 16690 19616 I TestPoC : [15:11:45.028][DiagnosticFileProvider] openFile | timestamp=1790320305027, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305026-7, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:45.028 16690 19616 I TestPoC : [15:11:45.028][DiagnosticFileProvider] openAssetFile | timestamp=1790320305028, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305026-7, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:45.028 16690 19616 I TestPoC : [15:11:45.028][DiagnosticFileProvider] getType | timestamp=1790320305028, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133733000036.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305026-7, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133733000036.gif, fileExists=true, fileLength=131815, result=SUCCESS
+09-25 15:11:45.049 16690 19617 I TestPoC : [15:11:45.049][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=36
+09-25 15:11:45.312 16690 16690 I TestPoC : [15:11:45.311][SuzuEmojy] ========== [点击直发] targetPkg=com.ss.android.ugc.aweme, item=20260915095134038000039.png ==========
+09-25 15:11:45.312 16690 16690 I TestPoC : [15:11:45.312][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.ss.android.ugc.aweme)，走剪贴板注入与标准粘贴
+09-25 15:11:45.313 16690 19616 I TestPoC : [15:11:45.313][ImageSender] [1790320305313-8] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:45.462 16690 16690 I TestPoC : [15:11:45.462][SuzuEmojy] ========== [点击直发] targetPkg=com.ss.android.ugc.aweme, item=20260915095133820000037.png ==========
+09-25 15:11:45.463 16690 16690 I TestPoC : [15:11:45.463][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.ss.android.ugc.aweme)，走剪贴板注入与标准粘贴
+09-25 15:11:45.689 16690 19616 I TestPoC : [15:11:45.689][PngToGifConverter] PNG 成功转换为单帧 GIF: png2gif_v2_20260915095134038000039.gif, size=136900 bytes, elapsedMs=375
+09-25 15:11:45.691 16690 19616 I TestPoC : [15:11:45.691][DiagnosticFileProvider] openFile | timestamp=1790320305690, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134038000039.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305313-8, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134038000039.gif, fileExists=true, fileLength=136900, result=SUCCESS
+09-25 15:11:45.691 16690 19616 I TestPoC : [15:11:45.691][DiagnosticFileProvider] openAssetFile | timestamp=1790320305691, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134038000039.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305313-8, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134038000039.gif, fileExists=true, fileLength=136900, result=SUCCESS
+09-25 15:11:45.691 16690 19616 I TestPoC : [15:11:45.691][DiagnosticFileProvider] getType | timestamp=1790320305691, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134038000039.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305313-8, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134038000039.gif, fileExists=true, fileLength=136900, result=SUCCESS
+09-25 15:11:45.702 16690 19616 I TestPoC : [15:11:45.702][ImageSender] [1790320305702-9] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:45.708 16690 16690 I TestPoC : [15:11:45.707][SuzuEmojy] ========== [点击直发] targetPkg=com.ss.android.ugc.aweme, item=20260915095133946000038.png ==========
+09-25 15:11:45.708 16690 16690 I TestPoC : [15:11:45.708][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.ss.android.ugc.aweme)，走剪贴板注入与标准粘贴
+09-25 15:11:45.715 16690 19617 I TestPoC : [15:11:45.715][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=39
+09-25 15:11:45.831 16690 16690 I TestPoC : [15:11:45.831][SuzuEmojy] ========== [点击直发] targetPkg=com.ss.android.ugc.aweme, item=20260915095134401000041.png ==========
+09-25 15:11:45.831 16690 16690 I TestPoC : [15:11:45.831][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.ss.android.ugc.aweme)，走剪贴板注入与标准粘贴
+09-25 15:11:45.925 16690 19616 I TestPoC : [15:11:45.925][PngToGifConverter] PNG 成功转换为单帧 GIF: png2gif_v2_20260915095133820000037.gif, size=114089 bytes, elapsedMs=222
+09-25 15:11:45.926 16690 19616 I TestPoC : [15:11:45.926][DiagnosticFileProvider] openFile | timestamp=1790320305925, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133820000037.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305702-9, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133820000037.gif, fileExists=true, fileLength=114089, result=SUCCESS
+09-25 15:11:45.926 16690 19616 I TestPoC : [15:11:45.926][DiagnosticFileProvider] openAssetFile | timestamp=1790320305926, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133820000037.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305702-9, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133820000037.gif, fileExists=true, fileLength=114089, result=SUCCESS
+09-25 15:11:45.926 16690 19616 I TestPoC : [15:11:45.926][DiagnosticFileProvider] getType | timestamp=1790320305926, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133820000037.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305702-9, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133820000037.gif, fileExists=true, fileLength=114089, result=SUCCESS
+09-25 15:11:45.934 16690 19616 I TestPoC : [15:11:45.934][ImageSender] [1790320305934-10] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:45.942 16690 19617 I TestPoC : [15:11:45.942][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=37
+09-25 15:11:46.009 16690 16690 I TestPoC : [15:11:46.009][SuzuEmojy] ========== [点击直发] targetPkg=com.ss.android.ugc.aweme, item=20260915095134580000042.png ==========
+09-25 15:11:46.009 16690 16690 I TestPoC : [15:11:46.009][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.ss.android.ugc.aweme)，走剪贴板注入与标准粘贴
+09-25 15:11:46.141 16690 19616 I TestPoC : [15:11:46.141][PngToGifConverter] PNG 成功转换为单帧 GIF: png2gif_v2_20260915095133946000038.gif, size=195840 bytes, elapsedMs=207
+09-25 15:11:46.142 16690 19616 I TestPoC : [15:11:46.142][DiagnosticFileProvider] openFile | timestamp=1790320306142, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133946000038.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305934-10, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133946000038.gif, fileExists=true, fileLength=195840, result=SUCCESS
+09-25 15:11:46.142 16690 19616 I TestPoC : [15:11:46.142][DiagnosticFileProvider] openAssetFile | timestamp=1790320306142, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133946000038.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305934-10, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133946000038.gif, fileExists=true, fileLength=195840, result=SUCCESS
+09-25 15:11:46.142 16690 19616 I TestPoC : [15:11:46.142][DiagnosticFileProvider] getType | timestamp=1790320306142, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133946000038.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320305934-10, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133946000038.gif, fileExists=true, fileLength=195840, result=SUCCESS
+09-25 15:11:46.148 16690 19616 I TestPoC : [15:11:46.148][ImageSender] [1790320306148-11] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:46.155 16690 19617 I TestPoC : [15:11:46.155][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=38
+09-25 15:11:46.302 16690 19616 I TestPoC : [15:11:46.302][PngToGifConverter] PNG 成功转换为单帧 GIF: png2gif_v2_20260915095134401000041.gif, size=118275 bytes, elapsedMs=153
+09-25 15:11:46.303 16690 19616 I TestPoC : [15:11:46.303][DiagnosticFileProvider] openFile | timestamp=1790320306303, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134401000041.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320306148-11, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134401000041.gif, fileExists=true, fileLength=118275, result=SUCCESS
+09-25 15:11:46.303 16690 19616 I TestPoC : [15:11:46.303][DiagnosticFileProvider] openAssetFile | timestamp=1790320306303, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134401000041.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320306148-11, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134401000041.gif, fileExists=true, fileLength=118275, result=SUCCESS
+09-25 15:11:46.303 16690 19616 I TestPoC : [15:11:46.303][DiagnosticFileProvider] getType | timestamp=1790320306303, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134401000041.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320306148-11, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134401000041.gif, fileExists=true, fileLength=118275, result=SUCCESS
+09-25 15:11:46.349 16690 19616 I TestPoC : [15:11:46.349][ImageSender] [1790320306348-12] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:46.358 16690 19617 I TestPoC : [15:11:46.358][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=41
+09-25 15:11:46.437 16690 16690 I TestPoC : [15:11:46.437][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:46.570 16690 19616 I TestPoC : [15:11:46.570][PngToGifConverter] PNG 成功转换为单帧 GIF: png2gif_v2_20260915095134580000042.gif, size=258656 bytes, elapsedMs=220
+09-25 15:11:46.570 16690 19616 I TestPoC : [15:11:46.570][DiagnosticFileProvider] openFile | timestamp=1790320306570, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134580000042.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320306348-12, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134580000042.gif, fileExists=true, fileLength=258656, result=SUCCESS
+09-25 15:11:46.570 16690 19616 I TestPoC : [15:11:46.570][DiagnosticFileProvider] openAssetFile | timestamp=1790320306570, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134580000042.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320306348-12, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134580000042.gif, fileExists=true, fileLength=258656, result=SUCCESS
+09-25 15:11:46.571 16690 19616 I TestPoC : [15:11:46.571][DiagnosticFileProvider] getType | timestamp=1790320306571, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134580000042.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320306348-12, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134580000042.gif, fileExists=true, fileLength=258656, result=SUCCESS
+09-25 15:11:46.597 16690 19617 I TestPoC : [15:11:46.597][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=42
+09-25 15:11:46.713 16690 16690 I TestPoC : [15:11:46.713][AccessibilityService] 悬浮球白名单窗口核验: com.miui.home
+09-25 15:11:46.817 16690 16690 I TestPoC : [15:11:46.817][AccessibilityService] 前台应用变更信号: com.miui.personalassistant
+09-25 15:11:47.022 16690 16690 I TestPoC : [15:11:47.022][AccessibilityService] 前台应用变更信号: com.miui.home
+09-25 15:11:47.328 16690 16690 I TestPoC : [15:11:47.328][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: onFinishInputView(finishing=false)
+09-25 15:11:47.328 16690 16690 I TestPoC : [15:11:47.328][SuzuEmojy] >>> 执行恢复原输入法 (onFinishInputView(finishing=false))
+09-25 15:11:47.333 16690 16690 I TestPoC : [15:11:47.333][AccessibilityService] 结束 IME 显示请求: 恢复原输入法
+09-25 15:11:47.333 16690 16690 I TestPoC : [15:11:47.333][AccessibilityService] <<< 开始执行 restorePreviousIme
+09-25 15:11:47.333 16690 16690 I TestPoC : [15:11:47.333][AccessibilityService] 当前 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, 准备恢复至 previous_ime_id = com.baidu.input/.ImeService
+09-25 15:11:47.343 16690 16690 I TestPoC : [15:11:47.343][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 15:11:47.347 16690 16690 I TestPoC : [15:11:47.347][SuzuEmojy] restorePreviousKeyboard: 无障碍服务 restorePreviousIme 返回值 = true
+09-25 15:11:47.350 16690 16690 I TestPoC : [15:11:47.350][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: onFinishInput
+09-25 15:11:47.351 16690 16690 I TestPoC : [15:11:47.351][SuzuEmojy] >>> 执行恢复原输入法 (onFinishInput)
+09-25 15:11:47.379 16690 16690 I TestPoC : [15:11:47.379][SuzuEmojy] restorePreviousKeyboard: 当前默认输入法已非自研 IME (com.baidu.input/.ImeService)，跳过恢复
+09-25 15:11:47.461 16690 16690 I TestPoC : [15:11:47.461][SuzuEmojy] onDestroy: SuzuEmojy 销毁
+09-25 15:11:47.475 16690 16690 I TestPoC : [15:11:47.475][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:47.476 16690 16690 W TestPoC : [15:11:47.475][AccessibilityService] 窗口快照耗时=157ms epoch=807 pid=16690
+09-25 15:11:47.550 16690 16690 I TestPoC : [15:11:47.550][AccessibilityService] [切回验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.baidu.input/.ImeService
+09-25 15:11:47.730 16690 16690 W TestPoC : [15:11:47.730][AccessibilityService] 窗口快照耗时=205ms epoch=816 pid=16690
+09-25 15:11:48.459 16690 16690 I TestPoC : [15:11:48.459][AccessibilityService] 悬浮球白名单窗口核验: 未知或受限窗口
+09-25 15:11:48.659 16690 16690 I TestPoC : [15:11:48.656][AccessibilityService] 前台应用变更信号: com.smile.gifmaker
+09-25 15:11:48.872 16690 16690 I TestPoC : [15:11:48.872][AccessibilityService] 悬浮球白名单窗口核验: com.smile.gifmaker
+09-25 15:11:49.205 16690 16690 I TestPoC : [15:11:49.205][AccessibilityService] 前台应用变更信号: com.miui.securitycenter
+09-25 15:11:49.793 16690 16690 I TestPoC : [15:11:49.793][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:50.310 16690 16690 I TestPoC : [15:11:50.310][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 15:11:50.310 16690 16690 I TestPoC : [15:11:50.310][FloatingBallController] 当前默认 IME = com.baidu.input/.ImeService, isCurrentOwnIme = false
+09-25 15:11:50.310 16690 16690 I TestPoC : [15:11:50.310][FloatingBallController] 当前非 SuzuEmojy，静默切换到 SuzuEmojy...
+09-25 15:11:50.310 16690 16690 I TestPoC : [15:11:50.310][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 15:11:50.314 16690 16690 I TestPoC : [15:11:50.313][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145447, packageName=com.smile.gifmaker) fromSearch=false destination=com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:50.314 16690 16793 I TestPoC : [15:11:50.314][AccessibilityService] >>> 开始执行 switchToTestIme
+09-25 15:11:50.314 16690 16793 I TestPoC : [15:11:50.314][AccessibilityService] 当前系统 DEFAULT_INPUT_METHOD = com.baidu.input/.ImeService
+09-25 15:11:50.315 16690 16793 I TestPoC : [15:11:50.315][AccessibilityService] 解析出本App的真实 IME ID = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:50.315 16690 16793 I TestPoC : [15:11:50.315][AccessibilityService] 记录原输入法 previous_ime_id = com.baidu.input/.ImeService 到 SharedPreferences
+09-25 15:11:50.318 16690 16793 I TestPoC : [15:11:50.318][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 15:11:50.427 16690 16690 I TestPoC : [15:11:50.427][SuzuEmojy] onCreate: SuzuEmojy 启动 (AppId: com.tencent.qqpinyin.suzu, authority: com.tencent.qqpinyin.suzu.provider, androidx.core: 1.12.0)
+09-25 15:11:50.429 16690 16792 I TestPoC : [15:11:50.428][CacheCleanManager] cleanExpired 完成: 删除了 0 个过期文件, 失败 0 个, 释放 0 B (阈值: 600s)
+09-25 15:11:50.429 16690 16792 I TestPoC : [15:11:50.429][SuzuEmojy] IME 自动清理完成: 删除了 0 个过期暂存文件, 释放 0 B
+09-25 15:11:50.492 16690 16690 I TestPoC : [15:11:50.492][SuzuEmojy] onStartInput: pkg=com.smile.gifmaker, inputType=131073, restarting=false
+09-25 15:11:50.519 16690 16690 I TestPoC : [15:11:50.518][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:50.544 16690 16690 I TestPoC : [15:11:50.543][AccessibilityService] [切换验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:50.619 16690 16690 I TestPoC : [15:11:50.618][AccessibilityService] IME 交接主动显示: target=InputTarget(windowId=145447, packageName=com.smile.gifmaker) requested=true elapsed=303ms
+09-25 15:11:50.620 16690 16690 I TestPoC : [15:11:50.620][SuzuEmojy] onCreateInputView: 创建 SuzuEmojy 键盘界面
+09-25 15:11:50.641 16690 16690 I TestPoC : [15:11:50.641][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:50.641 16690 16690 I TestPoC : [15:11:50.641][SuzuEmojy] 应用键盘网格高度配置: heightDp=300, heightPx=1050
+09-25 15:11:50.642 16690 16690 I TestPoC : [15:11:50.642][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:50.642 16690 16690 I TestPoC : [15:11:50.642][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 15:11:50.643 16690 16690 I TestPoC : [15:11:50.643][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:50.643 16690 16690 I TestPoC : [15:11:50.643][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:50.644 16690 16690 I TestPoC : [15:11:50.644][SuzuEmojy] [EditorInfo 全量 Dump 取证]
+09-25 15:11:50.644 16690 16690 I TestPoC : - 当前 AppId: com.tencent.qqpinyin.suzu
+09-25 15:11:50.644 16690 16690 I TestPoC : - 当前 FileProvider Authority: com.tencent.qqpinyin.suzu.provider
+09-25 15:11:50.644 16690 16690 I TestPoC : - 当前系统 DEFAULT_INPUT_METHOD: com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:50.644 16690 16690 I TestPoC : - 目标应用包名: com.smile.gifmaker
+09-25 15:11:50.644 16690 16690 I TestPoC : - 原生 info.contentMimeTypes: null
+09-25 15:11:50.644 16690 16690 I TestPoC : - EditorInfoCompat.getContentMimeTypes: [](size=0)
+09-25 15:11:50.644 16690 16690 I TestPoC : - ★ SOGOU_EXPRESSION: -999, SUPPORT_SOGOU_EXPRESSION: -999, SOGOU_EXPRESSION_WEBP: -999
+09-25 15:11:50.644 16690 16690 I TestPoC : - extras 全量键名列表: [hand_writing_keyboard_type]
+09-25 15:11:50.704 16690 16690 I TestPoC : [15:11:50.704][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:50.798 16690 19754 I TestPoC : [15:11:50.797][KeyboardDataSource] loadResources: tabKey=cat:4, 加载到 78 张表情
+09-25 15:11:50.798 16690 16690 I TestPoC : [15:11:50.798][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=false)
+09-25 15:11:50.809 16690 16690 I TestPoC : [15:11:50.809][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:50.812 16690 16726 I TestPoC : [15:11:50.811][KeyboardDataSource] loadResources: tabKey=cat:3, 加载到 33 张表情
+09-25 15:11:50.824 16690 16726 I TestPoC : [15:11:50.824][KeyboardDataSource] loadResources: tabKey=cat:1, 加载到 199 张表情
+09-25 15:11:50.952 16690 16690 I TestPoC : [15:11:50.952][AccessibilityService] IME 交接主动显示: target=InputTarget(windowId=145447, packageName=com.smile.gifmaker) requested=true elapsed=636ms
+09-25 15:11:50.953 16690 16690 I TestPoC : [15:11:50.953][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 15:11:50.953 16690 16690 I TestPoC : [15:11:50.953][SuzuEmojy] 应用键盘列数配置: spanCount=4
+09-25 15:11:50.976 16690 16690 I TestPoC : [15:11:50.976][SuzuEmojy] 应用键盘主题配置: isDark=true
+09-25 15:11:50.977 16690 16690 I TestPoC : [15:11:50.977][SuzuEmojy] [EditorInfo 全量 Dump 取证]
+09-25 15:11:50.977 16690 16690 I TestPoC : - 当前 AppId: com.tencent.qqpinyin.suzu
+09-25 15:11:50.977 16690 16690 I TestPoC : - 当前 FileProvider Authority: com.tencent.qqpinyin.suzu.provider
+09-25 15:11:50.977 16690 16690 I TestPoC : - 当前系统 DEFAULT_INPUT_METHOD: com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 15:11:50.977 16690 16690 I TestPoC : - 目标应用包名: com.smile.gifmaker
+09-25 15:11:50.977 16690 16690 I TestPoC : - 原生 info.contentMimeTypes: null
+09-25 15:11:50.977 16690 16690 I TestPoC : - EditorInfoCompat.getContentMimeTypes: [](size=0)
+09-25 15:11:50.977 16690 16690 I TestPoC : - ★ SOGOU_EXPRESSION: -999, SUPPORT_SOGOU_EXPRESSION: -999, SOGOU_EXPRESSION_WEBP: -999
+09-25 15:11:50.977 16690 16690 I TestPoC : - extras 全量键名列表: [hand_writing_keyboard_type]
+09-25 15:11:51.035 16690 16690 I TestPoC : [15:11:51.035][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:51.377 16690 16690 I TestPoC : [15:11:51.377][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145447, packageName=com.smile.gifmaker) elapsed=1066ms
+09-25 15:11:51.966 16690 16690 I TestPoC : [15:11:51.965][SuzuEmojy] ========== [点击直发] targetPkg=com.smile.gifmaker, item=20260915095134311000040.png ==========
+09-25 15:11:51.966 16690 16690 I TestPoC : [15:11:51.966][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.smile.gifmaker)，走剪贴板注入与标准粘贴
+09-25 15:11:51.967 16690 19762 I TestPoC : [15:11:51.966][ImageSender] [1790320311966-13] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:51.968 16690 19762 I TestPoC : [15:11:51.968][DiagnosticFileProvider] openFile | timestamp=1790320311968, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134311000040.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320311966-13, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134311000040.gif, fileExists=true, fileLength=305016, result=SUCCESS
+09-25 15:11:51.968 16690 19762 I TestPoC : [15:11:51.968][DiagnosticFileProvider] openAssetFile | timestamp=1790320311968, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134311000040.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320311966-13, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134311000040.gif, fileExists=true, fileLength=305016, result=SUCCESS
+09-25 15:11:51.969 16690 19762 I TestPoC : [15:11:51.969][DiagnosticFileProvider] getType | timestamp=1790320311969, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134311000040.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320311966-13, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134311000040.gif, fileExists=true, fileLength=305016, result=SUCCESS
+09-25 15:11:51.986 16690 19765 I TestPoC : [15:11:51.986][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=40
+09-25 15:11:52.161 16690 16690 I TestPoC : [15:11:52.160][SuzuEmojy] ========== [点击直发] targetPkg=com.smile.gifmaker, item=20260915095133946000038.png ==========
+09-25 15:11:52.161 16690 16690 I TestPoC : [15:11:52.161][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.smile.gifmaker)，走剪贴板注入与标准粘贴
+09-25 15:11:52.162 16690 19762 I TestPoC : [15:11:52.161][ImageSender] [1790320312161-14] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:52.163 16690 19762 I TestPoC : [15:11:52.163][DiagnosticFileProvider] openFile | timestamp=1790320312162, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133946000038.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320312161-14, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133946000038.gif, fileExists=true, fileLength=195840, result=SUCCESS
+09-25 15:11:52.163 16690 19762 I TestPoC : [15:11:52.163][DiagnosticFileProvider] openAssetFile | timestamp=1790320312163, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133946000038.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320312161-14, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133946000038.gif, fileExists=true, fileLength=195840, result=SUCCESS
+09-25 15:11:52.163 16690 19762 I TestPoC : [15:11:52.163][DiagnosticFileProvider] getType | timestamp=1790320312163, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095133946000038.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320312161-14, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095133946000038.gif, fileExists=true, fileLength=195840, result=SUCCESS
+09-25 15:11:52.176 16690 19765 I TestPoC : [15:11:52.176][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=38
+09-25 15:11:52.315 16690 16690 I TestPoC : [15:11:52.315][SuzuEmojy] ========== [点击直发] targetPkg=com.smile.gifmaker, item=20260915095134401000041.png ==========
+09-25 15:11:52.315 16690 16690 I TestPoC : [15:11:52.315][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.smile.gifmaker)，走剪贴板注入与标准粘贴
+09-25 15:11:52.316 16690 19762 I TestPoC : [15:11:52.316][ImageSender] [1790320312316-15] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:52.317 16690 19762 I TestPoC : [15:11:52.317][DiagnosticFileProvider] openFile | timestamp=1790320312317, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134401000041.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320312316-15, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134401000041.gif, fileExists=true, fileLength=118275, result=SUCCESS
+09-25 15:11:52.318 16690 19762 I TestPoC : [15:11:52.318][DiagnosticFileProvider] openAssetFile | timestamp=1790320312318, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134401000041.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320312316-15, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134401000041.gif, fileExists=true, fileLength=118275, result=SUCCESS
+09-25 15:11:52.318 16690 19762 I TestPoC : [15:11:52.318][DiagnosticFileProvider] getType | timestamp=1790320312318, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134401000041.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320312316-15, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134401000041.gif, fileExists=true, fileLength=118275, result=SUCCESS
+09-25 15:11:52.330 16690 19765 I TestPoC : [15:11:52.330][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=41
+09-25 15:11:52.561 16690 16690 I TestPoC : [15:11:52.561][SuzuEmojy] ========== [点击直发] targetPkg=com.smile.gifmaker, item=20260915095134580000042.png ==========
+09-25 15:11:52.561 16690 16690 I TestPoC : [15:11:52.561][SuzuEmojy] 智能路由 -> 非 H1β 直发目标 (com.smile.gifmaker)，走剪贴板注入与标准粘贴
+09-25 15:11:52.562 16690 19762 I TestPoC : [15:11:52.561][ImageSender] [1790320312561-16] GIF preparation: enabled=true, originalGif=false
+09-25 15:11:52.562 16690 19762 I TestPoC : [15:11:52.562][DiagnosticFileProvider] openFile | timestamp=1790320312562, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134580000042.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320312561-16, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134580000042.gif, fileExists=true, fileLength=258656, result=SUCCESS
+09-25 15:11:52.562 16690 19762 I TestPoC : [15:11:52.562][DiagnosticFileProvider] openAssetFile | timestamp=1790320312562, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134580000042.gif, mode=r, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320312561-16, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134580000042.gif, fileExists=true, fileLength=258656, result=SUCCESS
+09-25 15:11:52.563 16690 19762 I TestPoC : [15:11:52.563][DiagnosticFileProvider] getType | timestamp=1790320312563, uri=content://com.tencent.qqpinyin.suzu.provider/send_cache/png2gif_v2_20260915095134580000042.gif, mode=N/A, callingUid=10451, packages=[com.tencent.qqpinyin.suzu], processPid=16690, processUid=10451, eventId=1790320312561-16, filePath=/data/user/0/com.tencent.qqpinyin.suzu/cache/send/png2gif_v2_20260915095134580000042.gif, fileExists=true, fileLength=258656, result=SUCCESS
+09-25 15:11:52.579 16690 19765 I TestPoC : [15:11:52.579][SuzuEmojy] 已在后台更新资源使用频次并按上限(40)淘汰记录: ID=42
+09-25 15:11:55.573 16690 16690 I TestPoC : [15:11:55.573][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 15:11:55.574 16690 16690 I TestPoC : [15:11:55.574][FloatingBallController] 当前默认 IME = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, isCurrentOwnIme = true
+09-25 15:11:55.574 16690 16690 I TestPoC : [15:11:55.574][FloatingBallController] 当前已处于 SuzuEmojy，直接复用 IME 收起/退出恢复逻辑...
+09-25 15:11:55.574 16690 16690 I TestPoC : [15:11:55.574][SuzuEmojy] >>> 触发 [退出] 恢复原输入法
+09-25 15:11:55.574 16690 16690 I TestPoC : [15:11:55.574][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: 退出按钮
+09-25 15:11:55.574 16690 16690 I TestPoC : [15:11:55.574][SuzuEmojy] >>> 执行恢复原输入法 (退出按钮)
+09-25 15:11:55.575 16690 16690 I TestPoC : [15:11:55.575][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 15:11:55.576 16690 16690 I TestPoC : [15:11:55.576][SuzuEmojy] restorePreviousKeyboard: 无障碍服务 restorePreviousIme 返回值 = true
+09-25 15:11:55.581 16690 16690 I TestPoC : [15:11:55.581][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145447, packageName=com.smile.gifmaker) fromSearch=false destination=com.baidu.input/.ImeService
+09-25 15:11:55.584 16690 19754 I TestPoC : [15:11:55.584][AccessibilityService] 切回前记录输入框: target=InputTarget(windowId=145447, packageName=com.smile.gifmaker) editor=null
+09-25 15:11:55.584 16690 19754 I TestPoC : [15:11:55.584][AccessibilityService] 当前 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, 准备恢复至 previous_ime_id = com.baidu.input/.ImeService
+09-25 15:11:55.585 16690 19754 I TestPoC : [15:11:55.585][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 15:11:55.592 16690 16690 I TestPoC : [15:11:55.592][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=true)
+09-25 15:11:55.592 16690 16690 I TestPoC : [15:11:55.592][SuzuEmojy] IME 交接中，跳过输入连接重建的自动恢复
+09-25 15:11:55.649 16690 16690 I TestPoC : [15:11:55.649][SuzuEmojy] onDestroy: SuzuEmojy 销毁
+09-25 15:11:55.659 16690 16690 I TestPoC : [15:11:55.659][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER
+09-25 15:11:55.786 16690 16690 I TestPoC : [15:11:55.786][AccessibilityService] [切回验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.baidu.input/.ImeService
+09-25 15:11:55.887 16690 16690 I TestPoC : [15:11:55.887][EdgeGestureController] 已挂载边缘手势区域: RIGHT_LOWER
+09-25 15:11:56.173 16690 16690 I TestPoC : [15:11:56.172][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145447, packageName=com.smile.gifmaker) elapsed=597ms
+09-25 15:11:57.650 16690 16690 I TestPoC : [15:11:57.650][EdgeGestureController] 已移除边缘手势区域: RIGHT_LOWER

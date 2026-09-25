@@ -78,8 +78,15 @@ abstract class AppWhitelistActivity : AppCompatActivity() {
                     val installed = packageManager.queryIntentActivities(queryIntent(), queryFlags)
                         .filter { !excludeSelf || it.activityInfo.packageName != packageName }
                         .distinctBy { it.activityInfo.packageName }
-                        .map { AppEntry(it.activityInfo.packageName,
-                            it.loadLabel(packageManager).toString(), it.loadIcon(packageManager)) }
+                        .map {
+                            // Rows represent applications, not share activities such as “发送到好友”.
+                            val applicationInfo = it.activityInfo.applicationInfo
+                            AppEntry(
+                                it.activityInfo.packageName,
+                                applicationInfo.loadLabel(packageManager).toString(),
+                                applicationInfo.loadIcon(packageManager)
+                            )
+                        }
                     val missing = if (retainUnavailable) {
                         (selected - installed.map { it.packageName }.toSet()).map {
                             AppEntry(it, "$it（当前不可用）", packageManager.defaultActivityIcon)

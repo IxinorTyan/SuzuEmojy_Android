@@ -1,0 +1,197 @@
+09-25 14:57:02.530  2817  4587 I ImeTracker: com.ss.android.ugc.aweme:925195b9: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_ALWAYS_HIDDEN_STATE
+09-25 14:57:02.530  2817  4587 I ImeTracker: com.ss.android.ugc.aweme:925195b9: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-25 14:57:03.244 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:521f3cfc: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:03.412 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:96fcf3b: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:03.437 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:96fcf3b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:03.552 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:521f3cfc: onShown
+09-25 14:57:04.228  3132  3132 I TestPoC : [14:57:04.228][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 14:57:04.229  3132  3132 I TestPoC : [14:57:04.229][FloatingBallController] 当前默认 IME = com.iflytek.inputmethod.miui/.FlyIME, isCurrentOwnIme = false
+09-25 14:57:04.229  3132  3132 I TestPoC : [14:57:04.229][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 14:57:04.250  3132  3132 I TestPoC : [14:57:04.250][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 14:57:04.271  3132  3197 I TestPoC : [14:57:04.271][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 14:57:04.402  2817 11370 I ImeTracker: com.ss.android.ugc.aweme:f309ea37: onRequestShow at ORIGIN_SERVER_START_INPUT reason ATTACH_NEW_INPUT
+09-25 14:57:04.416  3132  3132 I TestPoC : [14:57:04.416][SuzuEmojy] onStartInput: pkg=com.ss.android.ugc.aweme, inputType=131073, restarting=false
+09-25 14:57:04.447 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:f5004acf: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:04.494  3132  3132 I TestPoC : [14:57:04.494][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 14:57:04.545  2817 11266 I ImeTracker: com.ss.android.ugc.aweme:f309ea37: onCancelled at PHASE_WM_SHOW_IME_RUNNER
+09-25 14:57:04.546  3132  3132 I TestPoC : [14:57:04.545][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=false)
+09-25 14:57:04.564 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:f5004acf: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:04.710  2817 11362 I ImeTracker: com.ss.android.ugc.aweme:afd38277: onRequestShow at ORIGIN_SERVER_START_INPUT reason SHOW_SOFT_INPUT_FROM_IME
+09-25 14:57:04.714  3132  3132 I TestPoC : [14:57:04.714][AccessibilityService] IME 交接主动显示: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) requested=true elapsed=477ms
+09-25 14:57:04.727  3132  3132 I TestPoC : [14:57:04.726][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 14:57:04.841 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:42cda03c: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:04.899 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:42cda03c: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:04.982 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:afd38277: onShown
+09-25 14:57:05.203  3132  3132 I TestPoC : [14:57:05.203][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) elapsed=975ms
+09-25 14:57:05.775  3132  3132 I TestPoC : [14:57:05.775][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 14:57:05.776  3132  3132 I TestPoC : [14:57:05.776][FloatingBallController] 当前默认 IME = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, isCurrentOwnIme = true
+09-25 14:57:05.776  3132  3132 I TestPoC : [14:57:05.776][SuzuEmojy] >>> 触发 [退出] 恢复原输入法
+09-25 14:57:05.776  3132  3132 I TestPoC : [14:57:05.776][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: 退出按钮
+09-25 14:57:05.776  3132  3132 I TestPoC : [14:57:05.776][SuzuEmojy] >>> 执行恢复原输入法 (退出按钮)
+09-25 14:57:05.777  3132  3132 I TestPoC : [14:57:05.777][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 14:57:05.785  3132  3132 I TestPoC : [14:57:05.785][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:05.786  3132  3197 I TestPoC : [14:57:05.786][AccessibilityService] 当前 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, 准备恢复至 previous_ime_id = com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:05.789  3132  3197 I TestPoC : [14:57:05.788][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 14:57:05.816  3132  3132 I TestPoC : [14:57:05.812][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=true)
+09-25 14:57:05.818  3132  3132 I TestPoC : [14:57:05.817][SuzuEmojy] IME 交接中，跳过输入连接重建的自动恢复
+09-25 14:57:05.928 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:e3e9bfb3: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:05.992  3132  3132 I TestPoC : [14:57:05.991][AccessibilityService] [切回验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:06.001 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:e3e9bfb3: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:07.526 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:478ec85: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:07.711 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:6f0f4dcb: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:07.727 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:6f0f4dcb: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:07.857 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:478ec85: onShown
+09-25 14:57:08.056  3132  3132 I TestPoC : [14:57:08.055][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) elapsed=2278ms
+09-25 14:57:08.405  3132  3132 I TestPoC : [14:57:08.405][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 14:57:08.406  3132  3132 I TestPoC : [14:57:08.406][FloatingBallController] 当前默认 IME = com.iflytek.inputmethod.miui/.FlyIME, isCurrentOwnIme = false
+09-25 14:57:08.406  3132  3132 I TestPoC : [14:57:08.406][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 14:57:08.412  3132  3132 I TestPoC : [14:57:08.412][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 14:57:08.425  3132  3197 I TestPoC : [14:57:08.425][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 14:57:08.543  2817  5388 I ImeTracker: com.ss.android.ugc.aweme:9b6e4c09: onRequestShow at ORIGIN_SERVER_START_INPUT reason ATTACH_NEW_INPUT
+09-25 14:57:08.562  3132  3132 I TestPoC : [14:57:08.562][SuzuEmojy] onStartInput: pkg=com.ss.android.ugc.aweme, inputType=131073, restarting=false
+09-25 14:57:08.581  3132  3132 I TestPoC : [14:57:08.581][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 14:57:08.620 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:223622a: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:08.641 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:9b6e4c09: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:08.651  3132  3132 I TestPoC : [14:57:08.651][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=false)
+09-25 14:57:08.784  2817  4587 I ImeTracker: com.ss.android.ugc.aweme:67bfbce: onRequestShow at ORIGIN_SERVER_START_INPUT reason SHOW_SOFT_INPUT_FROM_IME
+09-25 14:57:08.786  3132  3132 I TestPoC : [14:57:08.786][AccessibilityService] IME 交接主动显示: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) requested=true elapsed=372ms
+09-25 14:57:08.791  3132  3132 I TestPoC : [14:57:08.791][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 14:57:08.831 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:223622a: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+09-25 14:57:08.915 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:5b989692: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:08.930 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:5b989692: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:09.041 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:67bfbce: onShown
+09-25 14:57:09.223  3132  3132 I TestPoC : [14:57:09.223][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) elapsed=816ms
+09-25 14:57:09.901  3132  3132 I TestPoC : [14:57:09.900][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 14:57:09.901  3132  3132 I TestPoC : [14:57:09.901][FloatingBallController] 当前默认 IME = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, isCurrentOwnIme = true
+09-25 14:57:09.901  3132  3132 I TestPoC : [14:57:09.901][SuzuEmojy] >>> 触发 [退出] 恢复原输入法
+09-25 14:57:09.901  3132  3132 I TestPoC : [14:57:09.901][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: 退出按钮
+09-25 14:57:09.902  3132  3132 I TestPoC : [14:57:09.902][SuzuEmojy] >>> 执行恢复原输入法 (退出按钮)
+09-25 14:57:09.903  3132  3132 I TestPoC : [14:57:09.903][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 14:57:09.906  3132  3132 I TestPoC : [14:57:09.906][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:09.906  3132  3887 I TestPoC : [14:57:09.906][AccessibilityService] 当前 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, 准备恢复至 previous_ime_id = com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:09.908  3132  3887 I TestPoC : [14:57:09.908][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 14:57:09.919  3132  3132 I TestPoC : [14:57:09.919][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=true)
+09-25 14:57:09.919  3132  3132 I TestPoC : [14:57:09.919][SuzuEmojy] IME 交接中，跳过输入连接重建的自动恢复
+09-25 14:57:10.024  2817 10998 I ImeTracker: com.ss.android.ugc.aweme:c67f9f13: onRequestShow at ORIGIN_SERVER_START_INPUT reason ATTACH_NEW_INPUT
+09-25 14:57:10.024 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:7117d94c: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:10.104 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:c67f9f13: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+09-25 14:57:10.109  3132  3132 I TestPoC : [14:57:10.109][AccessibilityService] [切回验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:10.331 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:7c27166d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+09-25 14:57:10.331  2817 11362 I ImeTracker: com.ss.android.ugc.aweme:7c27166d: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-25 14:57:10.332 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:7117d94c: onHidden
+09-25 14:57:11.393 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:d8b02d5f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:11.527 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:13cb4991: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:11.541 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:13cb4991: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:11.666 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:d8b02d5f: onShown
+09-25 14:57:11.908  3132  3132 I TestPoC : [14:57:11.908][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) elapsed=2005ms
+09-25 14:57:12.115  3132  3132 I TestPoC : [14:57:12.115][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 14:57:12.115  3132  3132 I TestPoC : [14:57:12.115][FloatingBallController] 当前默认 IME = com.iflytek.inputmethod.miui/.FlyIME, isCurrentOwnIme = false
+09-25 14:57:12.116  3132  3132 I TestPoC : [14:57:12.116][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 14:57:12.120  3132  3132 I TestPoC : [14:57:12.120][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 14:57:12.124  3132  3884 I TestPoC : [14:57:12.124][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 14:57:12.207  2817 10998 I ImeTracker: com.ss.android.ugc.aweme:99a0ae9f: onRequestShow at ORIGIN_SERVER_START_INPUT reason ATTACH_NEW_INPUT
+09-25 14:57:12.213  3132  3132 I TestPoC : [14:57:12.213][SuzuEmojy] onStartInput: pkg=com.ss.android.ugc.aweme, inputType=131073, restarting=false
+09-25 14:57:12.221  3132  3132 I TestPoC : [14:57:12.221][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 14:57:12.239 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:99d95e6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:12.244  3132  3132 I TestPoC : [14:57:12.243][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=false)
+09-25 14:57:12.266 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:99a0ae9f: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+09-25 14:57:12.366  2817  5388 I ImeTracker: com.ss.android.ugc.aweme:b178a33b: onRequestShow at ORIGIN_SERVER_START_INPUT reason SHOW_SOFT_INPUT_FROM_IME
+09-25 14:57:12.367  3132  3132 I TestPoC : [14:57:12.367][AccessibilityService] IME 交接主动显示: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) requested=true elapsed=246ms
+09-25 14:57:12.368  3132  3132 I TestPoC : [14:57:12.368][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 14:57:12.406 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:99d95e6: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+09-25 14:57:12.480 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:a910aeea: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:12.490 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:a910aeea: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:12.613 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:b178a33b: onShown
+09-25 14:57:12.776  3132  3132 I TestPoC : [14:57:12.776][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) elapsed=661ms
+09-25 14:57:13.211  3132  3132 I TestPoC : [14:57:13.211][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 14:57:13.211  3132  3132 I TestPoC : [14:57:13.211][FloatingBallController] 当前默认 IME = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, isCurrentOwnIme = true
+09-25 14:57:13.211  3132  3132 I TestPoC : [14:57:13.211][SuzuEmojy] >>> 触发 [退出] 恢复原输入法
+09-25 14:57:13.211  3132  3132 I TestPoC : [14:57:13.211][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: 退出按钮
+09-25 14:57:13.211  3132  3132 I TestPoC : [14:57:13.211][SuzuEmojy] >>> 执行恢复原输入法 (退出按钮)
+09-25 14:57:13.212  3132  3132 I TestPoC : [14:57:13.212][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 14:57:13.214  3132  3132 I TestPoC : [14:57:13.214][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:13.214  3132  3198 I TestPoC : [14:57:13.214][AccessibilityService] 当前 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, 准备恢复至 previous_ime_id = com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:13.215  3132  3198 I TestPoC : [14:57:13.215][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 14:57:13.227  3132  3132 I TestPoC : [14:57:13.227][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=true)
+09-25 14:57:13.227  3132  3132 I TestPoC : [14:57:13.227][SuzuEmojy] IME 交接中，跳过输入连接重建的自动恢复
+09-25 14:57:13.340 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:94efc65d: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:13.380 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:94efc65d: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:13.417  3132  3132 I TestPoC : [14:57:13.417][AccessibilityService] [切回验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:14.120 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:96a8705f: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:14.265 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:a060467: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:14.282 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:a060467: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:14.403 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:96a8705f: onShown
+09-25 14:57:14.602  3132  3132 I TestPoC : [14:57:14.602][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) elapsed=1390ms
+09-25 14:57:15.758  3132  3132 I TestPoC : [14:57:15.757][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 14:57:15.758  3132  3132 I TestPoC : [14:57:15.758][FloatingBallController] 当前默认 IME = com.iflytek.inputmethod.miui/.FlyIME, isCurrentOwnIme = false
+09-25 14:57:15.759  3132  3132 I TestPoC : [14:57:15.759][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 14:57:15.765  3132  3132 I TestPoC : [14:57:15.765][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 14:57:15.770  3132  3887 I TestPoC : [14:57:15.770][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 14:57:15.868  2817 10998 I ImeTracker: com.ss.android.ugc.aweme:12e3f123: onRequestShow at ORIGIN_SERVER_START_INPUT reason ATTACH_NEW_INPUT
+09-25 14:57:15.880  3132  3132 I TestPoC : [14:57:15.880][SuzuEmojy] onStartInput: pkg=com.ss.android.ugc.aweme, inputType=131073, restarting=false
+09-25 14:57:15.899  3132  3132 I TestPoC : [14:57:15.899][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 14:57:15.937 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:d5cbf651: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:15.959  3132  3132 I TestPoC : [14:57:15.959][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=false)
+09-25 14:57:16.000 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:12e3f123: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+09-25 14:57:16.058  2817 10997 I ImeTracker: com.ss.android.ugc.aweme:129e6db6: onRequestShow at ORIGIN_SERVER_START_INPUT reason SHOW_SOFT_INPUT_FROM_IME
+09-25 14:57:16.061  3132  3132 I TestPoC : [14:57:16.061][AccessibilityService] IME 交接主动显示: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) requested=true elapsed=294ms
+09-25 14:57:16.067  3132  3132 I TestPoC : [14:57:16.067][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 14:57:16.109 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:d5cbf651: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+09-25 14:57:16.204 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:cd405dc5: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:16.224 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:cd405dc5: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:16.323 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:129e6db6: onShown
+09-25 14:57:16.488  3132  3132 I TestPoC : [14:57:16.488][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) elapsed=728ms
+09-25 14:57:19.306 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:adbac51b: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:19.307 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:bc53b988: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:19.308  2817 10998 I ImeTracker: com.ss.android.ugc.aweme:bc53b988: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-25 14:57:19.308  3132  3132 I TestPoC : [14:57:19.308][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: onFinishInputView(finishing=false)
+09-25 14:57:19.308  3132  3132 I TestPoC : [14:57:19.308][SuzuEmojy] >>> 执行恢复原输入法 (onFinishInputView(finishing=false))
+09-25 14:57:19.309  3132  3132 I TestPoC : [14:57:19.309][AccessibilityService] 结束 IME 显示请求: 恢复原输入法
+09-25 14:57:19.309  3132  3132 I TestPoC : [14:57:19.309][AccessibilityService] 当前 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, 准备恢复至 previous_ime_id = com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:19.313  3132  3132 I TestPoC : [14:57:19.313][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 14:57:19.333  2817  4587 I ImeTracker: com.ss.android.ugc.aweme:6ad219ec: onRequestHide at ORIGIN_SERVER_HIDE_INPUT reason HIDE_SAME_WINDOW_FOCUSED_WITHOUT_EDITOR
+09-25 14:57:19.333  2817  4587 I ImeTracker: com.ss.android.ugc.aweme:6ad219ec: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-25 14:57:19.350  3132  3132 I TestPoC : [14:57:19.350][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: onFinishInput
+09-25 14:57:19.351  3132  3132 I TestPoC : [14:57:19.351][SuzuEmojy] >>> 执行恢复原输入法 (onFinishInput)
+09-25 14:57:19.514  3132  3132 I TestPoC : [14:57:19.514][AccessibilityService] [切回验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:19.647 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:7ba159c8: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT_BY_INSETS_API
+09-25 14:57:19.647  2817  7666 I ImeTracker: com.ss.android.ugc.aweme:7ba159c8: onCancelled at PHASE_SERVER_SHOULD_HIDE
+09-25 14:57:19.648 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:adbac51b: onHidden
+09-25 14:57:31.402 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:232fb0c6: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:31.648 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:7943a627: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:31.665 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:7943a627: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:31.772 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:232fb0c6: onShown
+09-25 14:57:34.776  3132  3132 I TestPoC : [14:57:34.776][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 14:57:34.776  3132  3132 I TestPoC : [14:57:34.776][FloatingBallController] 当前默认 IME = com.iflytek.inputmethod.miui/.FlyIME, isCurrentOwnIme = false
+09-25 14:57:34.776  3132  3132 I TestPoC : [14:57:34.776][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 14:57:34.782  3132  3132 I TestPoC : [14:57:34.782][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME
+09-25 14:57:34.787  3132  3700 I TestPoC : [14:57:34.787][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 14:57:34.888  2817 11266 I ImeTracker: com.ss.android.ugc.aweme:ca70c0a5: onRequestShow at ORIGIN_SERVER_START_INPUT reason ATTACH_NEW_INPUT
+09-25 14:57:34.901  3132  3132 I TestPoC : [14:57:34.900][SuzuEmojy] onStartInput: pkg=com.ss.android.ugc.aweme, inputType=131073, restarting=false
+09-25 14:57:34.923  3132  3132 I TestPoC : [14:57:34.923][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 14:57:34.924 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:cda77db5: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:34.951  3132  3132 I TestPoC : [14:57:34.951][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=false)
+09-25 14:57:34.978 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:ca70c0a5: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+09-25 14:57:35.061  2817 11362 I ImeTracker: com.ss.android.ugc.aweme:56ed4a9b: onRequestShow at ORIGIN_SERVER_START_INPUT reason SHOW_SOFT_INPUT_FROM_IME
+09-25 14:57:35.063  3132  3132 I TestPoC : [14:57:35.063][AccessibilityService] IME 交接主动显示: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) requested=true elapsed=280ms
+09-25 14:57:35.065  3132  3132 I TestPoC : [14:57:35.065][SuzuEmojy] ==================== onStartInputView (restarting=false) ====================
+09-25 14:57:35.105 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:cda77db5: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+09-25 14:57:35.185 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:97cdfc73: onRequestShow at ORIGIN_CLIENT_SHOW_SOFT_INPUT reason SHOW_SOFT_INPUT
+09-25 14:57:35.204 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:97cdfc73: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:35.328 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:56ed4a9b: onShown
+09-25 14:57:35.505  3132  3132 I TestPoC : [14:57:35.505][AccessibilityService] IME 交接完成: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) elapsed=729ms
+09-25 14:57:35.674  3132  3132 I TestPoC : [14:57:35.674][FloatingBallController] ========== 悬浮球动作触发 (静默切换) ==========
+09-25 14:57:35.674  3132  3132 I TestPoC : [14:57:35.674][FloatingBallController] 当前默认 IME = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, isCurrentOwnIme = true
+09-25 14:57:35.674  3132  3132 I TestPoC : [14:57:35.674][SuzuEmojy] >>> 触发 [退出] 恢复原输入法
+09-25 14:57:35.674  3132  3132 I TestPoC : [14:57:35.674][AccessibilityService] 结束 IME 显示请求: 恢复原输入法: 退出按钮
+09-25 14:57:35.674  3132  3132 I TestPoC : [14:57:35.674][SuzuEmojy] >>> 执行恢复原输入法 (退出按钮)
+09-25 14:57:35.675  3132  3132 I TestPoC : [14:57:35.675][AccessibilityService] 结束 IME 显示请求: 新请求
+09-25 14:57:35.679  3132  3132 I TestPoC : [14:57:35.679][AccessibilityService] 开始 IME 交接: target=InputTarget(windowId=145133, packageName=com.ss.android.ugc.aweme) fromSearch=false destination=com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:35.681  3132  3700 I TestPoC : [14:57:35.681][AccessibilityService] 当前 DEFAULT_INPUT_METHOD = com.tencent.qqpinyin.suzu/com.suzu.test.ime.TestImageIME, 准备恢复至 previous_ime_id = com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:35.682  3132  3700 I TestPoC : [14:57:35.682][AccessibilityService] softKeyboardController.switchToInputMethod 返回值 = true
+09-25 14:57:35.697  3132  3132 I TestPoC : [14:57:35.697][SuzuEmojy] IME 交接中，跳过短暂收起的自动恢复 (finishing=true)
+09-25 14:57:35.698  3132  3132 I TestPoC : [14:57:35.698][SuzuEmojy] IME 交接中，跳过输入连接重建的自动恢复
+09-25 14:57:35.824 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:3eeb4ca6: onRequestHide at ORIGIN_CLIENT_HIDE_SOFT_INPUT reason HIDE_SOFT_INPUT
+09-25 14:57:35.849 23849 23849 I ImeTracker: com.ss.android.ugc.aweme:3eeb4ca6: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+09-25 14:57:35.883  3132  3132 I TestPoC : [14:57:35.883][AccessibilityService] [切回验证+200ms] 实际生效 DEFAULT_INPUT_METHOD = com.iflytek.inputmethod.miui/.FlyIME
+09-25 14:57:38.177  3132  3132 I TestPoC : [14:57:38.176][AccessibilityService] 结束 IME 显示请求: IME 交接超过 2500ms

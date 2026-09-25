@@ -25,7 +25,7 @@ class CategoryReorderBottomSheet(
     context: Context,
     private val scope: CoroutineScope,
     private val categories: List<CategoryEntity>,
-    private val selectedCategoryId: String,
+    private val spanCount: Int,
     private val onDismissCallback: () -> Unit
 ) : BottomSheetDialog(context) {
     private lateinit var binding: BottomSheetCategoryReorderBinding
@@ -46,15 +46,10 @@ class CategoryReorderBottomSheet(
         behavior.isDraggable = false
         behavior.state = BottomSheetBehavior.STATE_EXPANDED
 
-        adapter = CategoryReorderAdapter(sheetScope, categories, selectedCategoryId.toLongOrNull())
-        val grid = GridLayoutManager(context, 3)
+        adapter = CategoryReorderAdapter(sheetScope, categories)
+        val grid = GridLayoutManager(context, spanCount)
         binding.rvCategoriesReorder.layoutManager = grid
         binding.rvCategoriesReorder.adapter = adapter
-        binding.rvCategoriesReorder.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
-            val widthDp = view.width / context.resources.displayMetrics.density
-            val span = if (widthDp >= 380) 4 else 3
-            if (grid.spanCount != span) grid.spanCount = span
-        }
 
         val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT, 0
