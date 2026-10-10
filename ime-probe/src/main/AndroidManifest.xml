@@ -1,0 +1,18 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <permission android:name="org.suzu.imeprobe.permission.BRIDGE" android:protectionLevel="signature" />
+    <application android:label="Suzu 独立 IME 实验" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false">
+        <activity android:name=".SetupActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service android:name=".ProbeIme" android:label="Suzu 实验 IME（不同包名）"
+            android:exported="true" android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter><action android:name="android.view.InputMethod" /></intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/input_method" />
+        </service>
+        <service android:name=".BridgeService" android:exported="true"
+            android:permission="org.suzu.imeprobe.permission.BRIDGE" />
+    </application>
+</manifest>

@@ -76,6 +76,8 @@ object TestLog {
         logFile?.let { file ->
             fileExecutor.execute {
                 try {
+                    // A cache cleanup may have removed the directory while this process is alive.
+                    file.parentFile?.mkdirs()
                     FileWriter(file, true).use { writer ->
                         writer.write(formatted + "\n")
                     }

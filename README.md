@@ -6,7 +6,7 @@
 
 ### 高效、私密、原生的本地表情包管理与即时发送助手
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-green.svg)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9%2B-purple.svg)](https://kotlinlang.org)
 [![Version](https://img.shields.io/badge/Version-v1.7.1-orange.svg)](https://github.com/IxinorTyan/SuzuEmojy_Android/releases)
@@ -171,7 +171,9 @@ com.suzu.test
 
 ## 📄 开源协议
 
-本项目遵循 [MIT License](LICENSE) 许可协议开源。
+Copyright (c) 2024-2026 SuzuEmojy。
+
+本项目遵循 [GNU General Public License v3.0（GPL-3.0-only）](LICENSE) 许可协议开源。
 
 ---
 

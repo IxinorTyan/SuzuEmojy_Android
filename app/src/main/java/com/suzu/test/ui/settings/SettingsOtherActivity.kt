@@ -53,6 +53,30 @@ class SettingsOtherActivity : AppCompatActivity() {
         }
 
         setupCacheCleaner()
+        binding.btnStartStandaloneSendTest.setOnClickListener {
+            if (!android.provider.Settings.canDrawOverlays(this)) {
+                startActivity(android.content.Intent(
+                    android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    android.net.Uri.parse("package:$packageName")
+                ))
+                Toast.makeText(this, "授权后请返回，再点击开启测试悬浮窗", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            val service = com.suzu.test.accessibility.TestAccessibilityService.instance
+            if (service == null) {
+                Toast.makeText(this, "请先在设置中开启无障碍服务", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            try {
+                service.showStandaloneSendTest()
+                Toast.makeText(this, "已开启独立悬浮窗，请在 QQ 用自家 IME 和其他输入法分别测试", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "悬浮窗开启失败：${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+        binding.btnStopStandaloneSendTest.setOnClickListener {
+            com.suzu.test.accessibility.TestAccessibilityService.instance?.hideStandaloneSendTest()
+        }
 
         binding.btnSaveSettings.setOnClickListener {
             val inputStr = binding.etRecentLimit.text.toString().trim()

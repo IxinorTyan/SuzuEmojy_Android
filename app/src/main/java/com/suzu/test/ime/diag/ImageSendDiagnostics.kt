@@ -28,6 +28,7 @@ object ImageSendDiagnostics {
         var inputConnection: String = "NULL",
         var resourceType: String = "",
         var source: String = "",
+        var isolatedExperiment: Boolean = false,
         var filePath: String = "",
         var fileExists: Boolean = false,
         var fileLength: Long = 0,

@@ -118,6 +118,24 @@ class TestAccessibilityService : AccessibilityService() {
     private var windowScanDirty = false
     private var previousVerifiedHost: String? = null
     private var ballController: FloatingBallController? = null
+    private var standaloneSendTest: com.suzu.test.floating.StandaloneSendTestOverlay? = null
+
+    fun showStandaloneSendTest() {
+        if (standaloneSendTest != null) return
+        val overlay = com.suzu.test.floating.StandaloneSendTestOverlay(this)
+        try {
+            overlay.show()
+            standaloneSendTest = overlay
+        } catch (e: Exception) {
+            overlay.destroy()
+            throw e
+        }
+    }
+
+    fun hideStandaloneSendTest() {
+        standaloneSendTest?.destroy()
+        standaloneSendTest = null
+    }
 
     // Independent from the legacy foreground hint used by IME and edge gestures.
     var verifiedBallForeground: String? = null
@@ -504,6 +522,7 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
+        hideStandaloneSendTest()
         cancelImeSwitch("服务停止")
         pendingShareCard = null
         mainHandler.removeCallbacks(shareCardTimeoutRunnable)
@@ -512,6 +531,7 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
+        hideStandaloneSendTest()
         windowEpoch++
         windowScope.coroutineContext.cancelChildren()
         mainHandler.removeCallbacks(ballForegroundRecheck)
@@ -536,6 +556,7 @@ class TestAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        hideStandaloneSendTest()
         windowEpoch++
         windowScope.cancel()
         mainHandler.removeCallbacks(ballForegroundRecheck)

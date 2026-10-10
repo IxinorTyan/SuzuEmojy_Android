@@ -123,13 +123,16 @@ class ImageSender(private val context: Context) {
         targetPkg: String,
         editorInfoPackage: String? = targetPkg,
         icProvider: () -> InputConnection?,
+        isolatedTest: Boolean = false,
+        onReport: ((String, Boolean) -> Unit)? = null,
         onSuccess: () -> Unit
     ) {
         val actionName = "com.sogou.inputmethod.exp.commit"
         actionExecutor.execute {
             var result: PreparedResult? = null
             try {
-                result = prepareValidatedUri(item, targetPkg, editorInfoPackage, "H1β")
+                result = prepareValidatedUri(item, targetPkg, editorInfoPackage,
+                    if (isolatedTest) "自家 IME 悬浮窗实验" else "H1β", isolatedTest)
                 val prepared = result
                 val record = prepared.diagnostic
                 record.branch = "H1β 直发"
@@ -137,13 +140,19 @@ class ImageSender(private val context: Context) {
                 record.bundleUriMatches = true
                 ImageSendDiagnostics.update(record)
                 mainHandler.post {
-                    val ic = icProvider()
+                    val ic = try { icProvider() } catch (e: Exception) {
+                        record.commandException = exceptionText(e)
+                        ImageSendDiagnostics.update(record)
+                        onReport?.invoke("发送取消：${e.message}", true)
+                        return@post
+                    }
                     record.inputConnection = if (ic == null) "NULL" else "正常"
                     if (ic == null) {
                         record.commandException = "InputConnection 为 null"
                         ImageSendDiagnostics.update(record)
                         TestLog.e(MODULE, "[${record.eventId}] [H1β] 失败: InputConnection 为 null")
-                        launchFallbackShare(
+                        onReport?.invoke("未递交命令：自家 IME 的 InputConnection 为 null", true)
+                        if (!isolatedTest) launchFallbackShare(
                             prepared = prepared,
                             record = record,
                             targetPkg = targetPkg,
@@ -158,9 +167,11 @@ class ImageSender(private val context: Context) {
                         }
                         val bundleUri = commandBundle.getParcelable<Uri>("EXP_PATH_URI")
                         record.bundleUriMatches = bundleUri == prepared.uri
-                        val commandAccepted = ic.performPrivateCommand(actionName, commandBundle)
+                        val commandAccepted = try {
+                            ic.performPrivateCommand(actionName, commandBundle)
+                        } finally { ic.endBatchEdit() }
                         val accepted = if (
-                            BuildConfig.DEBUG &&
+                            !isolatedTest && BuildConfig.DEBUG &&
                             DebugSendTestConfig.isSkipProviderDiagnosticAndCleanupEnabled(context)
                         ) {
                             TestLog.i(
@@ -171,13 +182,12 @@ class ImageSender(private val context: Context) {
                         } else {
                             commandAccepted
                         }
-                        ic.endBatchEdit()
                         record.commandResult = accepted
                         ImageSendDiagnostics.update(record)
-                        TestLog.i(MODULE, "[$record.eventId] performPrivateCommand accepted=$accepted")
+                        TestLog.i(MODULE, "[${record.eventId}] performPrivateCommand accepted=$accepted isolated=$isolatedTest")
                         if (accepted) {
                             onSuccess()
-                        } else {
+                        } else if (!isolatedTest) {
                             launchFallbackShare(
                                 prepared = prepared,
                                 record = record,
@@ -193,14 +203,21 @@ class ImageSender(private val context: Context) {
                             "[${record.eventId}] [H1β] 异常: ${e.message}",
                             e
                         )
-                        launchFallbackShare(
+                        if (!isolatedTest) launchFallbackShare(
                             prepared = prepared,
                             record = record,
                             targetPkg = targetPkg,
                             onSuccess = onSuccess
                         )
                     }
-                    schedulePostCommandChecks(record)
+                    if (isolatedTest) {
+                        onReport?.invoke("原特化命令返回：${record.commandResult ?: record.commandException}\n等待 QQ 读取图片…", false)
+                        mainHandler.postDelayed({
+                            updateTimedCheck(record, true, allowFallback = false)
+                            onReport?.invoke("事件：${record.eventId}\n原特化命令返回：${record.commandResult ?: record.commandException}\n" +
+                                "外部读取：${record.providerOpen}\n请以 QQ 实际显示为准", true)
+                        }, 5000)
+                    } else schedulePostCommandChecks(record)
                 }
             } catch (e: Exception) {
                 result?.diagnostic?.let {
@@ -208,6 +225,7 @@ class ImageSender(private val context: Context) {
                     ImageSendDiagnostics.update(it)
                 }
                 TestLog.e(MODULE, "[H1β] 准备异常: ${e.message}", e)
+                mainHandler.post { onReport?.invoke("图片准备失败：${e.message}", true) }
             }
         }
     }
@@ -267,6 +285,117 @@ class ImageSender(private val context: Context) {
                     ImageSendDiagnostics.update(it)
                 }
                 TestLog.e(MODULE, "发送异常: ${e.message}", e)
+            }
+        }
+    }
+
+    /** Same image preparation as H1β; only the owner of the submitting input connection changes. */
+    fun executeImeBridgeTest(
+        item: ImageItem,
+        targetPkg: String,
+        validateSession: () -> Boolean,
+        submit: (Uri, String, (Bundle) -> Unit) -> Unit,
+        onReport: (String, Boolean) -> Unit
+    ) {
+        actionExecutor.execute {
+            try {
+                val prepared = prepareValidatedUri(item, targetPkg, null, "独立 IME 桥接实验")
+                val record = prepared.diagnostic
+                record.branch = "外部实验 IME + 原 H1β 命令（无兜底）"
+                record.inputConnection = "org.suzu.imeprobe 持有；主应用不使用 IME 连接"
+                record.commandName = "com.sogou.inputmethod.exp.commit"
+                ImageSendDiagnostics.update(record)
+                mainHandler.post {
+                    try {
+                        check(validateSession()) { "输入焦点或输入法已变化，取消提交" }
+                        check(record.selfOpen == "SUCCESS" && record.grantCall == "SUCCESS") {
+                            "图片准备或授权失败"
+                        }
+                        TestLog.i(MODULE, "[${record.eventId}] 桥接提交：target=$targetPkg uri=${prepared.uri} " +
+                            "grant=${record.grantCall} permission=${record.permissionAfter}")
+                        submit(prepared.uri, record.eventId) { reply ->
+                            if (reply.getBoolean("ok")) {
+                                record.commandResult = reply.getBoolean("accepted")
+                            } else {
+                                record.commandException = reply.getString("error") ?: "桥接无有效回执"
+                            }
+                            ImageSendDiagnostics.update(record)
+                            onReport("命令回执：${record.commandResult ?: record.commandException}\n等待 QQ 读取记录…", false)
+                            mainHandler.postDelayed({
+                                updateTimedCheck(record, true, allowFallback = false)
+                                val detail = "事件：${record.eventId}\n命令返回：${record.commandResult ?: record.commandException}\n" +
+                                    "外部读取：${record.providerOpen}\n" +
+                                    "请检查 QQ 的实际图片；返回 true 不代表发送成功。"
+                                TestLog.i(MODULE, "[${record.eventId}] 桥接实验结果：$detail")
+                                onReport(detail, true)
+                            }, 5000)
+                        }
+                    } catch (e: Exception) {
+                        record.commandException = exceptionText(e)
+                        ImageSendDiagnostics.update(record)
+                        onReport("桥接实验取消：${e.message}", true)
+                    }
+                }
+            } catch (e: Exception) {
+                TestLog.e(MODULE, "桥接图片准备失败", e)
+                mainHandler.post { onReport("图片准备失败：${e.message}", true) }
+            }
+        }
+    }
+
+    /** Independent overlay experiment. Never obtains an IME connection or falls back to sharing. */
+    fun executeOverlayPasteTest(
+        item: ImageItem,
+        targetPkg: String,
+        validateSession: () -> Boolean,
+        paste: () -> Boolean,
+        onReport: (String, Boolean) -> Unit
+    ) {
+        actionExecutor.execute {
+            try {
+                val prepared = prepareValidatedUri(item, targetPkg, null, "独立悬浮窗实验")
+                val record = prepared.diagnostic
+                record.branch = "非 IME：剪贴板 URI + 无障碍粘贴（无分享兜底）"
+                record.inputConnection = "未使用（不是 IME 私有命令测试）"
+                record.commandName = "AccessibilityNodeInfo.ACTION_PASTE"
+                mainHandler.post {
+                    try {
+                        check(validateSession()) { "输入焦点或输入法已变化，已取消" }
+                        check(record.selfOpen == "SUCCESS" && record.grantCall == "SUCCESS") {
+                            "图片准备或 URI 授权失败"
+                        }
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        try {
+                            clipboard.setPrimaryClip(ClipData(
+                                ClipDescription("suzu_overlay_test", arrayOf(prepared.mimeType)),
+                                ClipData.Item(prepared.uri)
+                            ))
+                        } catch (e: Exception) {
+                            record.clipboardSetException = exceptionText(e)
+                            throw e
+                        }
+                        check(validateSession()) { "输入会话已变化，已取消粘贴" }
+                        record.pasteResult = paste()
+                        ImageSendDiagnostics.update(record)
+                        onReport("粘贴动作返回 ${record.pasteResult}；等待图片读取记录…", false)
+                        // Diagnostic sampling only: do NOT use schedulePostCommandChecks, which can share.
+                        mainHandler.postDelayed({
+                            updateTimedCheck(record, true, allowFallback = false)
+                            onReport(
+                                "粘贴返回 ${record.pasteResult}\nProvider 读取：${record.providerOpen}\n" +
+                                    "请以聊天内实际图片为准；返回 true 不代表发送成功。",
+                                true
+                            )
+                        }, 5000L)
+                    } catch (e: Exception) {
+                        record.pasteException = exceptionText(e)
+                        ImageSendDiagnostics.update(record)
+                        onReport("测试未完成：${e.message}", true)
+                    }
+                }
+            } catch (e: Exception) {
+                TestLog.e(MODULE, "独立悬浮窗图片准备失败", e)
+                mainHandler.post { onReport("图片准备失败：${e.message}", true) }
             }
         }
     }
@@ -379,11 +508,14 @@ class ImageSender(private val context: Context) {
         item: ImageItem,
         targetPkg: String,
         editorInfoPackage: String?,
-        source: String
+        source: String,
+        isolatedExperiment: Boolean = false
     ): PreparedResult {
-        val sendDir = File(context.cacheDir, "send").apply { if (!exists()) mkdirs() }
+        val sendDir = File(context.cacheDir, if (isolatedExperiment) "send/overlay-work" else "send")
+            .apply { if (!exists()) mkdirs() }
         val placeholder = File(sendDir, "pending_${System.currentTimeMillis()}.tmp")
         val record = ImageSendDiagnostics.newRecord(editorInfoPackage, targetPkg, item, source, placeholder)
+        record.isolatedExperiment = isolatedExperiment
         record.inputConnection = "未检查"
         ImageSendDiagnostics.add(record)
 
@@ -455,13 +587,17 @@ class ImageSender(private val context: Context) {
             }
         }
 
-        record.filePath = finalFile.absolutePath
-        record.fileExists = finalFile.exists()
-        record.fileLength = finalFile.length()
-        record.fileExtension = finalFile.extension
+        val grantedFile = if (isolatedExperiment) {
+            SendSnapshot.create(finalFile, File(context.cacheDir, "send/overlay-attempts"))
+        } else finalFile
+        val cleanupGrantedFile = isolatedExperiment || deleteFileOnCleanup
+        record.filePath = grantedFile.absolutePath
+        record.fileExists = grantedFile.exists()
+        record.fileLength = grantedFile.length()
+        record.fileExtension = grantedFile.extension
         record.detectedMime = if (isCachedGif || isOriginalGif) "image/gif" else "image/png"
 
-        val uri = FileProvider.getUriForFile(context, BuildConfig.FILE_PROVIDER_AUTHORITY, finalFile)
+        val uri = FileProvider.getUriForFile(context, BuildConfig.FILE_PROVIDER_AUTHORITY, grantedFile)
         record.uri = uri.toString()
         record.authority = uri.authority.orEmpty()
         ImageSendDiagnostics.associate(uri, record.eventId)
@@ -479,8 +615,8 @@ class ImageSender(private val context: Context) {
             record.selfStack = android.util.Log.getStackTraceString(e)
             TestLog.e(MODULE, "[$record.eventId] SELF_URI_READ_FAILED", e)
         }
-        queryUidAndGrant(record, uri, targetPkg, finalFile, deleteFileOnCleanup)
-        return PreparedResult(uri, finalFile, record.detectedMime, record, deleteFileOnCleanup)
+        queryUidAndGrant(record, uri, targetPkg, grantedFile, cleanupGrantedFile)
+        return PreparedResult(uri, grantedFile, record.detectedMime, record, cleanupGrantedFile)
     }
 
     private fun queryUidAndGrant(
@@ -560,12 +696,12 @@ class ImageSender(private val context: Context) {
     }
 
     private fun shouldFallback(record: ImageSendDiagnostics.Record): Boolean =
-        KeyboardConfig.isSendFailureForwardEnabled(context) &&
+        !record.isolatedExperiment && KeyboardConfig.isSendFailureForwardEnabled(context) &&
             record.commandResult == true &&
             record.providerOpen == "未发生" &&
             record.revokeOrDelete.isBlank()
 
-    private fun updateTimedCheck(record: ImageSendDiagnostics.Record, fiveSeconds: Boolean) {
+    private fun updateTimedCheck(record: ImageSendDiagnostics.Record, fiveSeconds: Boolean, allowFallback: Boolean = true) {
         val state = checkPermission(Uri.parse(record.uri), record.targetUid)
         val file = File(record.filePath)
         if (fiveSeconds) {
@@ -579,7 +715,7 @@ class ImageSender(private val context: Context) {
         }
         ImageSendDiagnostics.update(record)
 
-        if (fiveSeconds && shouldFallback(record) && fallbackLaunchedEvents.add(record.eventId)) {
+        if (allowFallback && fiveSeconds && shouldFallback(record) && fallbackLaunchedEvents.add(record.eventId)) {
             TestLog.w(
                 MODULE,
                 "[${record.eventId}] 5秒后仍未检测到 Provider openFile，自动转入通道B"
@@ -602,7 +738,7 @@ class ImageSender(private val context: Context) {
     }
 
     private fun scheduleNormalGrantCleanup(uri: Uri, delayMs: Long, deleteFileOnCleanup: Boolean) {
-        if (BuildConfig.DEBUG &&
+        if (grantForUri(uri)?.isolatedExperiment != true && grantForUri(uri)?.source != "独立 IME 桥接实验" && BuildConfig.DEBUG &&
             DebugSendTestConfig.isSkipProviderDiagnosticAndCleanupEnabled(context)
         ) {
             TestLog.i(MODULE, "[$uri] DEBUG测试开关已开启，跳过撤销授权及临时文件清理")

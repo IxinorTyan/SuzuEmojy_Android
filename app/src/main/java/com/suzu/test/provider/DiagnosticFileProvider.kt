@@ -57,7 +57,7 @@ class DiagnosticFileProvider : FileProvider() {
             record != null &&
             methodName.startsWith("openFile") &&
             callingUid != Process.myUid() &&
-            !(BuildConfig.DEBUG &&
+            !(!record.isolatedExperiment && record.source != "独立 IME 桥接实验" && BuildConfig.DEBUG &&
                 DebugSendTestConfig.isSkipProviderDiagnosticAndCleanupEnabled(requireNotNull(context)))
         ) {
             record.providerOpen = when {

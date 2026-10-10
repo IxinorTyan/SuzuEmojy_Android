@@ -68,6 +68,12 @@ class TestImageIME : InputMethodService() {
     private var previewPopup: ImagePreviewPopup? = null
     private var isImeShowing: Boolean = false
     private var imeWindowVisible = false
+    var inputSessionVersion: Long = 0
+        private set
+
+    fun overlayConnectionState(): String =
+        "instance=存在 started=$currentInputStarted shown=$isInputViewShown " +
+            "editor=${currentInputEditorInfo?.packageName} IC=${if (currentInputConnection == null) "NULL" else "存在"} session=$inputSessionVersion"
 
     fun isShowingFor(targetPackage: String): Boolean =
         imeWindowVisible && isInputViewShown && currentInputEditorInfo?.packageName == targetPackage
@@ -307,6 +313,7 @@ class TestImageIME : InputMethodService() {
     }
 
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
+        inputSessionVersion++
         super.onStartInput(attribute, restarting)
         TestAccessibilityService.instance?.onImeInputConnectionChanged()
         TestLog.i(MODULE, "onStartInput: pkg=${attribute?.packageName}, inputType=${attribute?.inputType}, restarting=$restarting")
@@ -513,6 +520,7 @@ class TestImageIME : InputMethodService() {
     }
 
     override fun onFinishInput() {
+        inputSessionVersion++
         tabBar?.saveNavigationState()
         previewPopup?.dismiss()
         isImeShowing = false

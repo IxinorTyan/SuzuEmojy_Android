@@ -24,6 +24,26 @@
             android:orientation="vertical"
             android:paddingBottom="36dp">
 
+            <Button
+                android:id="@+id/btnStartStandaloneSendTest"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="开启独立发送测试悬浮窗" />
+
+            <Button
+                android:id="@+id/btnStopStandaloneSendTest"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="关闭独立发送测试悬浮窗" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="实验：在 QQ 开启我们的表情 IME，从独立悬浮窗选图；再切到其他输入法，用同一悬浮窗重试。两次都调用我们自己的原特化发送。不自动切换、不粘贴、不分享。图库显示前 200 张。"
+                android:textColor="#64748B"
+                android:textSize="12sp"
+                android:padding="8dp" />
+
             <!-- 顶部导航栏 -->
             <LinearLayout
                 android:layout_width="match_parent"

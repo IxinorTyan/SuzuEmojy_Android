@@ -55,6 +55,11 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+
+    // Run this device-only sender check without compiling unrelated experimental tests.
+    if (providers.gradleProperty("ownImeOverlayTestOnly").orNull == "true") {
+        sourceSets.getByName("androidTest").java.setSrcDirs(listOf("src/overlayAndroidTest/java"))
+    }
 }
 
 dependencies {
