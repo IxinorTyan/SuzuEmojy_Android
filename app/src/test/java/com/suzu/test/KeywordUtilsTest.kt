@@ -226,4 +226,51 @@ class KeywordUtilsTest {
         assertEquals(2L, result[0].id)
         assertEquals(1L, result[1].id)
     }
+
+    private fun searchResource(id: Long = 1, keywords: String = "猫猫 开心"): ResourceEntity = ResourceEntity(
+        id = id, filename = "ignored.png", format = "PNG", isAnimated = false,
+        syncKey = "p:$id", pixelMd5 = "$id", fileMd5 = "$id", width = 100,
+        height = 100, byteSize = 100, keywords = keywords
+    )
+
+    @Test
+    fun multiWordSearchIgnoresOrderAndWhitespaceButRequiresEveryWord() {
+        val resource = searchResource()
+        assertTrue(KeywordUtils.matches(resource, "开心 猫猫"))
+        assertTrue(KeywordUtils.matches(resource, "  开心\t猫猫\n开心  "))
+        assertFalse(KeywordUtils.matches(resource, "开心 小狗"))
+        assertTrue(KeywordUtils.matches(searchResource(keywords = "CAT Funny"), "funny cat"))
+    }
+
+    @Test
+    fun multiWordSearchRespectsScopeAndCanCombineTagsWithCategories() {
+        val resource = searchResource()
+        val categories = listOf("动物")
+        assertFalse(KeywordUtils.matches(resource, "动物 开心", categoryNames = categories))
+        assertTrue(KeywordUtils.matches(resource, "动物 开心", categoryNames = categories,
+            searchScope = com.suzu.test.floating.FloatingBallConfig.SEARCH_SCOPE_TAG_AND_CATEGORY))
+        assertFalse(KeywordUtils.matches(resource, "动物 开心", categoryNames = categories,
+            searchScope = com.suzu.test.floating.FloatingBallConfig.SEARCH_SCOPE_CATEGORY_ONLY))
+    }
+
+    @Test
+    fun multiWordRankingPrefersPrefixesForAllWordsAndPreservesTieOrder() {
+        val infix = searchResource(1, "scat unhappy").copy(sortOrder = 0)
+        val prefix = searchResource(2, "happy cat").copy(sortOrder = 9)
+        val prefixEarlier = searchResource(3, "cat happy").copy(sortOrder = 1)
+        val items = listOf(infix, prefix, prefixEarlier)
+        assertEquals(listOf(3L, 2L, 1L), KeywordUtils.filterAndSort(items, "cat happy").map { it.id })
+        assertEquals(listOf(3L, 2L), KeywordUtils.filterAndSort(items, "happy cat", MatchMode.PREFIX).map { it.id })
+    }
+
+    @Test
+    fun largeLibrarySearchReturnsAllMatchesInStableOrder() {
+        val items = (1L..20000L).map { id ->
+            searchResource(id, if (id % 2L == 0L) "猫猫 开心" else "小狗 难过").copy(sortOrder = (20000L - id).toInt())
+        }
+        val result = KeywordUtils.filterAndSort(items, "开心 猫猫")
+        assertEquals(10000, result.size)
+        assertEquals(20000L, result.first().id)
+        assertEquals(2L, result.last().id)
+    }
 }

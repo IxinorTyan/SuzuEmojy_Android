@@ -9,7 +9,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.widget.Toast
@@ -21,22 +20,18 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.room.withTransaction
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.activity.OnBackPressedCallback
 import com.suzu.test.databinding.ActivityImportBinding
 import com.suzu.test.databinding.DialogImportFinishCleanupBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.SuzuDatabase
-import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.log.TestLog
-import com.suzu.test.resource.ResourceImportService
-import com.suzu.test.resource.importpkg.PackageImportStage
 import com.suzu.test.storage.CacheCleanManager
-import com.suzu.test.resource.importpkg.ResourcePackageImportService
 import com.suzu.test.ui.picker.MediaPickerActivity
 import com.suzu.test.ui.picker.PickerResultStore
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -55,16 +50,23 @@ class ImportActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityImportBinding
     private lateinit var database: SuzuDatabase
-    private lateinit var importService: ResourceImportService
-    private lateinit var packageImportService: ResourcePackageImportService
     private val viewModel: ImportViewModel by viewModels()
-    private var activeImportJob: Job? = null
+    private val taskModel: ImportTaskViewModel by viewModels()
+    private var renderedResult: ImportTaskResult? = null
 
     // 运行期暂存当前 API 29 / MediaStore 单项/批量处理时的进度
-    private var currentDeletingUriIndex = 0
-    private var deletedSuccessCount = 0
-    private var currentCleaningBatch = listOf<Uri>()
-    private var currentUnhandledCount = 0
+    private var currentDeletingUriIndex: Int
+        get() = viewModel.currentDeletingUriIndex
+        set(value) { viewModel.currentDeletingUriIndex = value }
+    private var deletedSuccessCount: Int
+        get() = viewModel.deletedSuccessCount
+        set(value) { viewModel.deletedSuccessCount = value }
+    private var currentCleaningBatch: List<Uri>
+        get() = viewModel.currentCleaningBatch
+        set(value) { viewModel.currentCleaningBatch = value }
+    private var currentUnhandledCount: Int
+        get() = viewModel.currentUnhandledCount
+        set(value) { viewModel.currentUnhandledCount = value }
 
     // API 30+ 批量移入回收站 / API 29 单项删除授权 Launcher
     private val intentSenderLauncher = registerForActivityResult(
@@ -156,25 +158,14 @@ class ImportActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        if (!isChangingConfigurations) {
-            // 先取消导入，待其 finally 完成后再清理，避免导入任务在清理后重新写入暂存。
-            val importJob = activeImportJob
-            activeImportJob = null
-            importJob?.cancel()
-
+        folderDialog?.dismiss()
+        cleanupDialog?.dismiss()
+        if (isFinishing && !taskModel.state.value.running) {
             ImportResultHolder.clear()
-
-            val cleanup = {
-                kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
-                    CacheCleanManager.cleanImportPreviewFiles(applicationContext)
-                    CacheCleanManager.cleanImportTempZipFiles(applicationContext)
-                }
-            }
-
-            if (importJob != null) {
-                importJob.invokeOnCompletion { cleanup() }
-            } else {
-                cleanup()
+            val app = applicationContext
+            kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+                CacheCleanManager.cleanImportPreviewFiles(app)
+                CacheCleanManager.cleanImportTempZipFiles(app)
             }
         }
         super.onDestroy()
@@ -186,8 +177,6 @@ class ImportActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         database = DatabaseProvider.getDatabase(this)
-        importService = ResourceImportService(this, database)
-        packageImportService = ResourcePackageImportService(this, database, importService)
 
         val targetCatId = intent.getLongExtra(EXTRA_TARGET_CATEGORY_ID, -1L)
         if (targetCatId != -1L) {
@@ -195,9 +184,11 @@ class ImportActivity : AppCompatActivity() {
             loadPresetCategoryInfo(targetCatId)
         }
 
-        binding.btnBack.setOnClickListener {
-            finish()
-        }
+        binding.btnBack.setOnClickListener { requestExit() }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() = requestExit()
+        })
+        observeImportTask()
 
         binding.btnOpenWebShare.setOnClickListener {
             openUrl(WEB_SHARE_URL)
@@ -358,135 +349,27 @@ class ImportActivity : AppCompatActivity() {
         }
     }
 
+    private var folderDialog: AlertDialog? = null
+    private var cleanupDialog: AlertDialog? = null
+
     private fun handleDocumentTreeSelected(treeUri: Uri) {
-        setButtonsEnabled(false)
-        binding.tvProgress.text = "正在扫描文件夹..."
-        binding.tvSummary.text = ""
-
-        lifecycleScope.launch {
-            val (imageUris, rawFolderName) = try {
-                withContext(Dispatchers.IO) {
-                    val uris = scanDirectChildImages(treeUri)
-                    val name = getFolderName(treeUri)
-                    uris to name
-                }
-            } catch (e: Exception) {
-                TestLog.e(MODULE, "扫描文件夹失败: ${e.message}", e)
-                null to null
-            }
-
-            if (imageUris == null) {
-                Toast.makeText(this@ImportActivity, "无法读取该文件夹", Toast.LENGTH_SHORT).show()
-                binding.tvProgress.text = "扫描失败"
-                setButtonsEnabled(true)
-                return@launch
-            }
-
-            if (imageUris.isEmpty()) {
-                Toast.makeText(this@ImportActivity, "未找到可导入的图片", Toast.LENGTH_SHORT).show()
-                binding.tvProgress.text = "未找到可导入的图片"
-                setButtonsEnabled(true)
-                return@launch
-            }
-
-            val folderName = rawFolderName?.trim().takeIf { !it.isNullOrEmpty() }
-            val isReserved = folderName == "全部" || folderName == "ALL" || folderName == "最近"
-            val validFolderName = if (isReserved) null else folderName
-
-            val presetName = presetCategoryName
-
-            val message = when {
-                !presetName.isNullOrBlank() && !validFolderName.isNullOrBlank() && presetName != validFolderName -> {
-                    "找到 ${imageUris.size} 张图片，确认导入并归入「$presetName」和「$validFolderName」两个分类？"
-                }
-                !validFolderName.isNullOrBlank() -> {
-                    "找到 ${imageUris.size} 张图片，确认导入并归入分类「$validFolderName」？"
-                }
-                !presetName.isNullOrBlank() -> {
-                    "找到 ${imageUris.size} 张图片，确认导入到「$presetName」？"
-                }
-                else -> {
-                    "找到 ${imageUris.size} 张图片，确认导入？"
-                }
-            }
-
-            AlertDialog.Builder(this@ImportActivity)
-                .setTitle("确认导入")
-                .setMessage(message)
-                .setPositiveButton("确认") { _, _ ->
-                    startImportProcess(imageUris, folderCategoryName = validFolderName)
-                }
-                .setNegativeButton("取消") { _, _ ->
-                    binding.tvProgress.text = "已取消导入"
-                    setButtonsEnabled(true)
-                }
-                .setOnCancelListener {
-                    binding.tvProgress.text = "已取消导入"
-                    setButtonsEnabled(true)
-                }
-                .show()
-        }
+        taskModel.scanFolder(treeUri)
     }
 
-    private fun getFolderName(treeUri: Uri): String? {
-        return try {
-            val treeDocId = DocumentsContract.getTreeDocumentId(treeUri)
-            val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocId)
-            val projection = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-            val cursor = contentResolver.query(docUri, projection, null, null, null)
-            cursor?.use {
-                if (it.moveToFirst()) {
-                    val nameIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-                    if (nameIndex != -1) it.getString(nameIndex) else null
-                } else null
+    private fun showFolderConfirmation(selection: FolderImportSelection) {
+        if (folderDialog != null) return
+        val names = listOfNotNull(presetCategoryName, selection.categoryName).distinct()
+        val destination = if (names.isEmpty()) "" else names.joinToString("和", prefix = "并归入", postfix = "分类") { "「$it」" }
+        folderDialog = AlertDialog.Builder(this)
+            .setTitle("确认导入")
+            .setMessage("找到 ${selection.uris.size} 张图片，确认导入$destination？")
+            .setPositiveButton("确认") { _, _ ->
+                taskModel.clearFolderSelection()
+                startImportProcess(selection.uris, selection.categoryName)
             }
-        } catch (e: Exception) {
-            TestLog.w(MODULE, "获取文件夹名称失败: ${e.message}")
-            null
-        }
-    }
-
-    private fun scanDirectChildImages(treeUri: Uri): List<Uri> {
-        val result = mutableListOf<Uri>()
-        val docId = DocumentsContract.getTreeDocumentId(treeUri)
-        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, docId)
-
-        val projection = arrayOf(
-            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-            DocumentsContract.Document.COLUMN_MIME_TYPE,
-            DocumentsContract.Document.COLUMN_DISPLAY_NAME
-        )
-
-        val supportedExtensions = setOf("png", "jpg", "jpeg", "gif", "webp", "bmp")
-
-        val cursor = contentResolver.query(childrenUri, projection, null, null, null)
-        cursor?.use {
-            val idIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
-            val mimeIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
-            val nameIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-
-            while (it.moveToNext()) {
-                val childDocId = if (idIndex != -1) it.getString(idIndex) else null ?: continue
-                val mimeType = if (mimeIndex != -1) it.getString(mimeIndex) else null
-                val displayName = if (nameIndex != -1) it.getString(nameIndex) else null
-
-                // 硬性排除子文件夹
-                if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
-                    continue
-                }
-
-                val ext = displayName?.substringAfterLast('.', "")?.lowercase() ?: ""
-                val isImageMime = mimeType?.startsWith("image/", ignoreCase = true) == true
-                val isSupportedExt = ext in supportedExtensions
-
-                if (isImageMime || isSupportedExt) {
-                    val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childDocId)
-                    result.add(documentUri)
-                }
-            }
-        } ?: throw IllegalStateException("查询返回 null Cursor")
-
-        return result
+            .setNegativeButton("取消") { _, _ -> taskModel.clearFolderSelection() }
+            .setOnCancelListener { taskModel.clearFolderSelection() }
+            .create().also { it.show() }
     }
 
     private fun setButtonsEnabled(enabled: Boolean) {
@@ -497,262 +380,69 @@ class ImportActivity : AppCompatActivity() {
     }
 
     private fun handlePackageZipSelected(uri: Uri) {
-        setButtonsEnabled(false)
-        binding.progressBar.visibility = android.view.View.VISIBLE
-        binding.progressBar.isIndeterminate = true
-        binding.tvProgress.text = "准备导入 zip 资源包..."
-        binding.tvSummary.text = ""
-        activeImportJob = lifecycleScope.launch {
-            try {
-                val result = packageImportService.importFromZip(uri) { stage, progress, total ->
-                    runOnUiThread {
-                        if (isFinishing || isDestroyed) return@runOnUiThread
-                        binding.progressBar.visibility = android.view.View.VISIBLE
-                        when (stage) {
-                            PackageImportStage.COPYING -> {
-                                if (total > 0) {
-                                    binding.progressBar.isIndeterminate = false
-                                    binding.progressBar.max = 100
-                                    binding.progressBar.progress = (progress * 100 / total).toInt()
-                                    binding.tvProgress.text = "正在读取资源包: ${progress * 100 / total}%"
-                                } else {
-                                    binding.progressBar.isIndeterminate = true
-                                    binding.tvProgress.text = "正在读取资源包..."
-                                }
+        taskModel.importZip(uri)
+    }
+
+    private fun startImportProcess(uris: List<Uri>, folderCategoryName: String? = null) {
+        taskModel.importImages(uris, presetCategoryId, folderCategoryName)
+    }
+
+    private fun observeImportTask() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                try {
+                    taskModel.state.collect { state ->
+                        setButtonsEnabled(!state.running && state.folderSelection == null)
+                        if (state.folderSelection != null && !state.running) showFolderConfirmation(state.folderSelection)
+                        else { folderDialog?.dismiss(); folderDialog = null }
+                        binding.progressBar.visibility = if (state.running) android.view.View.VISIBLE else android.view.View.GONE
+                        binding.progressBar.isIndeterminate = state.progress == null
+                        binding.progressBar.max = state.total
+                        binding.progressBar.progress = state.progress ?: 0
+                        if (state.message.isNotEmpty()) {
+                            binding.tvProgress.text = state.message
+                            binding.tvSummary.text = state.summary
+                        }
+                        val result = state.result
+                        if (!state.running && result != null) {
+                            if (renderedResult !== result) {
+                                renderedResult = result
+                                val cards = buildAggregateCards(result.records)
+                                ImportResultHolder.records = result.records
+                                ImportResultHolder.aggregateCards = cards
+                                ImportResultHolder.zipPreviewFilePaths = result.records.mapNotNull { it.previewFilePath }.distinct()
+                                binding.tvViewDetailAction.visibility = if (cards.isEmpty()) android.view.View.GONE else android.view.View.VISIBLE
                             }
-                            PackageImportStage.PARSING -> {
-                                binding.progressBar.isIndeterminate = true
-                                binding.tvProgress.text = "正在解析配置..."
+                            if (!taskModel.cleanupHandled && result.cleanupSummary != null) {
+                                taskModel.cleanupHandled = true
+                                val summary = result.cleanupSummary
+                                handlePostImportCleanup(result.eligibleUris, summary.successCount, summary.duplicateCount, summary.failCount)
                             }
-                            PackageImportStage.IMPORTING -> {
-                                binding.progressBar.isIndeterminate = false
-                                binding.progressBar.max = total.toInt()
-                                binding.progressBar.progress = progress.toInt()
-                                binding.tvProgress.text = "正在导入: $progress / $total"
-                            }
+                        } else if (state.running) {
+                            binding.tvViewDetailAction.visibility = android.view.View.GONE
                         }
                     }
+                } finally {
+                    folderDialog?.dismiss()
+                    folderDialog = null
                 }
-                val aggregateCards = buildAggregateCards(result.records)
-                ImportResultHolder.records = result.records
-                ImportResultHolder.aggregateCards = aggregateCards
-                ImportResultHolder.zipPreviewFilePaths = result.records
-                    .mapNotNull { it.previewFilePath }
-                    .distinct()
-                if (aggregateCards.isEmpty()) {
-                    clearZipPreviewFiles()
-                }
-                binding.tvProgress.text = "zip 资源包导入完成"
-                binding.tvSummary.text = "新增 ${result.summary.successCount} 张，重复 ${result.summary.duplicateCount} 张，失败 ${result.summary.failCount} 张"
-                if (result.summary.warnings.isNotEmpty()) binding.tvSummary.append("\n" + result.summary.warnings.joinToString("\n"))
-                binding.tvViewDetailAction.visibility = if (aggregateCards.isNotEmpty()) android.view.View.VISIBLE else android.view.View.GONE
-            } catch (e: CancellationException) {
-                // 页面退出时取消导入，不能当作普通失败继续处理。
-                throw e
-            } catch (e: Exception) {
-                TestLog.e(MODULE, "资源包导入失败: ${e.message}", e)
-                clearZipPreviewFiles()
-                binding.tvProgress.text = "zip 资源包导入失败"
-                Toast.makeText(this@ImportActivity, e.message ?: "资源包导入失败", Toast.LENGTH_LONG).show()
-            } finally {
-                binding.progressBar.visibility = android.view.View.GONE
-                setButtonsEnabled(true)
             }
         }
     }
 
-    private fun startImportProcess(uris: List<Uri>, folderCategoryName: String? = null) {
-        // 普通导入不会使用 zip 预览；清掉已失效的上一批预览，防止长期累积。
-        lifecycleScope.launch(Dispatchers.IO) {
-            CacheCleanManager.cleanImportPreviewFiles(this@ImportActivity)
-        }
-        setButtonsEnabled(false)
-        binding.tvSummary.text = ""
-
-        activeImportJob = lifecycleScope.launch {
-            // 先将源 URI 去重，防止同一个 URI 重复进入统计
-            val distinctSourceUris = uris.distinct()
-            val total = distinctSourceUris.size
-            var successCount = 0
-            var duplicateCount = 0
-            var failCount = 0
-            val processedResourceIds = mutableListOf<Long>()
-            val eligibleUris = mutableListOf<Uri>()
-            val itemRecords = mutableListOf<ImportItemRecord>()
-
-            binding.progressBar.visibility = android.view.View.VISIBLE
-            binding.progressBar.isIndeterminate = false
-            binding.progressBar.max = total
-            binding.progressBar.progress = 0
-
-            try {
-                val (attachedCategoryNames, presetDeleted) = withContext(Dispatchers.IO) {
-                    distinctSourceUris.forEachIndexed { index, uri ->
-                        withContext(Dispatchers.Main) {
-                            binding.progressBar.progress = index
-                            binding.tvProgress.text = "正在导入 ${index + 1}/$total"
-                        }
-
-                        try {
-                            val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                            if (bytes == null || bytes.isEmpty()) {
-                                TestLog.e(MODULE, "读取 URI 失败或文件为空: $uri")
-                                failCount++
-                                itemRecords.add(
-                                    ImportItemRecord(
-                                        sourceUri = uri,
-                                        type = ImportItemType.FAILED,
-                                        syncKey = null,
-                                        resourceId = null,
-                                        filename = null,
-                                        existingResourceId = null,
-                                        existingFilename = null,
-                                        failReason = ImportFailReason.READ_FAILED
-                                    )
-                                )
-                                return@forEachIndexed
-                            }
-
-                            val result = importService.import(bytes)
-                            processedResourceIds.add(result.resourceId)
-                            eligibleUris.add(uri)
-                            if (result.isDuplicate) {
-                                duplicateCount++
-                                itemRecords.add(
-                                    ImportItemRecord(
-                                        sourceUri = uri,
-                                        type = ImportItemType.DUPLICATE,
-                                        syncKey = result.syncKey,
-                                        resourceId = result.resourceId,
-                                        filename = result.filename,
-                                        existingResourceId = result.existingResourceId,
-                                        existingFilename = result.existingFilename,
-                                        failReason = null
-                                    )
-                                )
-                            } else {
-                                successCount++
-                                itemRecords.add(
-                                    ImportItemRecord(
-                                        sourceUri = uri,
-                                        type = ImportItemType.NEW_ADDED,
-                                        syncKey = result.syncKey,
-                                        resourceId = result.resourceId,
-                                        filename = result.filename,
-                                        existingResourceId = null,
-                                        existingFilename = null,
-                                        failReason = null
-                                    )
-                                )
-                            }
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            TestLog.e(MODULE, "导入异常 (URI=$uri): ${e.message}", e)
-                            failCount++
-                            val reason = when {
-                                e.message?.contains("Animated WebP", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_ANIM_WEBP
-                                e.message?.contains("Unsupported format", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_OTHER
-                                e.message?.contains("Failed to decode", ignoreCase = true) == true || e.message?.contains("decode", ignoreCase = true) == true -> ImportFailReason.DECODE_FAILED
-                                else -> ImportFailReason.UNKNOWN
-                            }
-                            itemRecords.add(
-                                ImportItemRecord(
-                                    sourceUri = uri,
-                                    type = ImportItemType.FAILED,
-                                    syncKey = null,
-                                    resourceId = null,
-                                    filename = null,
-                                    existingResourceId = null,
-                                    existingFilename = null,
-                                    failReason = reason
-                                )
-                            )
-                        }
-                    }
-
-                    val distinctIds = processedResourceIds.distinct()
-                    val attachedNames = mutableListOf<String>()
-                    var isPresetDeleted = false
-
-                    if (distinctIds.isNotEmpty()) {
-                        database.withTransaction {
-                            val targetCatId = presetCategoryId
-                            var resolvedPresetCatId: Long? = null
-                            if (targetCatId != null) {
-                                val category = database.categoryDao().getCategoryById(targetCatId)
-                                if (category != null) {
-                                    resolvedPresetCatId = category.id
-                                    attachedNames.add(category.name)
-                                } else {
-                                    isPresetDeleted = true
-                                    TestLog.w(MODULE, "预设分类已被删除 (ID=$targetCatId)，跳过关联预设分类操作")
-                                }
-                            }
-
-                            var resolvedFolderCatId: Long? = null
-                            if (!folderCategoryName.isNullOrBlank()) {
-                                val existingFolderCat = database.categoryDao().getCategoryByName(folderCategoryName)
-                                val fCatId = if (existingFolderCat != null) {
-                                    existingFolderCat.id
-                                } else {
-                                    val maxSort = database.categoryDao().getMaxSortOrder() ?: 0
-                                    database.categoryDao().insertCategory(CategoryEntity(name = folderCategoryName, sortOrder = maxSort + 1))
-                                }
-                                resolvedFolderCatId = fCatId
-                                if (!attachedNames.contains(folderCategoryName)) {
-                                    attachedNames.add(folderCategoryName)
-                                }
-                            }
-
-                            val targetCatIds = listOfNotNull(resolvedPresetCatId, resolvedFolderCatId).distinct()
-                            for (catId in targetCatIds) {
-                                try {
-                                    database.resourceCategoryDao().addResourcesToCategoryBatch(distinctIds, catId)
-                                    TestLog.i(MODULE, "已将 ${distinctIds.size} 张表情关联到分类 (ID=$catId)")
-                                } catch (e: Exception) {
-                                    TestLog.e(MODULE, "关联分类异常 (ID=$catId): ${e.message}", e)
-                                }
-                            }
-                        }
-                    }
-                    attachedNames to isPresetDeleted
+    private fun requestExit() {
+        if (!taskModel.state.value.running) { finish(); return }
+        AlertDialog.Builder(this)
+            .setTitle("取消导入并退出？")
+            .setMessage("已导入的图片会保留，原图不会清理。切到其他应用无需取消，返回这里可以继续查看进度。")
+            .setNegativeButton("继续导入", null)
+            .setPositiveButton("取消并退出") { _, _ ->
+                lifecycleScope.launch {
+                    binding.tvProgress.text = "正在取消，请稍候…"
+                    taskModel.cancelAndJoin()
+                    finish()
                 }
-
-                binding.tvProgress.text = "导入流程已完成"
-                val summaryText = when {
-                    presetDeleted && attachedCategoryNames.isEmpty() -> {
-                        "新增 $successCount 张，重复 $duplicateCount 张，失败 $failCount 张（目标分类已不存在，仅导入资源库）"
-                    }
-                    attachedCategoryNames.isNotEmpty() -> {
-                        val catText = attachedCategoryNames.joinToString("") { "「$it」" }
-                        "新增 $successCount 张，重复 $duplicateCount 张（已归入$catText），失败 $failCount 张"
-                    }
-                    else -> {
-                        "成功导入 $successCount 张，重复跳过 $duplicateCount 张，失败 $failCount 张"
-                    }
-                }
-                binding.tvSummary.text = summaryText
-
-                // 构建聚合卡片数据
-                val aggregateCards = buildAggregateCards(itemRecords)
-                ImportResultHolder.records = itemRecords
-                ImportResultHolder.aggregateCards = aggregateCards
-
-                // 若有重复或失败，展示查看详情入口
-                if (aggregateCards.isNotEmpty()) {
-                    binding.tvViewDetailAction.visibility = android.view.View.VISIBLE
-                } else {
-                    binding.tvViewDetailAction.visibility = android.view.View.GONE
-                }
-
-                // 导入结束后，分流待清理 URI 并弹窗提示
-                handlePostImportCleanup(eligibleUris, successCount, duplicateCount, failCount)
-            } finally {
-                binding.progressBar.visibility = android.view.View.GONE
-                setButtonsEnabled(true)
-            }
-        }
+            }.show()
     }
 
     private fun handlePostImportCleanup(
@@ -890,6 +580,8 @@ class ImportActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
 
+        cleanupDialog?.dismiss()
+        cleanupDialog = dialog
         dialog.show()
     }
 
@@ -987,14 +679,6 @@ class ImportActivity : AppCompatActivity() {
                 }
             }
             notifyCleanupFinished(success, unhandledCount + failed)
-        }
-    }
-
-    private fun clearZipPreviewFiles() {
-        val paths = ImportResultHolder.zipPreviewFilePaths
-        ImportResultHolder.clear()
-        lifecycleScope.launch(Dispatchers.IO) {
-            CacheCleanManager.cleanImportPreviewFiles(this@ImportActivity, paths)
         }
     }
 

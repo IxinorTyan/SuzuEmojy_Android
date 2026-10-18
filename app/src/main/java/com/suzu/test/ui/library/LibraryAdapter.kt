@@ -72,7 +72,7 @@ class LibraryAdapter(
                 .load(file)
                 .override(250, 250)
                 .centerCrop()
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
                 .into(binding.ivThumbnail)
 
             val isGif = item.format.equals("gif", ignoreCase = true)

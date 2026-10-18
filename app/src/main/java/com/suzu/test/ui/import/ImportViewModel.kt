@@ -13,6 +13,22 @@ class ImportViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         private const val KEY_LAST_IMPORT_SUMMARY = "key_last_import_summary"
     }
 
+    var currentDeletingUriIndex: Int
+        get() = savedStateHandle.get<Int>("currentDeletingUriIndex") ?: 0
+        set(value) { savedStateHandle["currentDeletingUriIndex"] = value }
+
+    var deletedSuccessCount: Int
+        get() = savedStateHandle.get<Int>("deletedSuccessCount") ?: 0
+        set(value) { savedStateHandle["deletedSuccessCount"] = value }
+
+    var currentUnhandledCount: Int
+        get() = savedStateHandle.get<Int>("currentUnhandledCount") ?: 0
+        set(value) { savedStateHandle["currentUnhandledCount"] = value }
+
+    var currentCleaningBatch: List<Uri>
+        get() = savedStateHandle.get<ArrayList<String>>("currentCleaningBatch").orEmpty().map { Uri.parse(it) }
+        set(value) { savedStateHandle["currentCleaningBatch"] = ArrayList(value.map { it.toString() }) }
+
     var pendingCleanableUris: List<Uri>
         get() {
             val list = savedStateHandle.get<ArrayList<String>>(KEY_PENDING_CLEANABLE_URIS) ?: arrayListOf()

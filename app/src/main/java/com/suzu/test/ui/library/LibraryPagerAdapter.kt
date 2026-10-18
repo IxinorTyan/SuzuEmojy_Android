@@ -84,6 +84,8 @@ class LibraryPagerAdapter(
     }
 
     override fun onBindViewHolder(holder: PageViewHolder, position: Int) {
+        activeHolders.add(holder)
+        holderMap.values.remove(holder)
         holderMap[position] = holder
         val selection = selections[position]
         holder.bind(selection, position)
@@ -94,10 +96,12 @@ class LibraryPagerAdapter(
     override fun onViewRecycled(holder: PageViewHolder) {
         super.onViewRecycled(holder)
         holderMap.values.remove(holder)
+        activeHolders.remove(holder)
         holder.unbind()
     }
 
     fun clear() {
+        activeHolders.forEach { it.unbind() }
         activeHolders.clear()
         holderMap.clear()
         selections.clear()

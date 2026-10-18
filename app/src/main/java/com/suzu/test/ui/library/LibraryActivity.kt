@@ -801,6 +801,7 @@ class LibraryActivity : AppCompatActivity() {
             } else null
 
             val actions = mutableListOf<String>()
+            actions.add("分享")
             actions.add("编辑关键词")
             actions.add("移动到最前")
             actions.add("移动到最后")
@@ -816,6 +817,7 @@ class LibraryActivity : AppCompatActivity() {
                 .setTitle(resource.filename)
                 .setItems(actions.toTypedArray()) { _, which ->
                     when (actions[which]) {
+                        "分享" -> ResourceShareHelper.share(this@LibraryActivity, resource)
                         "编辑关键词" -> showEditKeywordsDialog(resource)
                         "移动到最前" -> moveSingleResourceToFront(resource, selection)
                         "移动到最后" -> moveSingleResourceToBack(resource, selection)

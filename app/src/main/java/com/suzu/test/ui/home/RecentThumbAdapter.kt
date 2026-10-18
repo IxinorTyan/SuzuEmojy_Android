@@ -12,7 +12,7 @@ import com.suzu.test.db.entity.ResourceEntity
 import java.io.File
 
 class RecentThumbAdapter(
-    private val onItemClick: () -> Unit
+    private val onItemClick: (ResourceEntity) -> Unit
 ) : ListAdapter<ResourceEntity, RecentThumbAdapter.ThumbViewHolder>(DIFF_CALLBACK) {
 
     companion object {
@@ -51,7 +51,8 @@ class RecentThumbAdapter(
 
         init {
             binding.root.setOnClickListener {
-                onItemClick()
+                val position = bindingAdapterPosition
+                if (position != RecyclerView.NO_POSITION) onItemClick(getItem(position))
             }
         }
 
@@ -64,7 +65,7 @@ class RecentThumbAdapter(
                 .load(file)
                 .override(200, 200)
                 .centerCrop()
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
                 .into(binding.ivRecentThumb)
         }
     }

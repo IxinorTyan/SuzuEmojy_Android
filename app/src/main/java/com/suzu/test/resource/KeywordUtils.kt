@@ -10,6 +10,8 @@ enum class MatchMode {
 
 object KeywordUtils {
 
+    private val whitespace = Regex("\\s+")
+
     val KEYWORD_MATCH_MODE: MatchMode = MatchMode.SUBSTRING
 
     /**
@@ -17,7 +19,7 @@ object KeywordUtils {
      */
     fun parse(raw: String): List<String> {
         if (raw.isBlank()) return emptyList()
-        return raw.split(Regex("\\s+"))
+        return raw.split(whitespace)
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .distinct()
@@ -69,28 +71,37 @@ object KeywordUtils {
         categoryNames: List<String>? = null,
         searchScope: Int = FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY
     ): Boolean {
-        if (query.isBlank()) return true
-        val q = query.trim().lowercase()
+        val terms = parse(query.lowercase())
+        return matchesTerms(resource, terms, mode, categoryNames, searchScope)
+    }
 
-        val tagMatch = if (searchScope != FloatingBallConfig.SEARCH_SCOPE_CATEGORY_ONLY) {
-            val kw = resource.keywords.lowercase()
-            when (mode) {
-                MatchMode.SUBSTRING -> kw.contains(q)
-                MatchMode.PREFIX -> kw.startsWith(q) || kw.contains(" $q")
+    private fun searchableFields(
+        resource: ResourceEntity,
+        categoryNames: List<String>?,
+        searchScope: Int
+    ): List<String> = buildList {
+        if (searchScope != FloatingBallConfig.SEARCH_SCOPE_CATEGORY_ONLY) add(resource.keywords.lowercase())
+        if (searchScope != FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY) {
+            categoryNames?.forEach { add(it.lowercase()) }
+        }
+    }
+
+    private fun matchesTerms(
+        resource: ResourceEntity,
+        terms: List<String>,
+        mode: MatchMode,
+        categoryNames: List<String>?,
+        searchScope: Int
+    ): Boolean {
+        if (terms.isEmpty()) return true
+        val fields = searchableFields(resource, categoryNames, searchScope)
+        return when (mode) {
+            MatchMode.SUBSTRING -> terms.all { term -> fields.any { it.contains(term) } }
+            MatchMode.PREFIX -> {
+                val tokens = fields.flatMap { parse(it) }
+                terms.all { term -> tokens.any { it.startsWith(term) } }
             }
-        } else false
-
-        val categoryMatch = if (searchScope != FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY && !categoryNames.isNullOrEmpty()) {
-            categoryNames.any { catName ->
-                val cn = catName.lowercase()
-                when (mode) {
-                    MatchMode.SUBSTRING -> cn.contains(q)
-                    MatchMode.PREFIX -> cn.startsWith(q) || cn.contains(" $q")
-                }
-            }
-        } else false
-
-        return tagMatch || categoryMatch
+        }
     }
 
     /**
@@ -102,19 +113,8 @@ object KeywordUtils {
         categoryNames: List<String>? = null,
         searchScope: Int = FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY
     ): Boolean {
-        if (query.isBlank()) return false
-        val q = query.trim().lowercase()
-
-        if (searchScope != FloatingBallConfig.SEARCH_SCOPE_CATEGORY_ONLY) {
-            val tokens = parse(resource.keywords)
-            if (tokens.any { it.lowercase().startsWith(q) }) return true
-        }
-
-        if (searchScope != FloatingBallConfig.SEARCH_SCOPE_TAG_ONLY && !categoryNames.isNullOrEmpty()) {
-            if (categoryNames.any { it.lowercase().startsWith(q) }) return true
-        }
-
-        return false
+        val terms = parse(query.lowercase())
+        return terms.isNotEmpty() && matchesTerms(resource, terms, MatchMode.PREFIX, categoryNames, searchScope)
     }
 
     /**
@@ -134,15 +134,14 @@ object KeywordUtils {
             )
         }
 
-        val matched = resources.filter {
-            matches(it, query, mode, categoryMap?.get(it.id), searchScope)
-        }
-        return matched.sortedWith(
-            compareByDescending<ResourceEntity> {
-                isPrefixMatch(it, query, categoryMap?.get(it.id), searchScope)
-            }
-                .thenBy { it.sortOrder }
-                .thenBy { it.id }
-        )
+        // Parse once per search; compute ranking once per resource, not on every comparison.
+        val terms = parse(query.lowercase())
+        return resources.asSequence()
+            .filter { matchesTerms(it, terms, mode, categoryMap?.get(it.id), searchScope) }
+            .map { it to matchesTerms(it, terms, MatchMode.PREFIX, categoryMap?.get(it.id), searchScope) }
+            .sortedWith(compareByDescending<Pair<ResourceEntity, Boolean>> { it.second }
+                .thenBy { it.first.sortOrder }.thenBy { it.first.id })
+            .map { it.first }
+            .toList()
     }
 }

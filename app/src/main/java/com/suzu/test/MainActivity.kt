@@ -22,6 +22,7 @@ import com.suzu.test.ui.home.RecentThumbAdapter
 import com.suzu.test.ui.export.ExportActivity
 import com.suzu.test.ui.import.ImportActivity
 import com.suzu.test.ui.library.LibraryActivity
+import com.suzu.test.ui.library.ResourceDetailActivity
 import com.suzu.test.ui.settings.SettingsActivity
 import com.suzu.test.util.PermissionChecker
 import androidx.core.view.ViewCompat
@@ -122,8 +123,15 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, LibraryActivity::class.java))
         }
 
-        recentAdapter = RecentThumbAdapter {
-            startActivity(Intent(this, LibraryActivity::class.java))
+        recentAdapter = RecentThumbAdapter { resource ->
+            val items = recentAdapter.currentList
+            val position = items.indexOfFirst { it.id == resource.id }
+            if (position >= 0) {
+                startActivity(Intent(this, ResourceDetailActivity::class.java).apply {
+                    putExtra(ResourceDetailActivity.EXTRA_RESOURCE_IDS, items.map { it.id }.toLongArray())
+                    putExtra(ResourceDetailActivity.EXTRA_START_POSITION, position)
+                })
+            }
         }
         binding.rvRecentAdded.layoutManager = GridLayoutManager(this, 3)
         binding.rvRecentAdded.adapter = recentAdapter

@@ -210,7 +210,8 @@
                                 android:id="@+id/btnPermImeAction"
                                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="wrap_content"
-                                android:layout_height="36dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                                 android:textSize="12sp"
                                 android:text="去设置"
                                 android:textColor="#2563EB"
@@ -239,7 +240,8 @@
                                 android:id="@+id/btnPermStorageAction"
                                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="wrap_content"
-                                android:layout_height="36dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                                 android:textSize="12sp"
                                 android:text="去授权"
                                 android:textColor="#2563EB"
@@ -285,7 +287,8 @@
                                 android:id="@+id/btnPermOverlayAction"
                                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="wrap_content"
-                                android:layout_height="36dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                                 android:textSize="12sp"
                                 android:text="去授权"
                                 android:textColor="#2563EB"
@@ -314,7 +317,8 @@
                                 android:id="@+id/btnPermA11yAction"
                                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="wrap_content"
-                                android:layout_height="36dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                                 android:textSize="12sp"
                                 android:text="去开启"
                                 android:textColor="#2563EB"
@@ -343,7 +347,8 @@
                                 android:id="@+id/btnPermBatteryAction"
                                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                 android:layout_width="wrap_content"
-                                android:layout_height="36dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                                 android:textSize="12sp"
                                 android:text="去设置"
                                 android:textColor="#2563EB"
@@ -392,7 +397,8 @@
                                     android:id="@+id/btnPermAutoStartAction"
                                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="36dp"
+                                    android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                                     android:textSize="12sp"
                                     android:text="去设置"
                                     android:textColor="#2563EB"
@@ -506,7 +512,8 @@
 
                         <FrameLayout
                             android:layout_width="36dp"
-                            android:layout_height="36dp"
+                            android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                             android:background="@drawable/bg_home_icon_purple">
 
                             <ImageView
@@ -568,7 +575,8 @@
 
                         <FrameLayout
                             android:layout_width="36dp"
-                            android:layout_height="36dp"
+                            android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                             android:background="@drawable/bg_home_icon_blue">
 
                             <ImageView
@@ -630,7 +638,8 @@
 
                         <FrameLayout
                             android:layout_width="36dp"
-                            android:layout_height="36dp"
+                            android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                             android:background="@drawable/bg_home_icon_slate">
 
                             <ImageView
@@ -692,7 +701,8 @@
 
                         <FrameLayout
                             android:layout_width="36dp"
-                            android:layout_height="36dp"
+                            android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                             android:background="@drawable/bg_home_icon_orange">
 
                             <ImageView
@@ -773,7 +783,8 @@
 
                     <FrameLayout
                         android:layout_width="36dp"
-                        android:layout_height="36dp"
+                        android:layout_height="wrap_content"
+                                android:minHeight="48dp"
                         android:background="@drawable/bg_home_icon_slate">
 
                         <ImageView

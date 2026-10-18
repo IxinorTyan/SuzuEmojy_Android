@@ -9,7 +9,8 @@
     <!-- 顶部操作行 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingStart="2dp"
@@ -91,8 +92,8 @@
 
         <ImageButton
             android:id="@+id/btnCategoryDropdown"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginEnd="2dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_expand_more_24"
@@ -134,7 +135,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="搜索关键词或文件名..."
+            android:hint="搜索关键词，多个词用空格分隔"
             android:imeOptions="actionSearch"
             android:inputType="text"
             android:maxLines="1"
@@ -144,8 +145,8 @@
 
         <FrameLayout
             android:id="@+id/flFilterContainer"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="4dp">
 
             <ImageButton
