@@ -132,10 +132,34 @@
                         android:background="@drawable/bg_home_tag_blue"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="4dp"
-                        android:text="版本 1.7.3"
+                        android:text="版本 1.7.4"
                         android:textSize="12sp"
                         android:textStyle="bold"
                         android:textColor="#2563EB" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="点击版本号检查 GitHub 更新"
+                        android:textSize="11sp"
+                        android:textColor="#64748B" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchAutoUpdate"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="自动检查更新"
+                        android:textSize="13sp"
+                        android:textColor="#0F172A" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="打开应用时每天最多检查一次正式版，更新时通过系统浏览器打开 GitHub 仓库。"
+                        android:textSize="11sp"
+                        android:textColor="#64748B" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

@@ -19,6 +19,7 @@ import com.suzu.test.storage.CacheCleanManager
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +36,11 @@ data class ImportTaskState(
     val folderSelection: FolderImportSelection? = null
 )
 
-data class FolderImportSelection(val uris: List<Uri>, val categoryName: String?)
+data class FolderImportSelection(
+    val items: List<FolderImportItem>,
+    val categories: List<FolderImportCategory>,
+    val unreadableDirectories: List<String> = emptyList()
+)
 
 data class ImportTaskResult(
     val records: List<ImportItemRecord>,
@@ -71,7 +76,11 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
                     block()
                 }
             } catch (e: CancellationException) {
-                mutableState.update { it.copy(message = "导入已取消，已导入的图片保留，原图未清理") }
+                mutableState.update { it.copy(
+                    message = "导入已取消，已导入的图片保留，原图未清理",
+                    result = null,
+                    folderSelection = null
+                ) }
                 throw e
             } catch (e: Exception) {
                 TestLog.e("ImportTask", "导入失败", e)
@@ -87,10 +96,39 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
 
     fun scanFolder(uri: Uri) = start(clearPreviews = false) {
         updateProgress("正在扫描文件夹…")
-        val uris = scanDirectChildImages(uri)
-        val name = getFolderName(uri)?.trim()?.takeIf { it.isNotEmpty() && it !in setOf("全部", "ALL", "最近") }
-        mutableState.update { it.copy(message = if (uris.isEmpty()) "未找到可导入的图片" else "请选择是否导入",
-            folderSelection = if (uris.isEmpty()) null else FolderImportSelection(uris, name)) }
+        val rootId = DocumentsContract.getTreeDocumentId(uri)
+        val scan = FolderImageScanner { documentId -> queryDirectoryEntries(uri, documentId) }
+            .scan(rootId, getDocumentDisplayName(uri, rootId)) { directories, images ->
+                updateProgress("已扫描 $directories 个文件夹，找到 $images 张图片…")
+            }
+        val items = scan.images.map {
+            FolderImportItem(DocumentsContract.buildDocumentUriUsingTree(uri, it.documentId), it.categoryName)
+        }
+        val grouped = LinkedHashMap<String?, Int>()
+        items.forEach { item ->
+            grouped[item.categoryName] = (grouped[item.categoryName] ?: 0) + 1
+        }
+        val existingNames = database.categoryDao().getAllCategories().map { it.name }.toSet()
+        val categories = grouped.map { (name, count) ->
+            FolderImportCategory(name, count, alreadyExists = name in existingNames)
+        }
+        val warning = if (scan.unreadableDirectories.isNotEmpty()) {
+            "（有 ${scan.unreadableDirectories.size} 个子文件夹无法读取）"
+        } else ""
+        val message = if (items.isEmpty()) {
+            "未找到可导入的图片$warning"
+        } else {
+            "请选择是否导入$warning"
+        }
+        mutableState.update { it.copy(
+            message = message,
+            summary = formatUnreadableDirectories(scan.unreadableDirectories),
+            folderSelection = if (items.isEmpty()) null else FolderImportSelection(
+                items = items,
+                categories = categories,
+                unreadableDirectories = scan.unreadableDirectories
+            )
+        ) }
     }
 
     fun clearFolderSelection() {
@@ -117,191 +155,135 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
         ) }
     }
 
-    fun importImages(uris: List<Uri>, presetCategoryId: Long?, folderCategoryName: String?) = start {
-        val distinctSourceUris = uris.distinct()
-        val total = distinctSourceUris.size
+    fun importImages(
+        items: List<FolderImportItem>,
+        presetCategoryId: Long?,
+        unreadableDirectories: List<String> = emptyList()
+    ) = start {
+        // Read a source once but preserve every category association reported for that source.
+        val itemsByUri = items.groupBy { it.uri }
+        val total = itemsByUri.size
         var successCount = 0
         var duplicateCount = 0
         var failCount = 0
-        val processedResourceIds = mutableListOf<Long>()
+        val attachedNames = linkedSetOf<String>()
+        var presetDeleted = false
         val eligibleUris = mutableListOf<Uri>()
         val itemRecords = mutableListOf<ImportItemRecord>()
         try {
-            val (attachedCategoryNames, presetDeleted) = withContext(Dispatchers.IO) {
-                distinctSourceUris.forEachIndexed { index, uri ->
-                    currentCoroutineContext().ensureActive()
-                    updateProgress("正在导入 ${index + 1}/$total", index, total)
-
-                    try {
-                        val bytes = app.contentResolver.openInputStream(uri)?.use { input ->
-                            val output = java.io.ByteArrayOutputStream()
-                            val buffer = ByteArray(64 * 1024)
-                            while (true) {
-                                currentCoroutineContext().ensureActive()
-                                val count = input.read(buffer)
-                                if (count < 0) break
-                                output.write(buffer, 0, count)
-                            }
-                            output.toByteArray()
+            itemsByUri.entries.forEachIndexed { index, (uri, sourceItems) ->
+                currentCoroutineContext().ensureActive()
+                updateProgress("正在导入 ${index + 1}/$total", index, total)
+                val result = try {
+                    val bytes = app.contentResolver.openInputStream(uri)?.use { input ->
+                        val output = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(64 * 1024)
+                        while (true) {
+                            currentCoroutineContext().ensureActive()
+                            val count = input.read(buffer)
+                            if (count < 0) break
+                            output.write(buffer, 0, count)
                         }
-                        if (bytes == null || bytes.isEmpty()) {
-                            TestLog.e(MODULE, "读取 URI 失败或文件为空: $uri")
-                            failCount++
-                            itemRecords.add(
-                                ImportItemRecord(
-                                    sourceUri = uri,
-                                    type = ImportItemType.FAILED,
-                                    syncKey = null,
-                                    resourceId = null,
-                                    filename = null,
-                                    existingResourceId = null,
-                                    existingFilename = null,
-                                    failReason = ImportFailReason.READ_FAILED
-                                )
-                            )
-                            return@forEachIndexed
-                        }
-
-                        val result = importService.import(bytes)
-                        processedResourceIds.add(result.resourceId)
-                        eligibleUris.add(uri)
-                        if (result.isDuplicate) {
-                            duplicateCount++
-                            itemRecords.add(
-                                ImportItemRecord(
-                                    sourceUri = uri,
-                                    type = ImportItemType.DUPLICATE,
-                                    syncKey = result.syncKey,
-                                    resourceId = result.resourceId,
-                                    filename = result.filename,
-                                    existingResourceId = result.existingResourceId,
-                                    existingFilename = result.existingFilename,
-                                    failReason = null
-                                )
-                            )
-                        } else {
-                            successCount++
-                            itemRecords.add(
-                                ImportItemRecord(
-                                    sourceUri = uri,
-                                    type = ImportItemType.NEW_ADDED,
-                                    syncKey = result.syncKey,
-                                    resourceId = result.resourceId,
-                                    filename = result.filename,
-                                    existingResourceId = null,
-                                    existingFilename = null,
-                                    failReason = null
-                                )
-                            )
-                        }
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        TestLog.e(MODULE, "导入异常 (URI=$uri): ${e.message}", e)
-                        failCount++
-                        val reason = when {
-                            e.message?.contains("Animated WebP", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_ANIM_WEBP
-                            e.message?.contains("Unsupported format", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_OTHER
-                            e.message?.contains("Failed to decode", ignoreCase = true) == true || e.message?.contains("decode", ignoreCase = true) == true -> ImportFailReason.DECODE_FAILED
-                            else -> ImportFailReason.UNKNOWN
-                        }
-                        itemRecords.add(
-                            ImportItemRecord(
-                                sourceUri = uri,
-                                type = ImportItemType.FAILED,
-                                syncKey = null,
-                                resourceId = null,
-                                filename = null,
-                                existingResourceId = null,
-                                existingFilename = null,
-                                failReason = reason
-                            )
-                        )
+                        output.toByteArray()
                     }
+                    if (bytes == null || bytes.isEmpty()) throw java.io.IOException("读取失败或文件为空")
+                    importService.import(bytes)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    TestLog.e(MODULE, "导入异常 (URI=$uri): ${e.message}", e)
+                    failCount++
+                    val reason = when {
+                        e is java.io.IOException || e is SecurityException -> ImportFailReason.READ_FAILED
+                        e.message?.contains("Animated WebP", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_ANIM_WEBP
+                        e.message?.contains("Unsupported format", ignoreCase = true) == true -> ImportFailReason.UNSUPPORTED_OTHER
+                        e.message?.contains("decode", ignoreCase = true) == true -> ImportFailReason.DECODE_FAILED
+                        else -> ImportFailReason.UNKNOWN
+                    }
+                    itemRecords.add(ImportItemRecord(
+                        sourceUri = uri, type = ImportItemType.FAILED,
+                        syncKey = null, resourceId = null, filename = null,
+                        existingResourceId = null, existingFilename = null, failReason = reason
+                    ))
+                    return@forEachIndexed
                 }
 
-                val distinctIds = processedResourceIds.distinct()
-                val attachedNames = mutableListOf<String>()
-                var isPresetDeleted = false
+                if (result.isDuplicate) duplicateCount++ else successCount++
+                itemRecords.add(ImportItemRecord(
+                    sourceUri = uri,
+                    type = if (result.isDuplicate) ImportItemType.DUPLICATE else ImportItemType.NEW_ADDED,
+                    syncKey = result.syncKey, resourceId = result.resourceId, filename = result.filename,
+                    existingResourceId = result.existingResourceId,
+                    existingFilename = result.existingFilename, failReason = null
+                ))
 
-                if (distinctIds.isNotEmpty()) {
-                    database.withTransaction {
-                        val targetCatId = presetCategoryId
-                        var resolvedPresetCatId: Long? = null
-                        if (targetCatId != null) {
-                            val category = database.categoryDao().getCategoryById(targetCatId)
-                            if (category != null) {
-                                resolvedPresetCatId = category.id
-                                attachedNames.add(category.name)
-                            } else {
-                                isPresetDeleted = true
-                                TestLog.w(MODULE, "预设分类已被删除 (ID=$targetCatId)，跳过关联预设分类操作")
-                            }
+                // Finish this image's short relation transaction even when the user cancels.
+                // Never defer all category relations until the entire import has finished.
+                withContext(NonCancellable) {
+                    val (names, missingPreset) = database.withTransaction {
+                        val categoryIds = linkedSetOf<Long>()
+                        val names = linkedSetOf<String>()
+                        val preset = presetCategoryId?.let { database.categoryDao().getCategoryById(it) }
+                        if (preset != null) {
+                            categoryIds.add(preset.id)
+                            names.add(preset.name)
                         }
-
-                        var resolvedFolderCatId: Long? = null
-                        if (!folderCategoryName.isNullOrBlank()) {
-                            val existingFolderCat = database.categoryDao().getCategoryByName(folderCategoryName)
-                            val fCatId = if (existingFolderCat != null) {
-                                existingFolderCat.id
-                            } else {
-                                val maxSort = database.categoryDao().getMaxSortOrder() ?: 0
-                                database.categoryDao().insertCategory(CategoryEntity(name = folderCategoryName, sortOrder = maxSort + 1))
-                            }
-                            resolvedFolderCatId = fCatId
-                            if (!attachedNames.contains(folderCategoryName)) {
-                                attachedNames.add(folderCategoryName)
-                            }
+                        val folderNames = sourceItems.mapNotNull { normalizeFolderCategoryName(it.categoryName) }.distinct()
+                        for (name in folderNames) {
+                            val existing = database.categoryDao().getCategoryByName(name)
+                            val categoryId = existing?.id ?: database.categoryDao().insertCategory(
+                                CategoryEntity(
+                                    name = name,
+                                    sortOrder = (database.categoryDao().getMaxSortOrder() ?: 0) + 1
+                                )
+                            )
+                            categoryIds.add(categoryId)
+                            names.add(name)
                         }
-
-                        val targetCatIds = listOfNotNull(resolvedPresetCatId, resolvedFolderCatId).distinct()
-                        for (catId in targetCatIds) {
-                            try {
-                                database.resourceCategoryDao().addResourcesToCategoryBatch(distinctIds, catId)
-                                TestLog.i(MODULE, "已将 ${distinctIds.size} 张表情关联到分类 (ID=$catId)")
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                TestLog.e(MODULE, "关联分类异常 (ID=$catId): ${e.message}", e)
-                            }
+                        for (categoryId in categoryIds) {
+                            database.resourceCategoryDao().addResourcesToCategoryBatch(
+                                listOf(result.resourceId), categoryId
+                            )
                         }
+                        names to (presetCategoryId != null && preset == null)
                     }
+                    attachedNames.addAll(names)
+                    presetDeleted = presetDeleted || missingPreset
                 }
-                attachedNames to isPresetDeleted
+                eligibleUris.add(uri)
             }
 
-            val summaryText = when {
-                presetDeleted && attachedCategoryNames.isEmpty() -> {
-                    "新增 $successCount 张，重复 $duplicateCount 张，失败 $failCount 张（目标分类已不存在，仅导入资源库）"
-                }
-                attachedCategoryNames.isNotEmpty() -> {
-                    val catText = attachedCategoryNames.joinToString("") { "「$it」" }
-                    "新增 $successCount 张，重复 $duplicateCount 张（已归入$catText），失败 $failCount 张"
-                }
-                else -> {
-                    "成功导入 $successCount 张，重复跳过 $duplicateCount 张，失败 $failCount 张"
-                }
+            currentCoroutineContext().ensureActive()
+            val destination = if (attachedNames.isEmpty()) "" else {
+                val names = attachedNames.take(5).joinToString("") { "「$it」" }
+                if (attachedNames.size > 5) "（已归入${names}等 ${attachedNames.size} 个分类）"
+                else "（已归入$names）"
             }
-
-            mutableState.update { it.copy(message = "导入流程已完成", summary = summaryText,
-                result = ImportTaskResult(itemRecords, eligibleUris, ImportSummary(successCount, duplicateCount, failCount))) }
+            val presetWarning = if (presetDeleted) "\n原目标分类已不存在，已跳过该分类。" else ""
+            val scanWarning = formatUnreadableDirectories(unreadableDirectories)
+            val summary = "新增 $successCount 张，重复 $duplicateCount 张，失败 $failCount 张$destination" +
+                presetWarning + if (scanWarning.isNotEmpty()) "\n$scanWarning" else ""
+            mutableState.update { it.copy(
+                message = "导入流程已完成", summary = summary, progress = total,
+                result = ImportTaskResult(itemRecords, eligibleUris, ImportSummary(successCount, duplicateCount, failCount))
+            ) }
         } finally {
-            // Preserve completed counts even on cancellation, without offering to delete source images.
-            mutableState.update { if (it.result == null) it.copy(summary = "已新增 $successCount 张，重复 $duplicateCount 张，失败 $failCount 张") else it }
+            // No source cleanup is offered after cancellation or an interrupted category transaction.
+            mutableState.update {
+                if (it.result == null) it.copy(summary = "已新增 $successCount 张，重复 $duplicateCount 张，失败 $failCount 张") else it
+            }
         }
     }
 
-    private fun getFolderName(treeUri: Uri): String? {
+    private fun getDocumentDisplayName(treeUri: Uri, documentId: String): String? {
         return try {
-            val treeDocId = DocumentsContract.getTreeDocumentId(treeUri)
-            val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocId)
+            val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
             val projection = arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-            val cursor = app.contentResolver.query(docUri, projection, null, null, null)
+            val cursor = app.contentResolver.query(documentUri, projection, null, null, null)
             cursor?.use {
-                if (it.moveToFirst()) {
-                    val nameIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-                    if (nameIndex != -1) it.getString(nameIndex) else null
-                } else null
+                if (!it.moveToFirst()) return@use null
+                val nameIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                if (nameIndex == -1) null else it.getString(nameIndex)
             }
         } catch (e: Exception) {
             TestLog.w(MODULE, "获取文件夹名称失败: ${e.message}")
@@ -309,50 +291,39 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
         }
     }
 
-    private suspend fun scanDirectChildImages(treeUri: Uri): List<Uri> {
-        val result = mutableListOf<Uri>()
-        val docId = DocumentsContract.getTreeDocumentId(treeUri)
-        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, docId)
-
+    private suspend fun queryDirectoryEntries(treeUri: Uri, documentId: String): List<FolderDocument> {
+        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, documentId)
         val projection = arrayOf(
             DocumentsContract.Document.COLUMN_DOCUMENT_ID,
             DocumentsContract.Document.COLUMN_MIME_TYPE,
             DocumentsContract.Document.COLUMN_DISPLAY_NAME
         )
-
-        val supportedExtensions = setOf("png", "jpg", "jpeg", "gif", "webp", "bmp")
-
         val cursor = app.contentResolver.query(childrenUri, projection, null, null, null)
-        cursor?.use {
+            ?: throw IllegalStateException("查询返回 null Cursor")
+        return cursor.use {
             val idIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
             val mimeIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
             val nameIndex = it.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+            require(idIndex != -1 && mimeIndex != -1) { "文件提供程序未返回目录信息" }
 
-            while (it.moveToNext()) {
-                currentCoroutineContext().ensureActive()
-                val childDocId = if (idIndex != -1) it.getString(idIndex) else null ?: continue
-                val mimeType = if (mimeIndex != -1) it.getString(mimeIndex) else null
-                val displayName = if (nameIndex != -1) it.getString(nameIndex) else null
-
-                // 硬性排除子文件夹
-                if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
-                    continue
-                }
-
-                val ext = displayName?.substringAfterLast('.', "")?.lowercase() ?: ""
-                val isImageMime = mimeType?.startsWith("image/", ignoreCase = true) == true
-                val isSupportedExt = ext in supportedExtensions
-
-                if (isImageMime || isSupportedExt) {
-                    val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childDocId)
-                    result.add(documentUri)
+            buildList {
+                while (it.moveToNext()) {
+                    currentCoroutineContext().ensureActive()
+                    val childDocumentId = it.getString(idIndex) ?: continue
+                    add(
+                        FolderDocument(
+                            id = childDocumentId,
+                            mimeType = if (mimeIndex == -1) null else it.getString(mimeIndex),
+                            name = if (nameIndex == -1) null else it.getString(nameIndex)
+                        )
+                    )
                 }
             }
-        } ?: throw IllegalStateException("查询返回 null Cursor")
-
-        return result
+        }
     }
 
 
-    companion object { private const val MODULE = "ImportTask" }
+    companion object {
+        private const val MODULE = "ImportTask"
+    }
 }

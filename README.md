@@ -68,7 +68,7 @@
 - **严格去重保障**：像素级 MD5 / sync_key 双重防重逻辑，重复导入绝不生成垃圾冗余。
 
 ### 🔒 本地化隐私与稳定存储
-- **全本地化运行**：所有表情资源与 SQLite 数据库均存放在 App 私有存储目录（`context.filesDir`），零数据上传、零网络依赖。
+- **本地资源存储**：所有表情资源与 SQLite 数据库均存放在 App 私有存储目录（`context.filesDir`），图片管理与发送无需联网。自动更新检查仅请求 GitHub 正式发行版信息，可在关于页关闭；不会上传表情、数据库或聊天内容。
 - **系统清理免疫**：与开放图库隔离，避免被第三方系统清理软件误删，保证元数据与物理文件的一致性。
 
 ---
@@ -97,6 +97,21 @@
 - **JDK**：Java 17
 - **Android SDK**：Compile SDK 34，Min SDK 26 (Android 8.0+)
 - **构建工具**：Gradle 8.x + KSP
+
+### Windows 一键打发布包
+
+双击项目根目录的 **`build-release.bat`** 即可生成 Release 安装包，完成后自动打开 `releases` 文件夹，窗口会保留打包结果；失败时会显示错误。
+
+- **最新安装包**：`releases/SuzuEmojy-latest.apk`，每次成功打包后更新，直接拿这个文件安装或分享。
+- **历史归档**：`releases/v版本号-versionCode-时间/`，保存带版本号的 APK 和对应的 `mapping.txt` 混淆映射，方便回溯和排查崩溃。
+- 版本信息读取自本次构建产物；发布前仍需在 `app/build.gradle.kts` 中手动更新 `versionName` 和 `versionCode`。
+- 使用现有 Release 签名配置（当前为 debug 签名）；`releases` 目录不提交到 Git。
+
+需要在终端运行且不自动打开文件夹时，可执行：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build-release.ps1 -NoOpen
+```
 
 ### 命令行编译
 

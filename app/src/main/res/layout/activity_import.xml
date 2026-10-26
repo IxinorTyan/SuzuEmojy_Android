@@ -316,7 +316,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="扫描目录中全部图片，自动按文件夹命名分组"
+                            android:text="包含所有子文件夹图片，按一级子文件夹分类"
                             android:textSize="11sp"
                             android:textColor="#64748B"
                             android:layout_marginTop="2dp" />

@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.activity.viewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import com.suzu.test.databinding.ActivityMainBinding
 import com.suzu.test.db.DatabaseProvider
@@ -29,6 +30,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import com.suzu.test.update.UpdateCheckViewModel
+import com.suzu.test.update.UpdatePromptController
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,6 +44,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var recentAdapter: RecentThumbAdapter
+    private val updateCheckViewModel: UpdateCheckViewModel by viewModels()
+    private lateinit var updatePromptController: UpdatePromptController
 
     private val storagePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -57,9 +62,11 @@ class MainActivity : AppCompatActivity() {
 
         initializeGuideState()
         setupUI()
+        updatePromptController = UpdatePromptController(this, updateCheckViewModel)
         observeData()
         observeA11yState()
         triggerAutoCacheClean()
+        updateCheckViewModel.check(manual = false)
     }
 
     private fun observeA11yState() {

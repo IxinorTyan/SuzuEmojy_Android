@@ -8,13 +8,18 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.viewModels
 import com.bumptech.glide.Glide
 import com.suzu.test.R
 import com.suzu.test.databinding.ActivityAboutBinding
+import com.suzu.test.update.UpdateCheckViewModel
+import com.suzu.test.update.UpdatePromptController
 
 class AboutActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAboutBinding
+    private val updateCheckViewModel: UpdateCheckViewModel by viewModels()
+    private lateinit var updatePromptController: UpdatePromptController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,8 +42,16 @@ class AboutActivity : AppCompatActivity() {
         }.getOrNull() ?: "未知"
 
         binding.tvVersion.text = "v$versionName"
+        updatePromptController = UpdatePromptController(this, updateCheckViewModel) { state ->
+            binding.tvVersion.isEnabled = !state.checking
+            binding.tvVersion.text = if (state.checking) "正在检查更新…" else "v$versionName"
+        }
         binding.tvVersion.setOnClickListener {
-            Toast.makeText(this, "当前已是最新版本：v$versionName", Toast.LENGTH_SHORT).show()
+            updateCheckViewModel.check(manual = true)
+        }
+        binding.switchAutoUpdate.isChecked = updateCheckViewModel.isAutomaticCheckEnabled()
+        binding.switchAutoUpdate.setOnCheckedChangeListener { _, enabled ->
+            updateCheckViewModel.setAutomaticCheckEnabled(enabled)
         }
 
         // 加载作者头像

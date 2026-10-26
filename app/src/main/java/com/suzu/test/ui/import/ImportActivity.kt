@@ -39,6 +39,7 @@ class ImportActivity : AppCompatActivity() {
 
     companion object {
         private const val MODULE = "ImportActivity"
+        private const val MAX_FOLDER_PREVIEW_CATEGORIES = 30
         const val EXTRA_TARGET_CATEGORY_ID = "extra_target_category_id"
         private const val PREFS_NAME = "import_prefs"
         private const val KEY_CLEAN_ORIGINALS_CHECKED = "clean_originals_checked"
@@ -358,14 +359,41 @@ class ImportActivity : AppCompatActivity() {
 
     private fun showFolderConfirmation(selection: FolderImportSelection) {
         if (folderDialog != null) return
-        val names = listOfNotNull(presetCategoryName, selection.categoryName).distinct()
-        val destination = if (names.isEmpty()) "" else names.joinToString("和", prefix = "并归入", postfix = "分类") { "「$it」" }
+        val visibleCategories = selection.categories.take(MAX_FOLDER_PREVIEW_CATEGORIES)
+        val categoryPreview = visibleCategories.joinToString("\n") { category ->
+            val action = when {
+                category.name == null -> "仅导入资源库"
+                category.alreadyExists -> "合并到已有分类"
+                else -> "新建分类"
+            }
+            "${category.name ?: "不创建分类"}：${category.count} 张（$action）"
+        }.let { preview ->
+            if (selection.categories.size > visibleCategories.size) {
+                "$preview\n...另有 ${selection.categories.size - visibleCategories.size} 个分类"
+            } else preview
+        }
+        val message = buildString {
+            append("找到 ${selection.items.size} 张图片。")
+            if (categoryPreview.isNotEmpty()) {
+                append("\n\n分类预览：\n")
+                append(categoryPreview)
+            }
+            append("\n\n按一级子文件夹创建分类，包含其下所有层级的图片；当前文件夹中的图片归入同名分类。空文件夹不创建分类。")
+            if (!presetCategoryName.isNullOrBlank()) {
+                append("\n同时添加到「$presetCategoryName」分类。")
+            }
+            if (selection.unreadableDirectories.isNotEmpty()) {
+                append("\n\n")
+                append(formatUnreadableDirectories(selection.unreadableDirectories))
+            }
+            append("\n\n确认导入吗？")
+        }
         folderDialog = AlertDialog.Builder(this)
             .setTitle("确认导入")
-            .setMessage("找到 ${selection.uris.size} 张图片，确认导入$destination？")
+            .setMessage(message)
             .setPositiveButton("确认") { _, _ ->
                 taskModel.clearFolderSelection()
-                startImportProcess(selection.uris, selection.categoryName)
+                taskModel.importImages(selection.items, presetCategoryId, selection.unreadableDirectories)
             }
             .setNegativeButton("取消") { _, _ -> taskModel.clearFolderSelection() }
             .setOnCancelListener { taskModel.clearFolderSelection() }
@@ -383,8 +411,9 @@ class ImportActivity : AppCompatActivity() {
         taskModel.importZip(uri)
     }
 
-    private fun startImportProcess(uris: List<Uri>, folderCategoryName: String? = null) {
-        taskModel.importImages(uris, presetCategoryId, folderCategoryName)
+    private fun startImportProcess(uris: List<Uri>) {
+        val items = uris.distinct().map { FolderImportItem(it, null) }
+        taskModel.importImages(items, presetCategoryId)
     }
 
     private fun observeImportTask() {

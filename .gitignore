@@ -16,6 +16,7 @@ gen/
 out/
 build/
 /temp_gradle/
+/releases/
 
 # Gradle files
 .gradle/
