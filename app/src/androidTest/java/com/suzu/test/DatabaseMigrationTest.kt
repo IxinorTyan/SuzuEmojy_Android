@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.suzu.test.db.SuzuDatabase
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,5 +82,32 @@ class DatabaseMigrationTest {
 
         // 原 resources.sort_order 顺序：id=20 (sort_order 2), id=10 (sort_order 5), id=30 (sort_order 8)
         assertEquals(listOf(20L to 0, 10L to 1, 30L to 2), pairs)
+    }
+
+    @Test
+    fun testMigration3To4PreservesRowsAndIndexesImportSorting() {
+        helper.createDatabase(TEST_DB, 3).apply {
+            execSQL("INSERT INTO categories (id, name, sort_order, created_at) VALUES (1, 'cat1', 0, 1000)")
+            execSQL("INSERT INTO resources (id, filename, format, is_animated, sync_key, file_md5, width, height, byte_size, quality_score, use_count, created_at, keywords, sort_order) VALUES (10, 'img1.png', 'PNG', 0, 'k1', 'm1', 100, 100, 1000, 0.0, 0, 1000, '', -5)")
+            execSQL("INSERT INTO resource_categories (resource_id, category_id, sort_order, added_at) VALUES (10, 1, -3, 1000)")
+            close()
+        }
+        val db = helper.runMigrationsAndValidate(TEST_DB, 4, true, SuzuDatabase.MIGRATION_3_4)
+        db.query("SELECT r.sync_key, r.sort_order, rc.sort_order FROM resources r JOIN resource_categories rc ON rc.resource_id = r.id").use {
+            assertTrue(it.moveToFirst())
+            assertEquals("k1", it.getString(0))
+            assertEquals(-5, it.getInt(1))
+            assertEquals(-3, it.getInt(2))
+        }
+        for ((query, index) in listOf(
+            "SELECT MIN(sort_order) FROM resources" to "index_resources_sort_order",
+            "SELECT MIN(sort_order) FROM resource_categories WHERE category_id = 1" to "index_resource_categories_category_id_sort_order"
+        )) {
+            db.query("EXPLAIN QUERY PLAN $query").use {
+                assertTrue(it.moveToFirst())
+                assertTrue(it.getString(3).contains(index))
+            }
+        }
+        db.close()
     }
 }

@@ -9,7 +9,8 @@ import androidx.room.PrimaryKey
     tableName = "resources",
     indices = [
         Index(value = ["filename"], unique = true),
-        Index(value = ["sync_key"], unique = true)
+        Index(value = ["sync_key"], unique = true),
+        Index(value = ["sort_order"])
     ]
 )
 data class ResourceEntity(

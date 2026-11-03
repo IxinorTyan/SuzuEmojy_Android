@@ -22,7 +22,7 @@
             android:minWidth="0dp"
             android:minHeight="0dp"
             android:background="@drawable/sel_keyboard_tab_bg"
-            android:src="@drawable/ic_keyboard_expand_24"
+            android:src="@drawable/ic_tab_dropdown_menu"
             android:scaleType="centerInside"
             android:padding="8dp"
             android:contentDescription="展开收藏夹" />

@@ -23,7 +23,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ResourceCategoryEntity::class,
         RecentHistoryEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class SuzuDatabase : RoomDatabase() {
@@ -35,6 +35,13 @@ abstract class SuzuDatabase : RoomDatabase() {
 
     companion object {
         private const val DB_NAME = "suzu_emojy.db"
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_resources_sort_order ON resources (sort_order)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_resource_categories_category_id_sort_order ON resource_categories (category_id, sort_order)")
+            }
+        }
 
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -75,7 +82,7 @@ abstract class SuzuDatabase : RoomDatabase() {
                     SuzuDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                 INSTANCE = instance
                 instance

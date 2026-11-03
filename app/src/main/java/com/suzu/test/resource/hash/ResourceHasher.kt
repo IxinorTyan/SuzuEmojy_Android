@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import com.suzu.test.log.TestLog
 import java.nio.ByteBuffer
 import java.security.MessageDigest
+import java.io.InputStream
 
 object ResourceHasher {
 
@@ -40,7 +41,29 @@ object ResourceHasher {
     fun fileMd5(bytes: ByteArray): String {
         val md5Digest = MessageDigest.getInstance("MD5")
         val hashBytes = md5Digest.digest(bytes)
-        return hashBytes.joinToString("") { "%02x".format(it) }
+        return toHex(hashBytes)
+    }
+
+    fun fileMd5(input: InputStream): String {
+        val digest = MessageDigest.getInstance("MD5")
+        val buffer = ByteArray(64 * 1024)
+        while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            digest.update(buffer, 0, count)
+        }
+        return toHex(digest.digest())
+    }
+
+    private fun toHex(bytes: ByteArray): String {
+        val digits = "0123456789abcdef"
+        val chars = CharArray(bytes.size * 2)
+        bytes.forEachIndexed { index, byte ->
+            val value = byte.toInt() and 0xff
+            chars[index * 2] = digits[value ushr 4]
+            chars[index * 2 + 1] = digits[value and 0x0f]
+        }
+        return String(chars)
     }
 
     fun isGif(bytes: ByteArray): Boolean {

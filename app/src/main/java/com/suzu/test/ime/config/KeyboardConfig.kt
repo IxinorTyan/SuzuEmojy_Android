@@ -40,7 +40,7 @@ object KeyboardConfig {
     const val DROPDOWN_ICON_ARROW = "arrow"
     const val DROPDOWN_ICON_MENU = "menu"
     const val DROPDOWN_ICON_MORE = "more"
-    const val DEFAULT_DROPDOWN_ICON_STYLE = DROPDOWN_ICON_ARROW
+    const val DEFAULT_DROPDOWN_ICON_STYLE = DROPDOWN_ICON_MENU
 
     const val KEY_DROPDOWN_POSITION = "keyboard_dropdown_position"
     const val DROPDOWN_POSITION_LEFT = "left"

@@ -24,7 +24,8 @@ import androidx.room.Index
     ],
     indices = [
         Index(value = ["resource_id"]),
-        Index(value = ["category_id"])
+        Index(value = ["category_id"]),
+        Index(value = ["category_id", "sort_order"])
     ]
 )
 data class ResourceCategoryEntity(

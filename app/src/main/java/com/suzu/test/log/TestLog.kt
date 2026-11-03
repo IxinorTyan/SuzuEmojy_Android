@@ -7,19 +7,24 @@ import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.ArrayDeque
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 object TestLog {
     private const val TAG = "TestPoC"
     private const val MAX_LOG_LINES = 300
-    private val timeFormat = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
-    private val memoryLogs = CopyOnWriteArrayList<String>()
+    private val timeFormat = ThreadLocal.withInitial { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
+    private val logLock = Any()
+    private val memoryLogs = ArrayDeque<String>()
+    private val pendingLogs = ArrayDeque<String>()
     private val listeners = CopyOnWriteArrayList<(String) -> Unit>()
-    private val fileExecutor = Executors.newSingleThreadExecutor()
-    private var logFile: File? = null
+    private val fileExecutor = Executors.newSingleThreadScheduledExecutor()
+    private var flushScheduled = false
+    @Volatile private var logFile: File? = null
 
-    fun init(context: Context) {
+    fun init(context: Context) = synchronized(logLock) {
         if (logFile == null) {
             val dir = File(context.cacheDir, "logs")
             if (!dir.exists()) {
@@ -47,7 +52,7 @@ object TestLog {
     }
 
     private fun log(level: String, module: String, content: String) {
-        val time = timeFormat.format(Date())
+        val time = timeFormat.get()!!.format(Date())
         val formatted = "[$time][$module] $content"
 
         // 1. Logcat 输出
@@ -58,9 +63,19 @@ object TestLog {
         }
 
         // 2. 内存列表 (仅保留最近 300 行)
-        memoryLogs.add(formatted)
-        while (memoryLogs.size > MAX_LOG_LINES) {
-            memoryLogs.removeAt(0)
+        synchronized(logLock) {
+            memoryLogs.addLast(formatted)
+            while (memoryLogs.size > MAX_LOG_LINES) memoryLogs.removeFirst()
+            if (logFile != null) {
+                pendingLogs.addLast(formatted)
+                // The on-disk log also retains only the latest entries. Bound pending memory
+                // even when storage cannot keep up with a burst of image-processing logs.
+                while (pendingLogs.size > MAX_LOG_LINES) pendingLogs.removeFirst()
+                if (!flushScheduled) {
+                    flushScheduled = true
+                    fileExecutor.schedule({ flushPendingLogs() }, 250, TimeUnit.MILLISECONDS)
+                }
+            }
         }
 
         // 3. 通知实时监听器 (UI展示)
@@ -72,20 +87,24 @@ object TestLog {
             }
         }
 
-        // 4. 异步持久化到本地文件
-        logFile?.let { file ->
-            fileExecutor.execute {
-                try {
-                    // A cache cleanup may have removed the directory while this process is alive.
-                    file.parentFile?.mkdirs()
-                    FileWriter(file, true).use { writer ->
-                        writer.write(formatted + "\n")
-                    }
-                    trimLogFile(file)
-                } catch (e: Exception) {
-                    Log.e(TAG, "写入日志文件异常", e)
-                }
-            }
+    }
+
+    private fun flushPendingLogs() {
+        val batch = synchronized(logLock) {
+            val lines = pendingLogs.toList()
+            pendingLogs.clear()
+            flushScheduled = false
+            lines
+        }
+        val file = logFile ?: return
+        if (batch.isEmpty()) return
+        try {
+            // A cache cleanup may have removed the directory while this process is alive.
+            file.parentFile?.mkdirs()
+            FileWriter(file, true).use { it.write(batch.joinToString("\n", postfix = "\n")) }
+            trimLogFile(file)
+        } catch (e: Exception) {
+            Log.e(TAG, "写入日志文件异常", e)
         }
     }
 
@@ -98,11 +117,12 @@ object TestLog {
     }
 
     fun getAllLogs(): String {
-        return memoryLogs.joinToString("\n")
+        return synchronized(logLock) { memoryLogs.joinToString("\n") }
     }
 
-    fun clear() {
+    fun clear() = synchronized(logLock) {
         memoryLogs.clear()
+        pendingLogs.clear()
         fileExecutor.execute {
             try {
                 logFile?.delete()
@@ -115,11 +135,14 @@ object TestLog {
     private fun loadAndTrimLogFile(file: File) {
         try {
             if (!file.exists()) return
-            val lines = file.readLines().takeLast(MAX_LOG_LINES)
-            memoryLogs.clear()
-            memoryLogs.addAll(lines)
-            if (file.readLines().size > MAX_LOG_LINES) {
-                file.writeText(lines.joinToString("\n") + "\n")
+            val savedLines = file.readLines()
+            synchronized(logLock) {
+                val merged = savedLines.takeLast(MAX_LOG_LINES) + memoryLogs.toList()
+                memoryLogs.clear()
+                memoryLogs.addAll(merged.takeLast(MAX_LOG_LINES))
+            }
+            if (savedLines.size > MAX_LOG_LINES) {
+                file.writeText(savedLines.takeLast(MAX_LOG_LINES).joinToString("\n") + "\n")
             }
         } catch (e: Exception) {
             Log.e(TAG, "加载或清理日志文件异常", e)

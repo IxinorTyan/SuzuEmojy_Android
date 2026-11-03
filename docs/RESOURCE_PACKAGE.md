@@ -22,6 +22,8 @@ manifest 的 `icon_assets`、`total_icon_bytes` 独立统计图标文件；旧 `
 
 导入会恢复空收藏夹。同名收藏夹保留本地有效自定义图标，缺失或失效时才补充。附件检查路径、大小、SHA-256 和图像可解码性；图标异常单独警告，不阻止有效表情导入。
 
+本地和包内都没有有效自定义图标时，在分类关系写入完成后，默认使用该分类当前显示顺序第一张图片作为图标，保存为 `res:<资源ID>`。包内图标缺失或损坏也适用此回退；空分类保持默认图标。合并到已有分类时按合并后的分类内排序取第一张，已有有效图标不会被覆盖。
+
 Android 附件存放于 filesDir/category_icons，iconPath 使用 `file:category_icons/<filename>`；原 `res:` 和 `text:` 继续支持。Windows 附件存放于 data/category_icons，数据库和 JSON 保存 `category_icons/<filename>`，界面解析成绝对路径。
 
 ## 验证

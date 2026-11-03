@@ -28,31 +28,39 @@ object ResourceCleaner {
 
     private const val MODULE = "ResourceCleaner"
 
+    /** Owns the decoded pixels until hashing and optional PNG encoding have finished. */
+    class DecodedStaticImage internal constructor(private val bitmap: Bitmap, val md5: String) : AutoCloseable {
+        val width: Int = bitmap.width
+        val height: Int = bitmap.height
+
+        fun encode(): CleanResult.StaticImage {
+            val output = ByteArrayOutputStream()
+            check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) { "PNG encoding failed" }
+            return CleanResult.StaticImage(output.toByteArray(), width, height, md5)
+        }
+
+        override fun close() = bitmap.recycle()
+    }
+
+    fun decodeStatic(bytes: ByteArray): DecodedStaticImage? {
+        val bitmap = ResourceHasher.decodeRgba(bytes) ?: return null
+        return try {
+            DecodedStaticImage(bitmap, ResourceHasher.pixelMd5(bitmap))
+        } catch (e: Throwable) {
+            bitmap.recycle()
+            throw e
+        }
+    }
+
     fun sanitizeStatic(bytes: ByteArray): CleanResult {
         if (isAnimatedWebP(bytes)) {
             TestLog.w(MODULE, "sanitizeStatic: 拒绝处理动态 WebP (v1 不支持动态转码)")
             return CleanResult.UnsupportedFormat("Animated WebP is not supported in v1")
         }
 
-        val bitmap = ResourceHasher.decodeRgba(bytes)
+        val decoded = decodeStatic(bytes)
             ?: return CleanResult.UnsupportedFormat("Failed to decode image bytes into RGBA Bitmap")
-
-        val pixelMd5 = ResourceHasher.pixelMd5(bitmap)
-        val width = bitmap.width
-        val height = bitmap.height
-
-        val outStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream)
-        val pngBytes = outStream.toByteArray()
-
-        TestLog.i(MODULE, "sanitizeStatic: 成功清洗静态图 (尺寸 ${width}x${height}, MD5=$pixelMd5, PNG大小=${pngBytes.size})")
-
-        return CleanResult.StaticImage(
-            pngBytes = pngBytes,
-            width = width,
-            height = height,
-            md5 = pixelMd5
-        )
+        return decoded.use { it.encode() }
     }
 
     fun passthroughGif(bytes: ByteArray): CleanResult {

@@ -8,10 +8,10 @@ import kotlinx.coroutines.ensureActive
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.room.withTransaction
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.log.TestLog
+import com.suzu.test.resource.ImportCategoryIcons
 import com.suzu.test.resource.ResourceImportService
 import com.suzu.test.resource.importpkg.PackageImportStage
 import com.suzu.test.resource.importpkg.ResourcePackageImportService
@@ -160,6 +160,7 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
         presetCategoryId: Long?,
         unreadableDirectories: List<String> = emptyList()
     ) = start {
+        val startedAt = android.os.SystemClock.elapsedRealtime()
         // Read a source once but preserve every category association reported for that source.
         val itemsByUri = items.groupBy { it.uri }
         val total = itemsByUri.size
@@ -167,14 +168,20 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
         var duplicateCount = 0
         var failCount = 0
         val attachedNames = linkedSetOf<String>()
+        val attachedCategoryIds = linkedSetOf<Long>()
+        var iconsAssigned = false
         var presetDeleted = false
         val eligibleUris = mutableListOf<Uri>()
         val itemRecords = mutableListOf<ImportItemRecord>()
         try {
-            itemsByUri.entries.forEachIndexed { index, (uri, sourceItems) ->
-                currentCoroutineContext().ensureActive()
-                updateProgress("正在导入 ${index + 1}/$total", index, total)
-                val result = try {
+            val performance = ImportPerformanceProbe(app)
+            updateProgress("正在准备导入…")
+            val parallelism = performance.measure(total)
+            forEachPreparedInOrder(
+                items = itemsByUri.entries.toList(),
+                parallelism = parallelism,
+                parallelismLimit = performance::currentLimit,
+                prepare = { (uri, _) ->
                     val bytes = app.contentResolver.openInputStream(uri)?.use { input ->
                         val output = java.io.ByteArrayOutputStream()
                         val buffer = ByteArray(64 * 1024)
@@ -187,10 +194,27 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
                         output.toByteArray()
                     }
                     if (bytes == null || bytes.isEmpty()) throw java.io.IOException("读取失败或文件为空")
-                    importService.import(bytes)
+                    performance.withImageMemory(bytes) { importService.prepare(bytes) }
+                }
+            ) { index, (uri, sourceItems), prepared ->
+                currentCoroutineContext().ensureActive()
+                updateProgress("正在导入 ${index + 1}/$total", index, total)
+                var attachment: Pair<Set<String>, Boolean>? = null
+                var categoryFailure: Exception? = null
+                val result = try {
+                    importService.importPrepared(prepared.getOrThrow()) { imported ->
+                        try {
+                            attachment = attachImportedImage(imported.resourceId, sourceItems, presetCategoryId, attachedCategoryIds)
+                        } catch (e: Exception) {
+                            categoryFailure = e
+                            throw e
+                        }
+                    }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
+                    // Category failures abort the task and never offer source cleanup.
+                    if (categoryFailure != null || e is android.database.sqlite.SQLiteException) throw e
                     TestLog.e(MODULE, "导入异常 (URI=$uri): ${e.message}", e)
                     failCount++
                     val reason = when {
@@ -205,7 +229,7 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
                         syncKey = null, resourceId = null, filename = null,
                         existingResourceId = null, existingFilename = null, failReason = reason
                     ))
-                    return@forEachIndexed
+                    return@forEachPreparedInOrder
                 }
 
                 if (result.isDuplicate) duplicateCount++ else successCount++
@@ -217,42 +241,15 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
                     existingFilename = result.existingFilename, failReason = null
                 ))
 
-                // Finish this image's short relation transaction even when the user cancels.
-                // Never defer all category relations until the entire import has finished.
-                withContext(NonCancellable) {
-                    val (names, missingPreset) = database.withTransaction {
-                        val categoryIds = linkedSetOf<Long>()
-                        val names = linkedSetOf<String>()
-                        val preset = presetCategoryId?.let { database.categoryDao().getCategoryById(it) }
-                        if (preset != null) {
-                            categoryIds.add(preset.id)
-                            names.add(preset.name)
-                        }
-                        val folderNames = sourceItems.mapNotNull { normalizeFolderCategoryName(it.categoryName) }.distinct()
-                        for (name in folderNames) {
-                            val existing = database.categoryDao().getCategoryByName(name)
-                            val categoryId = existing?.id ?: database.categoryDao().insertCategory(
-                                CategoryEntity(
-                                    name = name,
-                                    sortOrder = (database.categoryDao().getMaxSortOrder() ?: 0) + 1
-                                )
-                            )
-                            categoryIds.add(categoryId)
-                            names.add(name)
-                        }
-                        for (categoryId in categoryIds) {
-                            database.resourceCategoryDao().addResourcesToCategoryBatch(
-                                listOf(result.resourceId), categoryId
-                            )
-                        }
-                        names to (presetCategoryId != null && preset == null)
-                    }
-                    attachedNames.addAll(names)
-                    presetDeleted = presetDeleted || missingPreset
-                }
+                val (names, missingPreset) = checkNotNull(attachment)
+                attachedNames.addAll(names)
+                presetDeleted = presetDeleted || missingPreset
                 eligibleUris.add(uri)
             }
 
+            currentCoroutineContext().ensureActive()
+            ImportCategoryIcons.assignMissing(app, database, attachedCategoryIds)
+            iconsAssigned = true
             currentCoroutineContext().ensureActive()
             val destination = if (attachedNames.isEmpty()) "" else {
                 val names = attachedNames.take(5).joinToString("") { "「$it」" }
@@ -268,11 +265,53 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
                 result = ImportTaskResult(itemRecords, eligibleUris, ImportSummary(successCount, duplicateCount, failCount))
             ) }
         } finally {
+            // Keep a usable icon for categories whose images survived a canceled import.
+            if (!iconsAssigned && attachedCategoryIds.isNotEmpty()) {
+                withContext(NonCancellable) {
+                    try {
+                        ImportCategoryIcons.assignMissing(app, database, attachedCategoryIds)
+                    } catch (e: Exception) {
+                        TestLog.w(MODULE, "补充分类图标失败: ${e.message}")
+                    }
+                }
+            }
+            TestLog.i(MODULE, "批量导入耗时 ${android.os.SystemClock.elapsedRealtime() - startedAt}ms: 新增=$successCount, 重复=$duplicateCount, 失败=$failCount, 候选=$total")
             // No source cleanup is offered after cancellation or an interrupted category transaction.
             mutableState.update {
                 if (it.result == null) it.copy(summary = "已新增 $successCount 张，重复 $duplicateCount 张，失败 $failCount 张") else it
             }
         }
+    }
+
+    /** Called inside the same short transaction as the resource row. Re-resolve categories
+     * to preserve rename/deletion behavior while the user is importing in the background. */
+    private suspend fun attachImportedImage(
+        resourceId: Long,
+        sourceItems: List<FolderImportItem>,
+        presetCategoryId: Long?,
+        attachedCategoryIds: MutableSet<Long>
+    ): Pair<Set<String>, Boolean> {
+        val categoryIds = linkedSetOf<Long>()
+        val names = linkedSetOf<String>()
+        val categoryDao = database.categoryDao()
+        val preset = presetCategoryId?.let { categoryDao.getCategoryById(it) }
+        if (preset != null) {
+            categoryIds.add(preset.id)
+            names.add(preset.name)
+        }
+        for (name in sourceItems.mapNotNull { normalizeFolderCategoryName(it.categoryName) }.distinct()) {
+            val existing = categoryDao.getCategoryByName(name)
+            val id = existing?.id ?: categoryDao.insertCategory(CategoryEntity(
+                name = name, sortOrder = (categoryDao.getMaxSortOrder() ?: 0) + 1
+            ))
+            categoryIds.add(id)
+            names.add(name)
+        }
+        for (id in categoryIds) {
+            database.resourceCategoryDao().addResourcesToCategoryBatch(listOf(resourceId), id)
+        }
+        attachedCategoryIds.addAll(categoryIds)
+        return names to (presetCategoryId != null && preset == null)
     }
 
     private fun getDocumentDisplayName(treeUri: Uri, documentId: String): String? {

@@ -9,6 +9,7 @@ import com.suzu.test.db.entity.ResourceCategoryEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.ResourceImportService
 import com.suzu.test.resource.PackageIcons
+import com.suzu.test.resource.ImportCategoryIcons
 import com.suzu.test.resource.KeywordUtils
 import com.suzu.test.storage.CacheCleanManager
 import com.suzu.test.ui.import.ImportFailReason
@@ -389,6 +390,9 @@ class ResourcePackageImportService(
                         )
                     )
                 }
+                // Package/local custom icons win; otherwise use the first image in the
+                // category's final display order, including already-existing members.
+                ImportCategoryIcons.assignMissing(context, database, listOf(categoryId))
             }
         }
     }
