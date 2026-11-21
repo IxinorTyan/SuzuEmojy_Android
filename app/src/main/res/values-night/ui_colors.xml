@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ui_canvas">#18151D</color>
-    <color name="ui_surface">#211D28</color>
-    <color name="ui_surface_variant">#2C2535</color>
-    <color name="ui_outline">#3C3346</color>
-    <color name="ui_ink">#F3ECF6</color>
-    <color name="ui_muted">#C6BBD0</color>
-    <color name="ui_subtle">#AC9DB8</color>
-    <color name="ui_accent">#D6BCFF</color>
-    <color name="ui_accent_container">#3B2C51</color>
-    <color name="ui_on_accent">#312046</color>
+    <color name="ui_canvas">#0F1814</color>
+    <color name="ui_surface">#17231D</color>
+    <color name="ui_surface_variant">#21332A</color>
+    <color name="ui_outline">#32473C</color>
+    <color name="ui_ink">#E9F4ED</color>
+    <color name="ui_muted">#B6CABE</color>
+    <color name="ui_subtle">#9DB6A7</color>
+    <color name="ui_accent">#90D4AF</color>
+    <color name="ui_accent_container">#244936</color>
+    <color name="ui_on_accent">#103824</color>
     <color name="ui_good">#A1DDB9</color>
     <color name="ui_good_container">#203C30</color>
     <color name="ui_warning">#F7C496</color>
@@ -17,6 +17,6 @@
     <color name="ui_warning_outline">#533A2D</color>
     <color name="ui_danger">#FFAEBE</color>
     <color name="ui_danger_container">#49232D</color>
-    <color name="ui_thumbnail">#332B3B</color>
-    <color name="ui_selection_mask">#55B38CF0</color>
+    <color name="ui_thumbnail">#283B32</color>
+    <color name="ui_selection_mask">#5590D4AF</color>
 </resources>

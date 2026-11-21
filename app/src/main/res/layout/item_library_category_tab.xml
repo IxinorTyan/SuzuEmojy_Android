@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <com.suzu.test.ui.library.LibraryCategoryCoverView
+        android:id="@+id/categoryCover"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="3dp"
+        android:duplicateParentState="true"
+        android:importantForAccessibility="no" />
+
+    <View
+        android:layout_width="14dp"
+        android:layout_height="3dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="4dp"
+        android:background="@drawable/bg_library_category_indicator"
+        android:duplicateParentState="true"
+        android:importantForAccessibility="no" />
+</FrameLayout>

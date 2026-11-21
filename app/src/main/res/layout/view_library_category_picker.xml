@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.suzu.test.ui.design.SuzuDisclosureLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <HorizontalScrollView
+            android:id="@+id/svCategoryBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fadingEdgeLength="12dp"
+            android:requiresFadingEdge="horizontal"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/llCategoryContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="18dp"
+            android:background="@color/ui_outline"
+            android:importantForAccessibility="no" />
+
+        <FrameLayout
+            android:id="@+id/btnCategoryDropdown"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/ivCategoryDropdownArrow"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:duplicateParentState="true"
+                android:importantForAccessibility="no"
+                app:srcCompat="@drawable/ic_expand_more_24"
+                app:tint="@color/library_category_icon" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <com.suzu.test.ui.design.SuzuRevealBody
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:suzuRevealMaxHeight="292dp"
+        app:suzuRevealMaxScreenFraction="0.4">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginHorizontal="12dp"
+                android:background="@color/ui_outline"
+                android:importantForAccessibility="no" />
+
+            <com.suzu.test.ui.library.LibraryCategoryGridView
+                android:id="@+id/rvCategoryDropdown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:padding="6dp"
+                android:scrollbars="vertical" />
+        </LinearLayout>
+    </com.suzu.test.ui.design.SuzuRevealBody>
+</com.suzu.test.ui.design.SuzuDisclosureLayout>

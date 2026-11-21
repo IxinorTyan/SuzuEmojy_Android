@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ui_canvas">#F7F5F2</color>
-    <color name="ui_surface">#FFFCFA</color>
-    <color name="ui_surface_variant">#F1EBF1</color>
-    <color name="ui_outline">#E5DDE7</color>
-    <color name="ui_ink">#241E2B</color>
-    <color name="ui_muted">#61586B</color>
-    <color name="ui_subtle">#706779</color>
-    <color name="ui_accent">#6944A5</color>
-    <color name="ui_accent_container">#EBE0FC</color>
+    <color name="ui_canvas">#F2F6F2</color>
+    <color name="ui_surface">#FCFEFC</color>
+    <color name="ui_surface_variant">#E7EFE8</color>
+    <color name="ui_outline">#D2DED5</color>
+    <color name="ui_ink">#142A22</color>
+    <color name="ui_muted">#4D655A</color>
+    <color name="ui_subtle">#5A6F64</color>
+    <color name="ui_accent">#176449</color>
+    <color name="ui_accent_container">#D4EBDE</color>
     <color name="ui_on_accent">#FFFFFF</color>
     <color name="ui_good">#236548</color>
     <color name="ui_good_container">#E2F1E8</color>
@@ -17,17 +17,17 @@
     <color name="ui_warning_outline">#EEDDCA</color>
     <color name="ui_danger">#A33449</color>
     <color name="ui_danger_container">#F9E5E8</color>
-    <color name="ui_thumbnail">#EDE7EE</color>
-    <color name="ui_selection_mask">#406944A5</color>
+    <color name="ui_thumbnail">#E4EDE6</color>
+    <color name="ui_selection_mask">#40176449</color>
     <color name="ui_hero_ink">#FFFFFF</color>
-    <color name="ui_hero_muted">#F0E6FF</color>
-    <color name="ui_hero_start">#46306F</color>
-    <color name="ui_hero_end">#60458E</color>
+    <color name="ui_hero_muted">#DCFAE8</color>
+    <color name="ui_hero_start">#113B2C</color>
+    <color name="ui_hero_end">#256A50</color>
     <color name="ui_hero_translucent">#20FFFFFF</color>
-    <color name="ui_media_canvas">#15121A</color>
-    <color name="ui_media_surface">#221C2B</color>
-    <color name="ui_media_elevated">#32293D</color>
-    <color name="ui_media_muted">#D5CADC</color>
-    <color name="ui_media_accent">#D6BCFF</color>
-    <color name="ui_media_on_accent">#312046</color>
+    <color name="ui_media_canvas">#101913</color>
+    <color name="ui_media_surface">#192720</color>
+    <color name="ui_media_elevated">#263C31</color>
+    <color name="ui_media_muted">#C2D9CB</color>
+    <color name="ui_media_accent">#A4E0BC</color>
+    <color name="ui_media_on_accent">#113824</color>
 </resources>

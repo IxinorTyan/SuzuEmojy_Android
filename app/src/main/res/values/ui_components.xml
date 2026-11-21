@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SuzuRevealBody">
+        <attr name="suzuRevealMaxHeight" format="dimension" />
+        <attr name="suzuRevealMaxScreenFraction" format="float" />
+    </declare-styleable>
+
+    <string name="suzu_disclosure_expanded">已展开</string>
+    <string name="suzu_disclosure_collapsed">已收起</string>
+    <string name="suzu_navigate_back">返回</string>
+    <string name="suzu_library_title">资源库</string>
+    <string name="suzu_library_count">共 %1$d 张</string>
+    <string name="suzu_settings_title">设置</string>
+    <string name="library_expand_categories">展开分类</string>
+    <string name="library_collapse_categories">收起分类</string>
+</resources>

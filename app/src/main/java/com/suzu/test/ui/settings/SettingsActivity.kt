@@ -35,7 +35,6 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivitySettingsBinding
-    private var isPermissionExpanded = false
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -57,26 +56,14 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun setupPermissionCollapse() {
         val sp = getSharedPreferences(SP_NAME, Context.MODE_PRIVATE)
-        // 默认折叠，节省屏幕空间，可通过点击随时展开
-        isPermissionExpanded = sp.getBoolean(KEY_PERM_EXPANDED, false)
-        applyPermissionExpandState(animate = false)
-
+        val disclosure = binding.cardPermissions
+        disclosure.bindIndicator(binding.layoutPermissionHeader, binding.ivPermissionExpandArrow)
+        disclosure.setExpanded(sp.getBoolean(KEY_PERM_EXPANDED, false), animate = false)
         binding.layoutPermissionHeader.setOnClickListener {
-            isPermissionExpanded = !isPermissionExpanded
-            sp.edit().putBoolean(KEY_PERM_EXPANDED, isPermissionExpanded).apply()
-            applyPermissionExpandState(animate = true)
+            val expanded = !disclosure.isExpanded
+            disclosure.setExpanded(expanded)
+            sp.edit().putBoolean(KEY_PERM_EXPANDED, expanded).apply()
         }
-    }
-
-    private fun applyPermissionExpandState(animate: Boolean) {
-        if (animate) {
-            android.transition.TransitionManager.beginDelayedTransition(binding.cardPermissions)
-        }
-        binding.layoutPermissionContent.visibility = if (isPermissionExpanded) View.VISIBLE else View.GONE
-        binding.ivPermissionExpandArrow.animate()
-            .rotation(if (isPermissionExpanded) 180f else 0f)
-            .setDuration(if (animate) 200 else 0)
-            .start()
     }
 
     private fun observeA11yState() {
@@ -96,7 +83,8 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupNavigation() {
-        binding.btnBack.setOnClickListener {
+        binding.pageHeading.tvTitle.setText(R.string.suzu_settings_title)
+        binding.pageHeading.btnBack.setOnClickListener {
             finish()
         }
         binding.btnNavKeyboardAppearance.setOnClickListener {

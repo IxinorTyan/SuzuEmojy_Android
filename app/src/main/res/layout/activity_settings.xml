@@ -24,28 +24,11 @@
             android:orientation="vertical"
             android:paddingBottom="24dp">
 
-            <LinearLayout
+            <include
+                android:id="@+id/pageHeading"
+                layout="@layout/view_suzu_page_heading"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="60dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <androidx.appcompat.widget.AppCompatImageButton
-                    android:id="@+id/btnBack"
-                    style="@style/Widget.Suzu.IconAction"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    app:srcCompat="@drawable/ic_arrow_back_24"
-                    android:contentDescription="返回" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:text="设置"
-                    android:textAppearance="@style/TextAppearance.Suzu.PageTitle" />
-            </LinearLayout>
+                android:layout_height="wrap_content" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -240,108 +223,98 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 1. 权限状态卡片 (支持折叠/展开与状态摘要) -->
-            <com.google.android.material.card.MaterialCardView
+            <com.suzu.test.ui.design.SuzuDisclosureLayout
                 android:id="@+id/cardPermissions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="@dimen/ui_radius"
-                app:cardElevation="0dp"
-                app:cardMaxElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/ui_outline"
-                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginTop="16dp">
 
+                <!-- 卡片折叠/展开点击头部 -->
                 <LinearLayout
-                    android:id="@+id/layoutPermissionCardRoot"
+                    android:id="@+id/layoutPermissionHeader"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <!-- 卡片折叠/展开点击头部 -->
-                    <LinearLayout
-                        android:id="@+id/layoutPermissionHeader"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="16dp"
-                        android:background="?android:attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
+                    <FrameLayout
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:background="@drawable/bg_home_icon_blue">
 
-                        <FrameLayout
-                            android:layout_width="38dp"
-                            android:layout_height="38dp"
-                            android:background="@drawable/bg_home_icon_blue">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_about_shield"
-                                app:tint="@color/ui_accent"
-                                android:contentDescription="权限状态" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="12dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="权限状态"
-                                android:textSize="16sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/ui_ink" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="输入法及扩展功能运行状态"
-                                android:textSize="11sp"
-                                android:textColor="@color/ui_muted"
-                                android:layout_marginTop="2dp" />
-                        </LinearLayout>
-
-                        <!-- 状态摘要胶囊 -->
-                        <TextView
-                            android:id="@+id/tvPermissionSummaryBadge"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="检查中..."
-                            android:textSize="11sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/ui_good"
-                            android:background="@drawable/bg_home_tag_green"
-                            android:paddingHorizontal="8dp"
-                            android:paddingVertical="3dp"
-                            android:layout_marginEnd="6dp" />
-
-                        <!-- 折叠/展开旋转指示箭头 -->
                         <ImageView
-                            android:id="@+id/ivPermissionExpandArrow"
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@drawable/ic_expand_more_24"
-                            app:tint="@color/ui_muted"
-                            android:contentDescription="折叠或展开权限详情" />
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_about_shield"
+                            app:tint="@color/ui_accent"
+                            android:contentDescription="权限状态" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="12dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="权限状态"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/ui_ink" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="输入法及扩展功能运行状态"
+                            android:textSize="11sp"
+                            android:textColor="@color/ui_muted"
+                            android:layout_marginTop="2dp" />
                     </LinearLayout>
 
-                    <!-- 可折叠的详情区域 -->
+                    <!-- 状态摘要胶囊 -->
+                    <TextView
+                        android:id="@+id/tvPermissionSummaryBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="检查中..."
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/ui_good"
+                        android:background="@drawable/bg_home_tag_green"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
+                        android:layout_marginEnd="6dp" />
+
+                    <!-- 折叠/展开旋转指示箭头 -->
+                    <ImageView
+                        android:id="@+id/ivPermissionExpandArrow"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_expand_more_24"
+                        app:tint="@color/ui_muted"
+                        android:contentDescription="折叠或展开权限详情" />
+                </LinearLayout>
+
+                <!-- 可折叠的详情区域 -->
+
+                <com.suzu.test.ui.design.SuzuRevealBody
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
                     <LinearLayout
-                        android:id="@+id/layoutPermissionContent"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:paddingHorizontal="16dp"
-                        android:paddingBottom="16dp"
-                        android:visibility="gone">
+                        android:paddingBottom="16dp">
 
                         <View
                             android:layout_width="match_parent"
@@ -640,8 +613,8 @@
                         </LinearLayout>
 
                     </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                </com.suzu.test.ui.design.SuzuRevealBody>
+            </com.suzu.test.ui.design.SuzuDisclosureLayout>
 
             <TextView
                 android:layout_width="wrap_content"

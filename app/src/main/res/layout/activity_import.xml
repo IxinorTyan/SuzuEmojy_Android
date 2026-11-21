@@ -215,7 +215,7 @@
                     <FrameLayout
                         android:layout_width="42dp"
                         android:layout_height="42dp"
-                        android:background="@drawable/bg_home_icon_purple">
+                        android:background="@drawable/bg_home_icon_accent">
 
                         <ImageView
                             android:layout_width="22dp"

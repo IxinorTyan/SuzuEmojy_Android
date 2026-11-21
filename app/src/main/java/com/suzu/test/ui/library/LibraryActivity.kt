@@ -21,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.widget.ViewPager2
 import androidx.room.withTransaction
+import com.suzu.test.R
 import com.suzu.test.databinding.ActivityLibraryBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.SuzuDatabase
@@ -164,13 +165,15 @@ class LibraryActivity : AppCompatActivity() {
             }
         })
 
+        val categoryPicker = binding.categoryPicker
         categoryController = CategoryBarController(
             context = this,
-            container = binding.llCategoryContainer,
-            categoryBarScrollView = binding.svCategoryBar,
-            dropdownButton = binding.btnCategoryDropdown,
-            dropdownPanel = binding.svCategoryDropdown,
-            dropdownGrid = binding.glCategoryDropdown,
+            container = categoryPicker.llCategoryContainer,
+            categoryBarScrollView = categoryPicker.svCategoryBar,
+            dropdownButton = categoryPicker.btnCategoryDropdown,
+            dropdownArrow = categoryPicker.ivCategoryDropdownArrow,
+            disclosure = categoryPicker.root,
+            dropdownGrid = categoryPicker.rvCategoryDropdown,
             scope = lifecycleScope,
             isSortingMode = { isSortingMode },
             onAllLongClick = {
@@ -353,7 +356,12 @@ class LibraryActivity : AppCompatActivity() {
     }
 
     private fun setupTopBar() {
-        binding.btnBack.setOnClickListener {
+        binding.pageHeading.tvTitle.setText(R.string.suzu_library_title)
+        binding.pageHeading.tvSubtitle.apply {
+            text = getString(R.string.suzu_library_count, 0)
+            visibility = View.VISIBLE
+        }
+        binding.pageHeading.btnBack.setOnClickListener {
             if (isSortingMode) {
                 setSortingMode(false)
             } else if (isSelectionMode) {
@@ -779,8 +787,8 @@ class LibraryActivity : AppCompatActivity() {
                 "分类"
             }
         }
-        binding.tvTitle.text = title
-        binding.tvCount.text = "共 ${list.size} 张"
+        binding.pageHeading.tvTitle.text = title
+        binding.pageHeading.tvSubtitle.text = getString(R.string.suzu_library_count, list.size)
         if (isSelectionMode) {
             updateBatchActionBar()
         }
