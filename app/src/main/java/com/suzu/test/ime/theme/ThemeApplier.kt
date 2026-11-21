@@ -1,25 +1,18 @@
 package com.suzu.test.ime.theme
 
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.Gravity
+import androidx.core.graphics.ColorUtils
 import com.suzu.test.databinding.ViewImeKeyboardBinding
 
 object ThemeApplier {
 
-    fun applyTo(binding: ViewImeKeyboardBinding, theme: KeyboardTheme) {
-        val root = binding.root
-        root.setBackgroundColor(theme.rootBg)
-
-        binding.hsvTabBar.parent?.let { parentView ->
-            if (parentView is android.view.View) {
-                parentView.setBackgroundColor(theme.tabBarBg)
-            }
-        }
-
-        binding.flGridContainer.setBackgroundColor(theme.gridBg)
+    fun applyTo(binding: ViewImeKeyboardBinding, theme: KeyboardTheme, wallpaper: KeyboardWallpaper.Frame?) {
+        applyWallpaper(binding, theme, wallpaper)
         binding.svImeTabDropdown.background = createPopupBackground(theme)
         binding.glImeTabDropdown.setBackgroundColor(theme.popupBg)
 
@@ -33,6 +26,19 @@ object ThemeApplier {
         binding.btnTabDropdown.background = headerButtonBackground
         binding.btnExit.imageTintList = ColorStateList.valueOf(theme.iconColor)
         binding.btnExit.background = createTabBackground(theme)
+    }
+
+    fun applyWallpaper(binding: ViewImeKeyboardBinding, theme: KeyboardTheme, wallpaper: KeyboardWallpaper.Frame?) {
+        if (wallpaper == null) {
+            binding.root.setBackgroundColor(theme.rootBg)
+            binding.llTabHeaderBar.setBackgroundColor(theme.tabBarBg)
+            binding.flGridContainer.setBackgroundColor(theme.gridBg)
+        } else {
+            binding.root.background = WallpaperDrawable(wallpaper, theme.gridBg)
+            // Keep the controls legible without hiding the image behind the category bar.
+            binding.llTabHeaderBar.setBackgroundColor(ColorUtils.setAlphaComponent(theme.tabBarBg, 200))
+            binding.flGridContainer.setBackgroundColor(Color.TRANSPARENT)
+        }
     }
 
     private fun createPopupBackground(

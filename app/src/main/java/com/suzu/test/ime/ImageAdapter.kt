@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.graphics.drawable.GradientDrawable
+import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -17,6 +18,13 @@ class ImageAdapter(
 ) : RecyclerView.Adapter<ImageAdapter.ImageViewHolder>() {
 
     private val items = mutableListOf<ImageItem>()
+    private var wallpaperVisible = false
+
+    fun setWallpaperVisible(visible: Boolean) {
+        if (wallpaperVisible == visible) return
+        wallpaperVisible = visible
+        notifyDataSetChanged()
+    }
 
     fun submitList(newItems: List<ImageItem>, onSubmitted: (() -> Unit)? = null) {
         items.clear()
@@ -49,10 +57,11 @@ class ImageAdapter(
 
         fun bind(item: ImageItem) {
             val theme = KeyboardTheme.current(itemView.context)
-            val placeholderDrawable = android.graphics.drawable.ColorDrawable(theme.itemBgColor)
+            val itemColor = if (wallpaperVisible) ColorUtils.setAlphaComponent(theme.itemBgColor, 80) else theme.itemBgColor
+            val placeholderDrawable = android.graphics.drawable.ColorDrawable(itemColor)
             val itemBgDrawable = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                setColor(theme.itemBgColor)
+                setColor(itemColor)
                 val strokeWidthPx = (1 * itemView.resources.displayMetrics.density).toInt().coerceAtLeast(1)
                 setStroke(strokeWidthPx, theme.itemBorderColor)
                 cornerRadius = 4 * itemView.resources.displayMetrics.density

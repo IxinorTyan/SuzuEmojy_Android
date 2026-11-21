@@ -7,4 +7,13 @@
     <string name="floating_service_notification_channel">SuzuEmojy 悬浮服务</string>
     <string name="floating_service_notification_title">SuzuEmojy</string>
     <string name="floating_service_notification_text">SuzuEmojy 服务运行中，提供便捷表情发送支持</string>
+    <string name="ime_wallpaper_title">背景图片</string>
+    <string name="ime_wallpaper_choose">选择图片</string>
+    <string name="ime_wallpaper_remove">移除</string>
+    <string name="ime_wallpaper_blur">背景模糊度</string>
+    <string name="ime_wallpaper_brightness">背景亮度</string>
+    <string name="ime_wallpaper_blur_level">%1$d</string>
+    <string name="ime_wallpaper_brightness_level">%1$d%%</string>
+    <string name="ime_wallpaper_import_failed">无法保存背景图片</string>
+    <string name="ime_wallpaper_remove_failed">无法移除背景图片</string>
 </resources>

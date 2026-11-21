@@ -24,6 +24,7 @@ import com.suzu.test.ime.diag.EditorInfoDumper
 import com.suzu.test.ime.diag.ImageSendDiagnostics
 import com.suzu.test.ime.sender.ImageSender
 import com.suzu.test.ime.theme.KeyboardTheme
+import com.suzu.test.ime.theme.KeyboardWallpaper
 import com.suzu.test.ime.theme.ThemeApplier
 import com.suzu.test.ime.ui.CategoryPagerAdapter
 import com.suzu.test.ime.ui.ImeTabDropdownController
@@ -32,6 +33,7 @@ import com.suzu.test.ime.ui.preview.ImagePreviewPopup
 import com.suzu.test.log.TestLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -59,6 +61,8 @@ class TestImageIME : InputMethodService() {
 
     private var binding: ViewImeKeyboardBinding? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var wallpaperJob: Job? = null
+    private var wallpaper: KeyboardWallpaper.Frame? = null
     private lateinit var dataSource: KeyboardDataSource
     private lateinit var imageSender: ImageSender
     private var tabBar: KeyboardTabBar? = null
@@ -129,6 +133,14 @@ class TestImageIME : InputMethodService() {
         tabBar = null
         val viewBinding = ViewImeKeyboardBinding.inflate(layoutInflater)
         binding = viewBinding
+        wallpaperJob?.cancel()
+        wallpaperJob = serviceScope.launch {
+            KeyboardWallpaper.frames(this@TestImageIME).collect { frame ->
+                wallpaper = frame
+                ThemeApplier.applyWallpaper(viewBinding, KeyboardTheme.current(this@TestImageIME), frame)
+                categoryPagerAdapter?.setWallpaperVisible(frame != null)
+            }
+        }
 
         setupSendDiagnostics(viewBinding)
         setupDebugSendSwitch(viewBinding)
@@ -148,6 +160,7 @@ class TestImageIME : InputMethodService() {
                 previewPopup?.dismiss()
             }
         )
+        pagerAdapter.setWallpaperVisible(wallpaper != null)
         categoryPagerAdapter = pagerAdapter
 
         viewBinding.vpCategoryPager.adapter = pagerAdapter
@@ -489,7 +502,7 @@ class TestImageIME : InputMethodService() {
     private fun applyTheme() {
         val theme = KeyboardTheme.current(this)
         binding?.let { b ->
-            ThemeApplier.applyTo(b, theme)
+            ThemeApplier.applyTo(b, theme, wallpaper)
             tabBar?.refreshTheme()
             imeTabDropdown?.refreshTheme()
             categoryPagerAdapter?.notifyThemeChanged()

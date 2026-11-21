@@ -37,6 +37,13 @@ class CategoryPagerAdapter(
     private var spanCount: Int = KeyboardConfig.getSpanCount(context)
     private val pageDataCache = ConcurrentHashMap<String, List<ImageItem>>()
     private val activeHolders = mutableSetOf<PageViewHolder>()
+    private var wallpaperVisible = false
+
+    fun setWallpaperVisible(visible: Boolean) {
+        if (wallpaperVisible == visible) return
+        wallpaperVisible = visible
+        activeHolders.forEach { it.applyWallpaper() }
+    }
 
     fun setTabs(newTabs: List<String>) {
         if (tabs != newTabs) {
@@ -122,6 +129,7 @@ class CategoryPagerAdapter(
         private var gestureDirectionDetermined = false
 
         init {
+            applyWallpaper()
             binding.rvPageGrid.layoutManager = gridLayoutManager
             binding.rvPageGrid.adapter = imageAdapter
 
@@ -180,6 +188,10 @@ class CategoryPagerAdapter(
             val theme = KeyboardTheme.current(itemView.context)
             binding.tvPageEmptyHint.setTextColor(theme.emptyHintText)
             imageAdapter.notifyDataSetChanged()
+        }
+
+        fun applyWallpaper() {
+            imageAdapter.setWallpaperVisible(wallpaperVisible)
         }
 
         fun bind(tabKey: String) {

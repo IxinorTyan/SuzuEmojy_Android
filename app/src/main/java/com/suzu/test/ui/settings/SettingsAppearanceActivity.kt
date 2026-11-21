@@ -4,16 +4,24 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.SeekBar
+import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import com.suzu.test.R
 import com.suzu.test.databinding.ActivitySettingsAppearanceBinding
 import com.suzu.test.ime.ImageAdapter
 import com.suzu.test.ime.TestImageIME
 import com.suzu.test.ime.config.KeyboardConfig
 import com.suzu.test.ime.data.KeyboardDataSource
 import com.suzu.test.ime.theme.KeyboardTheme
+import com.suzu.test.ime.theme.KeyboardWallpaper
+import com.suzu.test.ime.theme.WallpaperDrawable
 import com.suzu.test.log.TestLog
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 class SettingsAppearanceActivity : AppCompatActivity() {
@@ -25,6 +33,13 @@ class SettingsAppearanceActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsAppearanceBinding
     private var previewAdapter: ImageAdapter? = null
     private var previewLayoutManager: GridLayoutManager? = null
+    private var wallpaperFrame: KeyboardWallpaper.Frame? = null
+    private var wallpaperBusy = false
+    private val wallpaperPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            changeWallpaper(R.string.ime_wallpaper_import_failed) { KeyboardWallpaper.replace(applicationContext, uri) }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +67,7 @@ class SettingsAppearanceActivity : AppCompatActivity() {
         setupExitButtonSwitch()
         setupSendFailureForwardSwitch()
         setupPreview()
+        setupWallpaper()
     }
 
     private fun setupRecentTabSwitch() {
@@ -156,9 +172,87 @@ class SettingsAppearanceActivity : AppCompatActivity() {
     }
 
     private fun updatePreviewTheme() {
-        val theme = KeyboardTheme.current(this)
-        binding.flPreviewContainer.setBackgroundColor(theme.gridBg)
+        updatePreviewWallpaper()
         previewAdapter?.notifyDataSetChanged()
+    }
+
+    private fun updatePreviewWallpaper() {
+        val theme = KeyboardTheme.current(this)
+        val frame = wallpaperFrame
+        if (frame == null) {
+            binding.flPreviewContainer.setBackgroundColor(theme.gridBg)
+        } else {
+            binding.flPreviewContainer.background = WallpaperDrawable(frame, theme.gridBg)
+        }
+    }
+
+    private fun setupWallpaper() {
+        val tone = KeyboardWallpaper.tone(this)
+        binding.sbWallpaperBlur.max = KeyboardWallpaper.MAX_BLUR
+        bindWallpaperSlider(binding.sbWallpaperBlur, binding.tvWallpaperBlurValue, tone.blur, R.string.ime_wallpaper_blur_level) {
+            KeyboardWallpaper.setBlur(this, it)
+        }
+        binding.sbWallpaperBrightness.max = KeyboardWallpaper.MAX_BRIGHTNESS
+        binding.sbWallpaperBrightness.min = -KeyboardWallpaper.MAX_BRIGHTNESS
+        bindWallpaperSlider(
+            binding.sbWallpaperBrightness, binding.tvWallpaperBrightnessValue, tone.brightness,
+            R.string.ime_wallpaper_brightness_level
+        ) {
+            KeyboardWallpaper.setBrightness(this, it)
+        }
+        binding.btnChooseWallpaper.setOnClickListener {
+            wallpaperPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
+        binding.btnRemoveWallpaper.setOnClickListener {
+            changeWallpaper(R.string.ime_wallpaper_remove_failed) { KeyboardWallpaper.remove(applicationContext) }
+        }
+        lifecycleScope.launch {
+            KeyboardWallpaper.frames(this@SettingsAppearanceActivity).collect { frame ->
+                wallpaperFrame = frame
+                previewAdapter?.setWallpaperVisible(frame != null)
+                updateWallpaperControls()
+                updatePreviewWallpaper()
+            }
+        }
+    }
+
+    private fun bindWallpaperSlider(slider: SeekBar, value: TextView, initial: Int, format: Int, save: (Int) -> Unit) {
+        slider.progress = initial
+        value.text = getString(format, initial)
+        slider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                value.text = getString(format, progress)
+                if (fromUser) save(progress)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+    }
+
+    private fun updateWallpaperControls() {
+        val hasImage = wallpaperFrame != null
+        binding.btnChooseWallpaper.isEnabled = !wallpaperBusy
+        binding.btnRemoveWallpaper.isEnabled = !wallpaperBusy && hasImage
+        binding.layoutWallpaperTone.visibility = if (hasImage) View.VISIBLE else View.GONE
+    }
+
+    private fun changeWallpaper(errorMessage: Int, change: suspend () -> Unit) {
+        if (wallpaperBusy) return
+        wallpaperBusy = true
+        updateWallpaperControls()
+        lifecycleScope.launch {
+            try {
+                change()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                TestLog.e(MODULE, "更新键盘背景失败", failure)
+                Toast.makeText(this@SettingsAppearanceActivity, errorMessage, Toast.LENGTH_SHORT).show()
+            } finally {
+                wallpaperBusy = false
+                updateWallpaperControls()
+            }
+        }
     }
 
     private fun setupKeyboardAdjusters() {
