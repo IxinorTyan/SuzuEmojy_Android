@@ -2,6 +2,7 @@ package com.suzu.test.ime
 
 /** Pure timing policy; Android window and editor checks are supplied by the caller. */
 internal class ImeSwitchAttempt(val startedAt: Long) {
+    val deadline = startedAt + 2500L
     private var visibleSince: Long? = null
     private var clicks = 0
     private var lastClickAt: Long? = null
@@ -13,7 +14,7 @@ internal class ImeSwitchAttempt(val startedAt: Long) {
         private set
 
     fun cancel() { cancelled = true }
-    fun expired(now: Long): Boolean = now - startedAt >= 2500L
+    fun expired(now: Long): Boolean = now >= deadline
     fun isActive(now: Long): Boolean = !cancelled && !expired(now)
     fun onHidden(now: Long) {
         if (!isActive(now)) return

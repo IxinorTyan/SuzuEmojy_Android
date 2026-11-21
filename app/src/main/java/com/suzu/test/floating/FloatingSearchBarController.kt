@@ -20,6 +20,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import com.suzu.test.accessibility.TestAccessibilityService
 import com.suzu.test.databinding.LayoutFloatingSearchBarBinding
+import com.suzu.test.ime.ImeHost
 import com.suzu.test.ime.theme.KeyboardTheme
 import com.suzu.test.log.TestLog
 import kotlinx.coroutines.*
@@ -50,7 +51,7 @@ class FloatingSearchBarController(private val context: Context) {
     private var currentImeTop: Int? = null
     private var pendingImeTop: Int? = null
     private var imeBoundsUpdatePosted = false
-    private var searchTarget: TestAccessibilityService.InputTarget? = null
+    private var searchTarget: ImeHost? = null
     private var showGeneration = 0L
     private val launchState = SearchLaunchState()
     private val launchScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)

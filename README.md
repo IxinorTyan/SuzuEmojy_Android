@@ -166,7 +166,7 @@ com.suzu.test
 └── ui/              # 业务页面与 ViewModel
 ```
 
-- **数据流与架构**：采用清晰的 MVVM 架构，全面基于 Kotlin Coroutines 与 `StateFlow` 实现响应式状态管理。
+- **数据流与架构**：资源库、导入等页面使用 ViewModel 与 `StateFlow`。系统服务链路不属于页面 MVVM：IME 交接由 `ImeHandoffCoordinator` 管理，无障碍服务负责系统窗口、输入框和键盘操作，具体边界与后续拆分见 [Android 架构说明](docs/ANDROID_ARCHITECTURE.md)。
 - **持久化层**：采用 Android Jetpack Room 统一管理本地资源与关系关联，保证 ACID 事务与级联操作可靠性。
 - **图像管线**：Glide 4.x 进行高性能位图加载与内存缓存；在像素层通过 `copyPixelsToBuffer` 提取原始 RGBA 进行跨端无损 MD5 校验。
 - **投递策略引擎**：内置 CommitContent 标准协议、搜狗私有命令兼容分支（H1β）、剪贴板自动注入与定向分享 Fallback，最大限度提高不同聊天客户端下的直发成功率。

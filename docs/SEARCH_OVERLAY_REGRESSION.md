@@ -2,6 +2,8 @@
 
 ## Implementation
 
+- `ImeHandoffCoordinator` owns the active request, polling, timeout, and recovery decisions. The accessibility service adapts Android window/editor queries and keyboard operations; the coordinator can be exercised against a fake platform without a device. Direct entry, search return, and explicit switch-back still use the same handoff.
+
 - Window events share one background snapshot for whitelist and IME evaluation.
 - Only one snapshot is in flight; a newer event invalidates its result and schedules one follow-up.
 - Ordinary window events retain the last verified whitelist result until the next snapshot. Revoking it on every event creates a show/hide feedback loop because the ball itself emits window events. Screen-off and whitelist configuration changes still revoke immediately; new snapshots revoke unknown or disallowed hosts.
