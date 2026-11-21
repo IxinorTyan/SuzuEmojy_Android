@@ -1,6 +1,7 @@
 package com.suzu.test.ui.library
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ScaleGestureDetector
 import android.view.View
@@ -380,6 +381,9 @@ class CategoryBarController(
         val iconView = view.findViewById<ImageView>(R.id.ivChipIcon)
         iconView.visibility = View.VISIBLE
         iconView.setImageResource(iconResId)
+        iconView.imageTintList = ColorStateList.valueOf(
+            context.getColor(if (isSelected) R.color.ui_accent else R.color.ui_muted)
+        )
         view.isSelected = isSelected
         view.setOnClickListener { onClick() }
         return view

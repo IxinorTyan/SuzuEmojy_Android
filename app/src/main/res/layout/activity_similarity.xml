@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F8FAFC">
+    android:background="@color/ui_canvas">
 
     <!-- 顶部导航栏 -->
     <LinearLayout
@@ -23,7 +23,7 @@
             android:layout_height="40dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_arrow_back_24"
-            app:tint="#0F172A"
+            app:tint="@color/ui_ink"
             android:padding="8dp"
             android:contentDescription="返回" />
 
@@ -38,9 +38,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="相似图片清理"
-                android:textSize="20sp"
+                android:textSize="24sp"
                 android:textStyle="bold"
-                android:textColor="#0F172A"
+                android:textColor="@color/ui_ink"
                 android:letterSpacing="-0.01" />
 
             <TextView
@@ -48,7 +48,7 @@
                 android:layout_height="wrap_content"
                 android:text="感知哈希比对 · 查找外观相近与重复表情"
                 android:textSize="12sp"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:layout_marginTop="2dp" />
         </LinearLayout>
     </LinearLayout>
@@ -60,12 +60,12 @@
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="8dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="1.5dp"
-        app:cardMaxElevation="3dp"
+        app:cardCornerRadius="@dimen/ui_radius"
+        app:cardElevation="0dp"
+        app:cardMaxElevation="0dp"
         app:strokeWidth="1dp"
-        app:strokeColor="#E2E8F0"
-        app:cardBackgroundColor="#FFFFFF">
+        app:strokeColor="@color/ui_outline"
+        app:cardBackgroundColor="@color/ui_surface">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -93,7 +93,7 @@
                         android:text="图片类型"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:textColor="#64748B"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginBottom="4dp" />
 
                     <FrameLayout
@@ -123,7 +123,7 @@
                         android:text="扫描范围"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:textColor="#64748B"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginBottom="4dp" />
 
                     <FrameLayout
@@ -155,7 +155,7 @@
                     android:text="匹配阈值"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:textColor="#0F172A" />
+                    android:textColor="@color/ui_ink" />
 
                 <TextView
                     android:id="@+id/tvThresholdBadge"
@@ -164,7 +164,7 @@
                     android:text="阈值: 6 · 推荐"
                     android:textSize="11sp"
                     android:textStyle="bold"
-                    android:textColor="#2563EB"
+                    android:textColor="@color/ui_accent"
                     android:background="@drawable/bg_home_tag_blue"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="2.5dp" />
@@ -176,8 +176,8 @@
                 android:layout_height="36dp"
                 android:max="16"
                 android:progress="6"
-                android:progressTint="#2563EB"
-                android:thumbTint="#2563EB"
+                android:progressTint="@color/ui_accent"
+                android:thumbTint="@color/ui_accent"
                 android:contentDescription="匹配范围，向右调节更宽松"
                 android:layout_marginTop="2dp" />
 
@@ -192,14 +192,14 @@
                     android:layout_weight="1"
                     android:text="严格 (0)"
                     android:textSize="11sp"
-                    android:textColor="#94A3B8" />
+                    android:textColor="@color/ui_subtle" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="宽松 (16)"
                     android:textSize="11sp"
-                    android:textColor="#94A3B8" />
+                    android:textColor="@color/ui_subtle" />
             </LinearLayout>
 
             <!-- 操作按钮行 -->
@@ -218,9 +218,9 @@
                     android:text="开始扫描"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/ui_on_accent"
                     app:cornerRadius="10dp"
-                    app:backgroundTint="#2563EB" />
+                    app:backgroundTint="@color/ui_accent" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnCancel"
@@ -230,8 +230,8 @@
                     android:layout_marginStart="8dp"
                     android:text="取消"
                     android:textSize="13sp"
-                    android:textColor="#64748B"
-                    app:strokeColor="#CBD5E1"
+                    android:textColor="@color/ui_muted"
+                    app:strokeColor="@color/ui_outline"
                     app:cornerRadius="10dp"
                     android:visibility="gone" />
             </LinearLayout>
@@ -242,7 +242,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="4dp"
                 android:indeterminate="true"
-                android:indeterminateTint="#2563EB"
+                android:indeterminateTint="@color/ui_accent"
                 android:layout_marginTop="8dp"
                 android:visibility="gone" />
 
@@ -251,7 +251,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="12sp"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:layout_marginTop="6dp"
                 android:accessibilityLiveRegion="polite" />
 
@@ -293,7 +293,7 @@
                     android:layout_height="28dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_similar_images"
-                    app:tint="#2563EB"
+                    app:tint="@color/ui_accent"
                     android:contentDescription="相似图片" />
             </FrameLayout>
 
@@ -304,14 +304,14 @@
                 android:text="未发现疑似相似图片"
                 android:textSize="15sp"
                 android:textStyle="bold"
-                android:textColor="#334155" />
+                android:textColor="@color/ui_ink" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="可尝试调大匹配阈值后重新扫描"
                 android:textSize="12sp"
-                android:textColor="#94A3B8"
+                android:textColor="@color/ui_subtle"
                 android:layout_marginTop="4dp" />
         </LinearLayout>
     </FrameLayout>
@@ -321,11 +321,11 @@
         android:id="@+id/layoutDeleteBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardElevation="4dp"
-        app:cardMaxElevation="6dp"
+        app:cardElevation="0dp"
+        app:cardMaxElevation="0dp"
         app:strokeWidth="1dp"
-        app:strokeColor="#E2E8F0"
-        app:cardBackgroundColor="#FFFFFF"
+        app:strokeColor="@color/ui_outline"
+        app:cardBackgroundColor="@color/ui_surface"
         app:cardCornerRadius="0dp"
         android:visibility="gone">
 
@@ -345,9 +345,9 @@
                 android:text="删除所选（0）"
                 android:textSize="15sp"
                 android:textStyle="bold"
-                android:textColor="#94A3B8"
+                android:textColor="@color/ui_subtle"
                 app:cornerRadius="12dp"
-                app:backgroundTint="#E2E8F0"
+                app:backgroundTint="@color/ui_outline"
                 android:enabled="false" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>

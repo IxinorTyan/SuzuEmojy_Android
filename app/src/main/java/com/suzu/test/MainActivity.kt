@@ -126,9 +126,11 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, ExportActivity::class.java))
         }
 
-        binding.cardRecentAdded.setOnClickListener {
+        val openRecentLibrary = View.OnClickListener {
             startActivity(Intent(this, LibraryActivity::class.java))
         }
+        binding.cardRecentAdded.setOnClickListener(openRecentLibrary)
+        binding.tvRecentEmptyHint.setOnClickListener(openRecentLibrary)
 
         recentAdapter = RecentThumbAdapter { resource ->
             val items = recentAdapter.currentList
@@ -242,53 +244,53 @@ class MainActivity : AppCompatActivity() {
         binding.btnGuideComplete.isEnabled = ime
         if (ime) {
             binding.tvGuideImeDot.text = "✓"
-            binding.tvGuideImeDot.setTextColor(0xFF4CAF50.toInt())
+            binding.tvGuideImeDot.setTextColor(getColor(R.color.ui_good))
             binding.btnGuideIme.isEnabled = false
             binding.btnGuideIme.text = "已启用"
         } else {
             binding.tvGuideImeDot.text = "●"
-            binding.tvGuideImeDot.setTextColor(0xFF2196F3.toInt())
+            binding.tvGuideImeDot.setTextColor(getColor(R.color.ui_accent))
             binding.btnGuideIme.isEnabled = true
             binding.btnGuideIme.text = "去开启"
         }
 
         if (storage) {
             binding.tvGuideStorageDot.text = "✓"
-            binding.tvGuideStorageDot.setTextColor(0xFF4CAF50.toInt())
+            binding.tvGuideStorageDot.setTextColor(getColor(R.color.ui_good))
             binding.btnGuideStorage.isEnabled = false
             binding.btnGuideStorage.text = "完整访问"
         } else if (PermissionChecker.hasSelectedPhotosPermission(this)) {
             binding.tvGuideStorageDot.text = "✓"
-            binding.tvGuideStorageDot.setTextColor(0xFF4CAF50.toInt())
+            binding.tvGuideStorageDot.setTextColor(getColor(R.color.ui_good))
             binding.btnGuideStorage.isEnabled = true
             binding.btnGuideStorage.text = "部分访问"
         } else {
             binding.tvGuideStorageDot.text = "○"
-            binding.tvGuideStorageDot.setTextColor(0xFF888888.toInt())
+            binding.tvGuideStorageDot.setTextColor(getColor(R.color.ui_subtle))
             binding.btnGuideStorage.isEnabled = true
             binding.btnGuideStorage.text = "去授权"
         }
 
         if (overlay) {
             binding.tvGuideOverlayDot.text = "✓"
-            binding.tvGuideOverlayDot.setTextColor(0xFF4CAF50.toInt())
+            binding.tvGuideOverlayDot.setTextColor(getColor(R.color.ui_good))
             binding.btnGuideOverlay.isEnabled = false
             binding.btnGuideOverlay.text = "已授权"
         } else {
             binding.tvGuideOverlayDot.text = "○"
-            binding.tvGuideOverlayDot.setTextColor(0xFF888888.toInt())
+            binding.tvGuideOverlayDot.setTextColor(getColor(R.color.ui_subtle))
             binding.btnGuideOverlay.isEnabled = true
             binding.btnGuideOverlay.text = "去授权"
         }
 
         if (a11y) {
             binding.tvGuideA11yDot.text = "✓"
-            binding.tvGuideA11yDot.setTextColor(0xFF4CAF50.toInt())
+            binding.tvGuideA11yDot.setTextColor(getColor(R.color.ui_good))
             binding.btnGuideA11y.isEnabled = false
             binding.btnGuideA11y.text = "已开启"
         } else {
             binding.tvGuideA11yDot.text = "○"
-            binding.tvGuideA11yDot.setTextColor(0xFF888888.toInt())
+            binding.tvGuideA11yDot.setTextColor(getColor(R.color.ui_subtle))
             binding.btnGuideA11y.isEnabled = true
             binding.btnGuideA11y.text = "去开启"
         }

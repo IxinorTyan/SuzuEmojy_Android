@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F8FAFC"
+    android:background="@color/ui_canvas"
     android:paddingHorizontal="16dp"
     android:paddingTop="12dp"
     android:paddingBottom="12dp">
@@ -39,7 +39,7 @@
                     android:layout_height="40dp"
                     android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_arrow_back_24"
-                    app:tint="#0F172A"
+                    app:tint="@color/ui_ink"
                     android:padding="8dp"
                     android:contentDescription="返回" />
 
@@ -54,9 +54,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="关于软件"
-                        android:textSize="20sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:letterSpacing="-0.01" />
 
                     <TextView
@@ -64,7 +64,7 @@
                         android:layout_height="wrap_content"
                         android:text="SuzuEmojy 本地表情与输入法"
                         android:textSize="12sp"
-                        android:textColor="#64748B"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginTop="2dp" />
                 </LinearLayout>
             </LinearLayout>
@@ -73,12 +73,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -112,7 +112,7 @@
                         android:text="SuzuEmojy"
                         android:textSize="20sp"
                         android:textStyle="bold"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:letterSpacing="-0.02" />
 
                     <TextView
@@ -121,7 +121,7 @@
                         android:layout_marginTop="4dp"
                         android:text="轻量便捷的表情键盘与辅助工具"
                         android:textSize="12sp"
-                        android:textColor="#64748B" />
+                        android:textColor="@color/ui_muted" />
 
                     <!-- 版本号胶囊 -->
                     <TextView
@@ -135,7 +135,7 @@
                         android:text="版本 1.7.4"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:textColor="#2563EB" />
+                        android:textColor="@color/ui_accent" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -143,7 +143,7 @@
                         android:layout_marginTop="6dp"
                         android:text="点击版本号检查 GitHub 更新"
                         android:textSize="11sp"
-                        android:textColor="#64748B" />
+                        android:textColor="@color/ui_muted" />
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/switchAutoUpdate"
@@ -152,14 +152,14 @@
                         android:layout_marginTop="12dp"
                         android:text="自动检查更新"
                         android:textSize="13sp"
-                        android:textColor="#0F172A" />
+                        android:textColor="@color/ui_ink" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="打开应用时每天最多检查一次正式版，更新时通过系统浏览器打开 GitHub 仓库。"
                         android:textSize="11sp"
-                        android:textColor="#64748B" />
+                        android:textColor="@color/ui_muted" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -170,7 +170,7 @@
                 android:text="项目与开发"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:letterSpacing="0.04"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="4dp" />
@@ -178,12 +178,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -227,7 +227,7 @@
                                 android:text="开发者"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:id="@+id/tvAuthor"
@@ -236,14 +236,14 @@
                                 android:layout_marginTop="2dp"
                                 android:text="IxinorTyan"
                                 android:textSize="12sp"
-                                android:textColor="#64748B" />
+                                android:textColor="@color/ui_muted" />
                         </LinearLayout>
 
                         <ImageView
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:src="@drawable/ic_about_chevron_right"
-                            app:tint="#94A3B8"
+                            app:tint="@color/ui_subtle"
                             android:contentDescription="详情" />
                     </LinearLayout>
 
@@ -251,7 +251,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginStart="66dp"
-                        android:background="#F1F5F9" />
+                        android:background="@color/ui_surface_variant" />
 
                     <!-- 开源地址 -->
                     <LinearLayout
@@ -292,7 +292,7 @@
                                 android:text="开源主页"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:id="@+id/tvProjectAddress"
@@ -301,7 +301,7 @@
                                 android:layout_marginTop="2dp"
                                 android:text="github.com/IxinorTyan/SuzuEmojy_Android"
                                 android:textSize="12sp"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:singleLine="true"
                                 android:ellipsize="middle" />
                         </LinearLayout>
@@ -310,7 +310,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:src="@drawable/ic_about_chevron_right"
-                            app:tint="#94A3B8"
+                            app:tint="@color/ui_subtle"
                             android:contentDescription="前往" />
                     </LinearLayout>
 
@@ -318,7 +318,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginStart="66dp"
-                        android:background="#F1F5F9" />
+                        android:background="@color/ui_surface_variant" />
 
                     <!-- 反馈交流群 -->
                     <LinearLayout
@@ -343,7 +343,7 @@
                                 android:layout_height="20dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_about_chat"
-                                app:tint="#2563EB"
+                                app:tint="@color/ui_accent"
                                 android:contentDescription="交流群" />
                         </FrameLayout>
 
@@ -360,7 +360,7 @@
                                 android:text="反馈与建议交流群"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:id="@+id/tvFeedbackGroup"
@@ -369,7 +369,7 @@
                                 android:layout_marginTop="2dp"
                                 android:text="QQ群：834586488"
                                 android:textSize="12sp"
-                                android:textColor="#64748B" />
+                                android:textColor="@color/ui_muted" />
                         </LinearLayout>
 
                         <TextView
@@ -381,7 +381,7 @@
                             android:paddingVertical="5dp"
                             android:text="复制"
                             android:textSize="12sp"
-                            android:textColor="#2563EB"
+                            android:textColor="@color/ui_accent"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
@@ -394,7 +394,7 @@
                 android:text="特性与保障"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:letterSpacing="0.04"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="4dp" />
@@ -402,12 +402,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -434,7 +434,7 @@
                                 android:layout_height="20dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_about_shield"
-                                app:tint="#16A34A"
+                                app:tint="@color/ui_good"
                                 android:contentDescription="隐私保障" />
                         </FrameLayout>
 
@@ -451,7 +451,7 @@
                                 android:text="本地离线存储 · 隐私安全"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -459,7 +459,7 @@
                                 android:layout_marginTop="2dp"
                                 android:text="所有表情及配置仅保存在本地，无隐私上传"
                                 android:textSize="12sp"
-                                android:textColor="#64748B" />
+                                android:textColor="@color/ui_muted" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -467,7 +467,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginStart="66dp"
-                        android:background="#F1F5F9" />
+                        android:background="@color/ui_surface_variant" />
 
                     <!-- 纯净体验 -->
                     <LinearLayout
@@ -488,7 +488,7 @@
                                 android:layout_height="20dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_about_sparkle"
-                                app:tint="#EA580C"
+                                app:tint="@color/ui_warning"
                                 android:contentDescription="体验" />
                         </FrameLayout>
 
@@ -505,7 +505,7 @@
                                 android:text="纯净开源 · 悬浮交互"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -513,7 +513,7 @@
                                 android:layout_marginTop="2dp"
                                 android:text="无广告干扰，支持自定义悬浮球与快捷输入"
                                 android:textSize="12sp"
-                                android:textColor="#64748B" />
+                                android:textColor="@color/ui_muted" />
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
@@ -533,7 +533,7 @@
                     android:layout_height="wrap_content"
                     android:text="Made with ❤ for Emoji Lovers"
                     android:textSize="12sp"
-                    android:textColor="#94A3B8" />
+                    android:textColor="@color/ui_subtle" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -541,7 +541,7 @@
                     android:layout_marginTop="4dp"
                     android:text="SuzuEmojy · 开源表情键盘"
                     android:textSize="11sp"
-                    android:textColor="#CBD5E1" />
+                    android:textColor="@color/ui_outline" />
             </LinearLayout>
 
         </LinearLayout>

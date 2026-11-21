@@ -376,7 +376,7 @@ class SettingsFloatingActivity : AppCompatActivity() {
             val cellPx = (10 * density).toInt()
             binding.flPreviewBackground.background = CheckerboardDrawable(cellPx)
         } else {
-            binding.flPreviewBackground.background = ColorDrawable(Color.parseColor("#F1F5F9"))
+            binding.flPreviewBackground.background = ColorDrawable(getColor(R.color.ui_surface_variant))
         }
 
         // 2. 设置 ShapeableImageView 的裁切与 ScaleType
@@ -780,9 +780,9 @@ class SettingsFloatingActivity : AppCompatActivity() {
     private fun updateGestureActionView(tv: TextView, action: FloatingBallConfig.EdgeGestureAction) {
         tv.text = action.title
         if (action == FloatingBallConfig.EdgeGestureAction.NONE) {
-            tv.setTextColor(Color.parseColor("#999999"))
+            tv.setTextColor(getColor(R.color.ui_subtle))
         } else {
-            tv.setTextColor(Color.parseColor("#007AFF"))
+            tv.setTextColor(getColor(R.color.ui_accent))
         }
     }
 

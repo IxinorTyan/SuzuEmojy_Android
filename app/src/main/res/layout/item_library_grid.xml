@@ -2,21 +2,22 @@
 <com.suzu.test.ime.ui.SquareFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="2dp">
+    android:layout_margin="3dp"
+    android:background="@drawable/bg_ui_thumbnail"
+    android:clipToOutline="true">
 
     <ImageView
         android:id="@+id/ivThumbnail"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:background="#E0E0E0" />
+        android:scaleType="centerCrop" />
 
     <!-- 选中态半透明遮罩 -->
     <View
         android:id="@+id/viewSelectionMask"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#4D0078D4"
+        android:background="@color/ui_selection_mask"
         android:visibility="gone" />
 
     <!-- 右上角多选状态圆标 -->
@@ -34,6 +35,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="4dp"
         android:background="#99000000"
         android:textColor="#FFFFFF"
         android:textSize="9sp"

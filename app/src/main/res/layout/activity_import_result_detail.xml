@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F5F5">
+    android:background="@color/ui_canvas">
 
     <!-- 顶部标题栏 -->
     <LinearLayout
@@ -12,7 +12,7 @@
         android:layout_height="48dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="#FFFFFF"
+        android:background="@color/ui_surface"
         android:elevation="1dp"
         android:paddingStart="4dp"
         android:paddingEnd="16dp">
@@ -33,18 +33,18 @@
             android:text="导入结果详情"
             android:textSize="17sp"
             android:textStyle="bold"
-            android:textColor="#222222" />
+            android:textColor="@color/ui_ink" />
     </LinearLayout>
 
     <!-- 顶部说明文案 -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#E8F4FD"
+        android:background="@color/ui_accent_container"
         android:paddingHorizontal="16dp"
         android:paddingVertical="10dp"
         android:text="判定依据为逐像素完全一致，合并不会丢失任何不同的表情。"
-        android:textColor="#1976D2"
+        android:textColor="@color/ui_accent"
         android:textSize="13sp"
         android:lineSpacingExtra="2dp" />
 

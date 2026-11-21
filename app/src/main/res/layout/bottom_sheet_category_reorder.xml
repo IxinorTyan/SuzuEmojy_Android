@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="#FFFFFF"
+    android:background="@color/ui_surface"
     android:paddingBottom="16dp">
 
     <!-- 顶部标题栏 -->
@@ -51,12 +51,12 @@
         android:paddingBottom="8dp"
         android:text="长按缩略图并拖动，调整分类夹排列顺序"
         android:textSize="12sp"
-        android:textColor="#888888" />
+        android:textColor="@color/ui_subtle" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#EEEEEE" />
+        android:background="@color/ui_outline" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCategoriesReorder"

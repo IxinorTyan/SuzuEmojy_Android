@@ -4,67 +4,126 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="8dp"
+    android:background="@color/ui_canvas">
 
-    <!-- 顶部操作行 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:orientation="horizontal"
+        android:minHeight="60dp"
         android:gravity="center_vertical"
-        android:paddingStart="2dp"
-        android:paddingEnd="2dp">
+        android:orientation="horizontal">
 
-        <ImageButton
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/btnBack"
+            style="@style/Widget.Suzu.IconAction"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_arrow_back_24"
-            app:tint="?attr/colorControlNormal"
+            app:srcCompat="@drawable/ic_arrow_back_24"
             android:contentDescription="返回" />
 
-        <TextView
-            android:id="@+id/tvTitle"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="4dp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:text="资源库"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#222222" />
+            android:layout_marginEnd="4dp"
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvCount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="8dp"
-            android:text="共 0 张"
-            android:textSize="13sp"
-            android:textColor="#777777" />
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="资源库"
+                android:textAppearance="@style/TextAppearance.Suzu.PageTitle" />
 
-        <ImageButton
+            <TextView
+                android:id="@+id/tvCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="共 0 张"
+                android:textAppearance="@style/TextAppearance.Suzu.Secondary" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/btnImport"
+            style="@style/Widget.Suzu.IconAction"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_import_24"
-            app:tint="?attr/colorControlNormal"
+            app:srcCompat="@drawable/ic_import_24"
+            app:tint="@color/ui_accent"
             android:contentDescription="导入" />
 
-        <ImageButton
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/btnToggleSelectMode"
+            style="@style/Widget.Suzu.IconAction"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_select_multiple_24"
+            app:srcCompat="@drawable/ic_select_multiple_24"
             app:tint="@color/icon_tint_selectable"
             android:contentDescription="多选" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/etSearchBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_ui_input"
+            android:drawableStart="@drawable/ic_search_24"
+            android:drawableTint="@color/ui_muted"
+            android:drawablePadding="9dp"
+            android:hint="搜索关键词，多个词用空格分隔"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLines="1"
+            android:textSize="14sp"
+            android:textColor="@color/ui_ink"
+            android:textColorHint="@color/ui_muted"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="10dp" />
+
+        <FrameLayout
+            android:id="@+id/flFilterContainer"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="6dp">
+
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/btnFilter"
+                style="@style/Widget.Suzu.IconAction"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_ui_neutral_icon"
+                android:foreground="?attr/selectableItemBackground"
+                android:clipToOutline="true"
+                app:srcCompat="@drawable/ic_filter"
+                android:contentDescription="筛选" />
+
+            <TextView
+                android:id="@+id/tvFilterBadge"
+                android:layout_width="17dp"
+                android:layout_height="17dp"
+                android:layout_gravity="top|end"
+                android:background="@drawable/bg_filter_badge"
+                android:textColor="@color/ui_on_accent"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:visibility="gone" />
+        </FrameLayout>
     </LinearLayout>
 
     <!-- 横向滚动分类条与快速选择按钮 -->
@@ -80,7 +139,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:scrollbars="none"
-            android:paddingVertical="4dp">
+            android:paddingVertical="3dp"
+            android:paddingStart="5dp">
 
             <LinearLayout
                 android:id="@+id/llCategoryContainer"
@@ -97,6 +157,7 @@
             android:layout_marginEnd="2dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_expand_more_24"
+            app:tint="@color/ui_ink"
             android:contentDescription="展开分类"
             android:rotation="0" />
     </LinearLayout>
@@ -121,56 +182,6 @@
             android:useDefaultMargins="false" />
     </ScrollView>
 
-    <!-- 搜索与筛选操作行 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginHorizontal="4dp"
-        android:layout_marginBottom="4dp">
-
-        <EditText
-            android:id="@+id/etSearchBox"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="搜索关键词，多个词用空格分隔"
-            android:imeOptions="actionSearch"
-            android:inputType="text"
-            android:maxLines="1"
-            android:textSize="14sp"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="8dp" />
-
-        <FrameLayout
-            android:id="@+id/flFilterContainer"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="4dp">
-
-            <ImageButton
-                android:id="@+id/btnFilter"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_filter"
-                android:contentDescription="筛选" />
-
-            <TextView
-                android:id="@+id/tvFilterBadge"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_gravity="top|end"
-                android:background="@drawable/bg_filter_badge"
-                android:textColor="#FFFFFF"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:visibility="gone" />
-        </FrameLayout>
-    </LinearLayout>
-
     <!-- 网格内容区 -->
     <FrameLayout
         android:layout_width="match_parent"
@@ -189,7 +200,7 @@
             android:layout_gravity="center"
             android:text="资源库为空，请先导入"
             android:textSize="16sp"
-            android:textColor="#999999"
+            android:textColor="@color/ui_muted"
             android:visibility="gone" />
 
         <!-- 调整位置模式底部半透明提示条 -->
@@ -307,7 +318,7 @@
             android:scaleType="centerInside"
             android:background="?attr/selectableItemBackgroundBorderless"
             app:srcCompat="@drawable/ic_batch_delete"
-            app:tint="#D32F2F"
+            app:tint="@color/ui_danger"
             android:contentDescription="删除"
             android:tooltipText="删除" />
     </LinearLayout>

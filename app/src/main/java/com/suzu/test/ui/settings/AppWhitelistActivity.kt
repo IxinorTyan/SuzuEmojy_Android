@@ -156,7 +156,7 @@ abstract class AppWhitelistActivity : AppCompatActivity() {
             text = app.label
             textSize = 15f
             typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setTextColor(0xFF0F172A.toInt())
+            setTextColor(context.getColor(R.color.ui_ink))
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
         }
@@ -164,7 +164,7 @@ abstract class AppWhitelistActivity : AppCompatActivity() {
         val packageNameView = TextView(this).apply {
             text = app.packageName
             textSize = 11f
-            setTextColor(0xFF64748B.toInt())
+            setTextColor(context.getColor(R.color.ui_muted))
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
             setPadding(0, dp(2), 0, 0)
@@ -202,7 +202,7 @@ abstract class AppWhitelistActivity : AppCompatActivity() {
             ).apply {
                 marginStart = dp(68)
             }
-            background = ColorDrawable(0xFFF1F5F9.toInt())
+            background = ColorDrawable(context.getColor(R.color.ui_outline))
         }
 
     private fun dp(value: Int): Int =

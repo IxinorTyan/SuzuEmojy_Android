@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F8FAFC"
+    android:background="@color/ui_canvas"
     android:paddingHorizontal="16dp"
     android:paddingTop="12dp"
     android:paddingBottom="12dp"
@@ -45,7 +45,7 @@
                     android:layout_height="40dp"
                     android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_arrow_back_24"
-                    app:tint="#0F172A"
+                    app:tint="@color/ui_ink"
                     android:padding="8dp"
                     android:contentDescription="返回" />
 
@@ -60,9 +60,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="键盘设置"
-                        android:textSize="20sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:letterSpacing="-0.01" />
 
                     <TextView
@@ -70,7 +70,7 @@
                         android:layout_height="wrap_content"
                         android:text="自定义键盘相关功能"
                         android:textSize="12sp"
-                        android:textColor="#64748B"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginTop="2dp" />
                 </LinearLayout>
             </LinearLayout>
@@ -83,7 +83,7 @@
                 android:text="主题与尺寸"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:letterSpacing="0.04"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="4dp" />
@@ -91,12 +91,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -112,7 +112,7 @@
                         android:text="键盘配色主题"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#0F172A" />
+                        android:textColor="@color/ui_ink" />
 
                     <RadioGroup
                         android:id="@+id/rgKeyboardTheme"
@@ -126,7 +126,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="暗色主题 (默认)"
-                            android:textColor="#334155"
+                            android:textColor="@color/ui_ink"
                             android:textSize="14sp" />
 
                         <RadioButton
@@ -135,21 +135,21 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="24dp"
                             android:text="亮色主题"
-                            android:textColor="#334155"
+                            android:textColor="@color/ui_ink"
                             android:textSize="14sp" />
                     </RadioGroup>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/ime_wallpaper_title"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:textSize="14sp"
                         android:textStyle="bold" />
 
@@ -194,7 +194,7 @@
                                 android:layout_weight="1"
                                 android:labelFor="@+id/sbWallpaperBlur"
                                 android:text="@string/ime_wallpaper_blur"
-                                android:textColor="#0F172A"
+                                android:textColor="@color/ui_ink"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
 
@@ -202,7 +202,7 @@
                                 android:id="@+id/tvWallpaperBlurValue"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:textSize="12sp" />
                         </LinearLayout>
 
@@ -226,7 +226,7 @@
                                 android:layout_weight="1"
                                 android:labelFor="@+id/sbWallpaperBrightness"
                                 android:text="@string/ime_wallpaper_brightness"
-                                android:textColor="#0F172A"
+                                android:textColor="@color/ui_ink"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
 
@@ -234,7 +234,7 @@
                                 android:id="@+id/tvWallpaperBrightnessValue"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:textSize="12sp" />
                         </LinearLayout>
 
@@ -249,7 +249,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <!-- 键盘高度调节 -->
@@ -266,7 +266,7 @@
                             android:text="键盘高度 (120 - 400 dp)"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <TextView
                             android:id="@+id/tvHeightValue"
@@ -275,7 +275,7 @@
                             android:text="190 dp"
                             android:textSize="12sp"
                             android:textStyle="bold"
-                            android:textColor="#2563EB"
+                            android:textColor="@color/ui_accent"
                             android:background="@drawable/bg_home_tag_blue"
                             android:paddingHorizontal="8dp"
                             android:paddingVertical="2dp" />
@@ -291,7 +291,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <!-- 每行列数调节 -->
@@ -308,7 +308,7 @@
                             android:text="每行列数 (3 - 8 列)"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <TextView
                             android:id="@+id/tvSpanValue"
@@ -317,7 +317,7 @@
                             android:text="4 列"
                             android:textSize="12sp"
                             android:textStyle="bold"
-                            android:textColor="#2563EB"
+                            android:textColor="@color/ui_accent"
                             android:background="@drawable/bg_home_tag_blue"
                             android:paddingHorizontal="8dp"
                             android:paddingVertical="2dp" />
@@ -333,7 +333,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <!-- 分类栏图标大小调节 -->
@@ -350,7 +350,7 @@
                             android:text="分类栏图标大小 (36 - 64 dp)"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <TextView
                             android:id="@+id/tvTabSizeValue"
@@ -359,7 +359,7 @@
                             android:text="56 dp"
                             android:textSize="12sp"
                             android:textStyle="bold"
-                            android:textColor="#2563EB"
+                            android:textColor="@color/ui_accent"
                             android:background="@drawable/bg_home_tag_blue"
                             android:paddingHorizontal="8dp"
                             android:paddingVertical="2dp" />
@@ -381,7 +381,7 @@
                 android:text="按键与分类导航"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:letterSpacing="0.04"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="4dp" />
@@ -389,12 +389,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -422,14 +422,14 @@
                                 android:text="显示「常用」"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="关闭后在键盘底部隐藏常用表情栏"
                                 android:textSize="11sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
 
@@ -442,7 +442,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <!-- 显示全部表情 -->
@@ -464,14 +464,14 @@
                                 android:text="显示「全部表情」"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="关闭后在键盘底部隐藏全部表情栏"
                                 android:textSize="11sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
 
@@ -484,7 +484,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <!-- 显示展开收藏夹按钮 -->
@@ -506,14 +506,14 @@
                                 android:text="显示「展开收藏夹」按钮"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="控制键盘顶部展开分类面板的按钮"
                                 android:textSize="11sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
 
@@ -539,7 +539,7 @@
                             android:text="按钮图标风格"
                             android:textSize="13sp"
                             android:textStyle="bold"
-                            android:textColor="#334155" />
+                            android:textColor="@color/ui_ink" />
 
                         <RadioGroup
                             android:id="@+id/rgDropdownIcon"
@@ -553,7 +553,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="箭头 (⌄)"
-                                android:textColor="#475569"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="13sp" />
 
                             <RadioButton
@@ -562,7 +562,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="14dp"
                                 android:text="菜单 (≡)"
-                                android:textColor="#475569"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="13sp" />
 
                             <RadioButton
@@ -571,7 +571,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="14dp"
                                 android:text="更多 (⋮)"
-                                android:textColor="#475569"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="13sp" />
                         </RadioGroup>
 
@@ -582,7 +582,7 @@
                             android:text="按钮摆放位置"
                             android:textSize="13sp"
                             android:textStyle="bold"
-                            android:textColor="#334155"
+                            android:textColor="@color/ui_ink"
                             android:layout_marginTop="8dp" />
 
                         <RadioGroup
@@ -597,7 +597,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="左上角 (默认)"
-                                android:textColor="#475569"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="13sp" />
 
                             <RadioButton
@@ -606,7 +606,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="20dp"
                                 android:text="右上角 (收起左侧)"
-                                android:textColor="#475569"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="13sp" />
                         </RadioGroup>
                     </LinearLayout>
@@ -614,7 +614,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <!-- 显示收起键盘按钮 -->
@@ -636,14 +636,14 @@
                                 android:text="显示「收起键盘」按钮"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="控制键盘顶部收起输入法(IME)的按钮"
                                 android:textSize="11sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
 
@@ -656,7 +656,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <LinearLayout
@@ -677,14 +677,14 @@
                                 android:text="腾讯系列发送失败拉起转发"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="QQ、微信、TIM 直发失败时自动打开转发页面，默认关闭"
                                 android:textSize="11sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
 
@@ -701,12 +701,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
                     <!-- 分享白名单 -->
                     <LinearLayout
@@ -728,7 +728,7 @@
                                 android:layout_height="20dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_share_24"
-                                app:tint="#16A34A"
+                                app:tint="@color/ui_good"
                                 android:contentDescription="分享白名单" />
                         </FrameLayout>
 
@@ -745,14 +745,14 @@
                                 android:text="分享白名单"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="配置使用系统分享面板的应用"
                                 android:textSize="11sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="1dp" />
                         </LinearLayout>
 
@@ -760,7 +760,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:src="@drawable/ic_about_chevron_right"
-                            app:tint="#94A3B8"
+                            app:tint="@color/ui_subtle"
                             android:contentDescription="进入" />
                     </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -772,7 +772,7 @@
                 android:text="唤出测试与预览"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:letterSpacing="0.04"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="4dp" />
@@ -780,12 +780,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="24dp">
 
                 <LinearLayout
@@ -800,14 +800,14 @@
                         android:text="键盘调出测试"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="#0F172A" />
+                        android:textColor="@color/ui_ink" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="点击下方测试框直接调起输入法，直观查看真实键盘效果"
                         android:textSize="11sp"
-                        android:textColor="#64748B"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginTop="2dp"
                         android:layout_marginBottom="10dp" />
 
@@ -816,9 +816,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:hint="点击此处呼出键盘进行测试..."
-                        android:textColorHint="#94A3B8"
+                        android:textColorHint="@color/ui_subtle"
                         android:textSize="14sp"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:background="@drawable/bg_rounded_input_field"
                         android:paddingHorizontal="14dp"
                         android:layout_marginBottom="16dp" />
@@ -829,7 +829,7 @@
                         android:text="页面内缩略预览（仅供参考）"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        android:textColor="#64748B"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginBottom="8dp" />
 
                     <FrameLayout

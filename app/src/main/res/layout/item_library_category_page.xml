@@ -16,7 +16,7 @@
         android:layout_gravity="center"
         android:text="资源库为空，请先导入"
         android:textSize="16sp"
-        android:textColor="#999999"
+        android:textColor="@color/ui_subtle"
         android:visibility="gone" />
 
 </FrameLayout>

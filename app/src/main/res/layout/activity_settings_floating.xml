@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F8FAFC"
+    android:background="@color/ui_canvas"
     android:paddingHorizontal="16dp"
     android:paddingTop="12dp"
     android:paddingBottom="12dp"
@@ -45,7 +45,7 @@
                     android:layout_height="40dp"
                     android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_arrow_back_24"
-                    app:tint="#0F172A"
+                    app:tint="@color/ui_ink"
                     android:padding="8dp"
                     android:contentDescription="返回" />
 
@@ -60,9 +60,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="悬浮窗设置"
-                        android:textSize="20sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:letterSpacing="-0.01" />
 
                     <TextView
@@ -70,7 +70,7 @@
                         android:layout_height="wrap_content"
                         android:text="配置悬浮球、边缘手势与搜索条"
                         android:textSize="12sp"
-                        android:textColor="#64748B"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginTop="2dp" />
                 </LinearLayout>
             </LinearLayout>
@@ -79,12 +79,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -106,14 +106,14 @@
                             android:text="悬浮窗功能总开关"
                             android:textSize="15sp"
                             android:textStyle="bold"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="总控开关，关闭后所有悬浮窗与手势功能均不生效"
                             android:textSize="12sp"
-                            android:textColor="#64748B"
+                            android:textColor="@color/ui_muted"
                             android:layout_marginTop="2dp" />
                     </LinearLayout>
 
@@ -129,12 +129,12 @@
                 android:id="@+id/layoutSectionEdgeGesture"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -149,14 +149,14 @@
                     android:text="悬浮窗"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="#0F172A" />
+                    android:textColor="@color/ui_ink" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="屏幕两侧边缘手势触发区域，在键盘弹出时滑动快速切换输入法"
                     android:textSize="12sp"
-                    android:textColor="#64748B"
+                    android:textColor="@color/ui_muted"
                     android:layout_marginTop="4dp" />
 
                 <!-- 独立开关：悬浮窗(手势区域) -->
@@ -179,14 +179,14 @@
                             android:text="开启悬浮窗 (手势区域)"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="启用屏幕边缘手势滑动切换"
                             android:textSize="12sp"
-                            android:textColor="#64748B"
+                            android:textColor="@color/ui_muted"
                             android:layout_marginTop="2dp" />
                     </LinearLayout>
 
@@ -207,7 +207,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <!-- 显示判定区域开关 -->
@@ -228,14 +228,14 @@
                                 android:layout_height="wrap_content"
                                 android:text="显示判定区域"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="在屏幕两侧绘制手势感应条，方便调试与定位"
                                 android:textSize="12sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
 
@@ -260,14 +260,14 @@
                             android:text="上半区域（键盘上方）"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#2563EB" />
+                            android:textColor="@color/ui_accent" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="位于输入法上方，应用上半安全距离"
                             android:textSize="11sp"
-                            android:textColor="#64748B"
+                            android:textColor="@color/ui_muted"
                             android:layout_marginTop="2dp" />
 
                         <!-- 启用左上区域 -->
@@ -290,7 +290,7 @@
                                     android:text="启用左上区域"
                                     android:textSize="14sp"
                                     android:textStyle="bold"
-                                    android:textColor="#0F172A" />
+                                    android:textColor="@color/ui_ink" />
                             </LinearLayout>
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -319,7 +319,7 @@
                                     android:text="启用右上区域"
                                     android:textSize="14sp"
                                     android:textStyle="bold"
-                                    android:textColor="#0F172A" />
+                                    android:textColor="@color/ui_ink" />
                             </LinearLayout>
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -341,7 +341,7 @@
                                 android:layout_weight="1"
                                 android:text="左上宽度 (8 - 100 dp)"
                                 android:textSize="14sp"
-                                android:textColor="#555555" />
+                                android:textColor="@color/ui_muted" />
 
                             <TextView
                                 android:id="@+id/tvEdgeLeftUpperWidthValue"
@@ -350,7 +350,7 @@
                                 android:text="24 dp"
                                 android:textSize="14sp"
                                 android:textStyle="bold"
-                                android:textColor="#2563EB" />
+                                android:textColor="@color/ui_accent" />
                         </LinearLayout>
 
                         <SeekBar
@@ -373,7 +373,7 @@
                                 android:layout_weight="1"
                                 android:text="左上触发距离 (20 - 300 dp)"
                                 android:textSize="14sp"
-                                android:textColor="#555555" />
+                                android:textColor="@color/ui_muted" />
 
                             <TextView
                                 android:id="@+id/tvEdgeLeftUpperDistanceValue"
@@ -382,7 +382,7 @@
                                 android:text="80 dp"
                                 android:textSize="14sp"
                                 android:textStyle="bold"
-                                android:textColor="#2563EB" />
+                                android:textColor="@color/ui_accent" />
                         </LinearLayout>
 
                         <SeekBar
@@ -404,7 +404,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="右上宽度 (8 - 100 dp)"
-                                android:textColor="#555555"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="14sp" />
 
                             <TextView
@@ -412,7 +412,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="24 dp"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -436,7 +436,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="右上触发距离 (20 - 300 dp)"
-                                android:textColor="#555555"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="14sp" />
 
                             <TextView
@@ -444,7 +444,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="80 dp"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -469,7 +469,7 @@
                                 android:layout_weight="1"
                                 android:text="上半区域安全距离 (0 - 2000 px)"
                                 android:textSize="14sp"
-                                android:textColor="#555555" />
+                                android:textColor="@color/ui_muted" />
 
                             <TextView
                                 android:id="@+id/tvEdgeSafetyDistanceValue"
@@ -478,7 +478,7 @@
                                 android:text="150 px"
                                 android:textSize="14sp"
                                 android:textStyle="bold"
-                                android:textColor="#2563EB" />
+                                android:textColor="@color/ui_accent" />
                         </LinearLayout>
 
                         <SeekBar
@@ -504,14 +504,14 @@
                             android:text="下半区域（键盘两侧）"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#0E8060" />
+                            android:textColor="@color/ui_good" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="覆盖输入法左右两侧边缘，应用下半安全距离"
                             android:textSize="11sp"
-                            android:textColor="#64748B"
+                            android:textColor="@color/ui_muted"
                             android:layout_marginTop="2dp" />
 
                         <!-- 启用左下区域 -->
@@ -534,7 +534,7 @@
                                     android:text="启用左下区域"
                                     android:textSize="14sp"
                                     android:textStyle="bold"
-                                    android:textColor="#0F172A" />
+                                    android:textColor="@color/ui_ink" />
                             </LinearLayout>
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -563,7 +563,7 @@
                                     android:text="启用右下区域"
                                     android:textSize="14sp"
                                     android:textStyle="bold"
-                                    android:textColor="#0F172A" />
+                                    android:textColor="@color/ui_ink" />
                             </LinearLayout>
 
                             <androidx.appcompat.widget.SwitchCompat
@@ -584,7 +584,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="左下宽度 (8 - 100 dp)"
-                                android:textColor="#555555"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="14sp" />
 
                             <TextView
@@ -592,7 +592,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="24 dp"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -616,7 +616,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="左下触发距离 (20 - 300 dp)"
-                                android:textColor="#555555"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="14sp" />
 
                             <TextView
@@ -624,7 +624,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="80 dp"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -648,7 +648,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="右下宽度 (8 - 100 dp)"
-                                android:textColor="#555555"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="14sp" />
 
                             <TextView
@@ -656,7 +656,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="24 dp"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -680,7 +680,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="右下触发距离 (20 - 300 dp)"
-                                android:textColor="#555555"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="14sp" />
 
                             <TextView
@@ -688,7 +688,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="80 dp"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -712,7 +712,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:text="下半区域安全距离 (0 - 2000 px)"
-                                android:textColor="#555555"
+                                android:textColor="@color/ui_muted"
                                 android:textSize="14sp" />
 
                             <TextView
@@ -720,7 +720,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="150 px"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
@@ -748,7 +748,7 @@
                             android:text="有效滑动方向及动作"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#555555" />
+                            android:textColor="@color/ui_muted" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -756,7 +756,7 @@
                             android:text="左侧手势"
                             android:textSize="13sp"
                             android:textStyle="bold"
-                            android:textColor="#334155"
+                            android:textColor="@color/ui_ink"
                             android:layout_marginTop="8dp" />
 
                         <!-- 左侧上滑 -->
@@ -776,7 +776,7 @@
                                 android:layout_weight="1"
                                 android:text="上滑动作"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:id="@+id/tvEdgeLeftUpAction"
@@ -784,14 +784,14 @@
                                 android:layout_height="wrap_content"
                                 android:text="切换键盘"
                                 android:textSize="13sp"
-                                android:textColor="#2563EB" />
+                                android:textColor="@color/ui_accent" />
 
                             <ImageView
                                 android:layout_width="16dp"
                                 android:layout_height="16dp"
                                 android:layout_marginStart="4dp"
                                 android:src="@drawable/ic_about_chevron_right"
-                                app:tint="#94A3B8" />
+                                app:tint="@color/ui_subtle" />
                         </LinearLayout>
 
                         <!-- 左侧下滑 -->
@@ -811,7 +811,7 @@
                                 android:layout_weight="1"
                                 android:text="下滑动作"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:id="@+id/tvEdgeLeftDownAction"
@@ -819,14 +819,14 @@
                                 android:layout_height="wrap_content"
                                 android:text="切换键盘"
                                 android:textSize="13sp"
-                                android:textColor="#2563EB" />
+                                android:textColor="@color/ui_accent" />
 
                             <ImageView
                                 android:layout_width="16dp"
                                 android:layout_height="16dp"
                                 android:layout_marginStart="4dp"
                                 android:src="@drawable/ic_about_chevron_right"
-                                app:tint="#94A3B8" />
+                                app:tint="@color/ui_subtle" />
                         </LinearLayout>
 
                         <!-- 左侧向内滑(右滑) -->
@@ -846,7 +846,7 @@
                                 android:layout_weight="1"
                                 android:text="向内滑动作 (右滑)"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:id="@+id/tvEdgeLeftRightAction"
@@ -854,14 +854,14 @@
                                 android:layout_height="wrap_content"
                                 android:text="切换键盘"
                                 android:textSize="13sp"
-                                android:textColor="#2563EB" />
+                                android:textColor="@color/ui_accent" />
 
                             <ImageView
                                 android:layout_width="16dp"
                                 android:layout_height="16dp"
                                 android:layout_marginStart="4dp"
                                 android:src="@drawable/ic_about_chevron_right"
-                                app:tint="#94A3B8" />
+                                app:tint="@color/ui_subtle" />
                         </LinearLayout>
 
                         <TextView
@@ -870,7 +870,7 @@
                             android:text="右侧手势"
                             android:textSize="13sp"
                             android:textStyle="bold"
-                            android:textColor="#334155"
+                            android:textColor="@color/ui_ink"
                             android:layout_marginTop="8dp" />
 
                         <!-- 右侧上滑 -->
@@ -890,7 +890,7 @@
                                 android:layout_weight="1"
                                 android:text="上滑动作"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:id="@+id/tvEdgeRightUpAction"
@@ -898,14 +898,14 @@
                                 android:layout_height="wrap_content"
                                 android:text="切换键盘"
                                 android:textSize="13sp"
-                                android:textColor="#2563EB" />
+                                android:textColor="@color/ui_accent" />
 
                             <ImageView
                                 android:layout_width="16dp"
                                 android:layout_height="16dp"
                                 android:layout_marginStart="4dp"
                                 android:src="@drawable/ic_about_chevron_right"
-                                app:tint="#94A3B8" />
+                                app:tint="@color/ui_subtle" />
                         </LinearLayout>
 
                         <!-- 右侧下滑 -->
@@ -925,7 +925,7 @@
                                 android:layout_weight="1"
                                 android:text="下滑动作"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:id="@+id/tvEdgeRightDownAction"
@@ -933,14 +933,14 @@
                                 android:layout_height="wrap_content"
                                 android:text="切换键盘"
                                 android:textSize="13sp"
-                                android:textColor="#2563EB" />
+                                android:textColor="@color/ui_accent" />
 
                             <ImageView
                                 android:layout_width="16dp"
                                 android:layout_height="16dp"
                                 android:layout_marginStart="4dp"
                                 android:src="@drawable/ic_about_chevron_right"
-                                app:tint="#94A3B8" />
+                                app:tint="@color/ui_subtle" />
                         </LinearLayout>
 
                         <!-- 右侧向内滑(左滑) -->
@@ -960,7 +960,7 @@
                                 android:layout_weight="1"
                                 android:text="向内滑动作 (左滑)"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:id="@+id/tvEdgeRightLeftAction"
@@ -968,14 +968,14 @@
                                 android:layout_height="wrap_content"
                                 android:text="切换键盘"
                                 android:textSize="13sp"
-                                android:textColor="#2563EB" />
+                                android:textColor="@color/ui_accent" />
 
                             <ImageView
                                 android:layout_width="16dp"
                                 android:layout_height="16dp"
                                 android:layout_marginStart="4dp"
                                 android:src="@drawable/ic_about_chevron_right"
-                                app:tint="#94A3B8" />
+                                app:tint="@color/ui_subtle" />
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
@@ -987,12 +987,12 @@
                 android:id="@+id/layoutSectionFloatingBall"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -1007,14 +1007,14 @@
                     android:text="悬浮球(外星科技)"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="#0F172A" />
+                    android:textColor="@color/ui_ink" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="在屏幕上显示可移动快捷悬浮按钮，点击快速切换输入法"
                     android:textSize="12sp"
-                    android:textColor="#64748B"
+                    android:textColor="@color/ui_muted"
                     android:layout_marginTop="4dp" />
 
                 <!-- 独立开关：悬浮球 -->
@@ -1037,14 +1037,14 @@
                             android:text="开启悬浮球"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="在其他应用上显示快捷切换按钮"
                             android:textSize="12sp"
-                            android:textColor="#64748B"
+                            android:textColor="@color/ui_muted"
                             android:layout_marginTop="2dp" />
                     </LinearLayout>
 
@@ -1065,7 +1065,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <!-- 仅在弹出键盘时显示 -->
@@ -1086,14 +1086,14 @@
                                 android:layout_height="wrap_content"
                                 android:text="仅在弹出键盘时显示"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="未检测到输入法时自动隐藏；本应用内常显，但仍受应用白名单限制"
                                 android:textSize="12sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
 
@@ -1109,14 +1109,14 @@
                         android:layout_height="wrap_content"
                         android:text="⚠️ 需要开启无障碍服务才能识别当前应用和键盘状态"
                         android:textSize="12sp"
-                        android:textColor="#E65100"
+                        android:textColor="@color/ui_warning"
                         android:layout_marginTop="4dp"
                         android:visibility="gone" />
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <androidx.appcompat.widget.SwitchCompat
@@ -1132,7 +1132,7 @@
                         android:layout_height="wrap_content"
                         android:text="白名单外隐藏；白名单内沿用现有显示规则。本应用固定允许，仅影响悬浮球。"
                         android:textSize="12sp"
-                        android:textColor="#64748B" />
+                        android:textColor="@color/ui_muted" />
 
                     <Button
                         android:id="@+id/btnBallWhitelistApps"
@@ -1148,7 +1148,7 @@
                         android:text="外观与尺寸"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#334155" />
+                        android:textColor="@color/ui_ink" />
 
                     <!-- 悬浮球大小调节 -->
                     <LinearLayout
@@ -1163,7 +1163,7 @@
                             android:layout_weight="1"
                             android:text="悬浮球大小 (20 - 160 dp)"
                             android:textSize="14sp"
-                            android:textColor="#555555" />
+                            android:textColor="@color/ui_muted" />
 
                         <TextView
                             android:id="@+id/tvSizeValue"
@@ -1172,7 +1172,7 @@
                             android:text="56 dp"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#2563EB" />
+                            android:textColor="@color/ui_accent" />
                     </LinearLayout>
 
                     <SeekBar
@@ -1195,7 +1195,7 @@
                             android:layout_weight="1"
                             android:text="不透明度 (10% - 100%)"
                             android:textSize="14sp"
-                            android:textColor="#555555" />
+                            android:textColor="@color/ui_muted" />
 
                         <TextView
                             android:id="@+id/tvAlphaValue"
@@ -1204,7 +1204,7 @@
                             android:text="80 %"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#2563EB" />
+                            android:textColor="@color/ui_accent" />
                     </LinearLayout>
 
                     <SeekBar
@@ -1227,7 +1227,7 @@
                             android:layout_weight="1"
                             android:text="渐显/渐隐动画时长 (0 - 1000 ms)"
                             android:textSize="14sp"
-                            android:textColor="#555555" />
+                            android:textColor="@color/ui_muted" />
 
                         <TextView
                             android:id="@+id/tvAnimDurationValue"
@@ -1236,7 +1236,7 @@
                             android:text="100 ms"
                             android:textSize="14sp"
                             android:textStyle="bold"
-                            android:textColor="#2563EB" />
+                            android:textColor="@color/ui_accent" />
                     </LinearLayout>
 
                     <SeekBar
@@ -1249,7 +1249,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <!-- 悬浮球形态选择 -->
@@ -1259,7 +1259,7 @@
                         android:text="悬浮球形态"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#334155" />
+                        android:textColor="@color/ui_ink" />
 
                     <RadioGroup
                         android:id="@+id/rgBallShape"
@@ -1275,7 +1275,7 @@
                             android:layout_weight="1"
                             android:text="圆形"
                             android:textSize="14sp"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <RadioButton
                             android:id="@+id/rbShapeRoundedRect"
@@ -1284,7 +1284,7 @@
                             android:layout_weight="1"
                             android:text="圆角方形"
                             android:textSize="14sp"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <RadioButton
                             android:id="@+id/rbShapeBorderless"
@@ -1293,7 +1293,7 @@
                             android:layout_weight="1"
                             android:text="无边框"
                             android:textSize="14sp"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
                     </RadioGroup>
 
                     <TextView
@@ -1302,7 +1302,7 @@
                         android:layout_height="wrap_content"
                         android:text="💡 提示：请选用透明底、裁切紧密的正方形画布图片。透明区域不会误触发悬浮球，但受系统限制无法点击穿透到底层应用。请勿使用完全空的图片。"
                         android:textSize="12sp"
-                        android:textColor="#2563EB"
+                        android:textColor="@color/ui_accent"
                         android:lineSpacingExtra="2dp"
                         android:layout_marginTop="8dp"
                         android:visibility="gone" />
@@ -1310,7 +1310,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <!-- 悬浮球贴图 -->
@@ -1320,7 +1320,7 @@
                         android:text="悬浮球贴图"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#334155" />
+                        android:textColor="@color/ui_ink" />
 
                     <TextView
                         android:id="@+id/tvCustomImageStatus"
@@ -1328,7 +1328,7 @@
                         android:layout_height="wrap_content"
                         android:text="当前外观: 默认纯色球"
                         android:textSize="13sp"
-                        android:textColor="#475569"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="12dp" />
 
@@ -1361,12 +1361,12 @@
                 android:id="@+id/layoutSectionSearchBar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -1381,14 +1381,14 @@
                     android:text="悬浮搜索框"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="#0F172A" />
+                    android:textColor="@color/ui_ink" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="通过边缘手势或横向滑动悬浮球唤起的快捷表情搜索栏"
                     android:textSize="12sp"
-                    android:textColor="#64748B"
+                    android:textColor="@color/ui_muted"
                     android:layout_marginTop="4dp" />
 
                 <!-- 搜索框顶边距调节 -->
@@ -1404,7 +1404,7 @@
                         android:layout_weight="1"
                         android:text="距离屏幕顶端 (0 - 1000 dp)"
                         android:textSize="14sp"
-                        android:textColor="#555555" />
+                        android:textColor="@color/ui_muted" />
 
                     <TextView
                         android:id="@+id/tvSearchBarTopMarginValue"
@@ -1413,7 +1413,7 @@
                         android:text="40 dp"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="#2563EB" />
+                        android:textColor="@color/ui_accent" />
                 </LinearLayout>
 
                 <SeekBar
@@ -1428,7 +1428,7 @@
                     android:layout_height="wrap_content"
                     android:text="控制搜索框弹出时距离屏幕顶端的距离，支持全屏幕大范围自定义"
                     android:textSize="11sp"
-                    android:textColor="#64748B"
+                    android:textColor="@color/ui_muted"
                     android:layout_marginTop="4dp" />
 
                 <LinearLayout
@@ -1456,7 +1456,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="#F1F5F9"
+                    android:background="@color/ui_surface_variant"
                     android:layout_marginVertical="12dp" />
 
                 <!-- 检索范围设置 -->
@@ -1466,7 +1466,7 @@
                     android:text="检索范围"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#555555" />
+                    android:textColor="@color/ui_muted" />
 
                 <RadioGroup
                     android:id="@+id/rgSearchBarScope"
@@ -1482,7 +1482,7 @@
                         android:layout_weight="1"
                         android:text="仅 tag"
                         android:textSize="13sp"
-                        android:textColor="#0F172A" />
+                        android:textColor="@color/ui_ink" />
 
                     <RadioButton
                         android:id="@+id/rbScopeCategoryOnly"
@@ -1491,7 +1491,7 @@
                         android:layout_weight="1"
                         android:text="仅分类夹"
                         android:textSize="13sp"
-                        android:textColor="#0F172A" />
+                        android:textColor="@color/ui_ink" />
 
                     <RadioButton
                         android:id="@+id/rbScopeTagAndCategory"
@@ -1500,7 +1500,7 @@
                         android:layout_weight="1.2"
                         android:text="tag和分类夹"
                         android:textSize="13sp"
-                        android:textColor="#0F172A" />
+                        android:textColor="@color/ui_ink" />
                 </RadioGroup>
 
                 <TextView
@@ -1508,7 +1508,7 @@
                     android:layout_height="wrap_content"
                     android:text="控制悬浮搜索框检索表情时的匹配范围（已排除文件名称匹配）"
                     android:textSize="11sp"
-                    android:textColor="#64748B"
+                    android:textColor="@color/ui_muted"
                     android:layout_marginTop="4dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -1518,12 +1518,12 @@
                 android:id="@+id/layoutPreviewBlock"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="24dp"
                 android:visibility="gone">
 
@@ -1539,14 +1539,14 @@
                         android:text="实时示意预览"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:layout_marginBottom="8dp" />
 
                     <FrameLayout
                         android:id="@+id/flPreviewBackground"
                         android:layout_width="match_parent"
                         android:layout_height="180dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:clipToOutline="true">
 
                         <com.suzu.test.ui.view.EdgeGestureRegionView
@@ -1584,7 +1584,7 @@
                             android:layout_gravity="center"
                             android:text="开启悬浮球或边缘手势后，此处实时显示效果示意"
                             android:textSize="13sp"
-                            android:textColor="#94A3B8"
+                            android:textColor="@color/ui_subtle"
                             android:visibility="gone" />
                     </FrameLayout>
                 </LinearLayout>

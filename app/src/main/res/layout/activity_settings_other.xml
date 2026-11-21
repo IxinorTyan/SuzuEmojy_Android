@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F8FAFC"
+    android:background="@color/ui_canvas"
     android:paddingHorizontal="16dp"
     android:paddingTop="12dp"
     android:paddingBottom="12dp">
@@ -40,7 +40,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="实验：在 QQ 开启我们的表情 IME，从独立悬浮窗选图；再切到其他输入法，用同一悬浮窗重试。两次都调用我们自己的原特化发送。不自动切换、不粘贴、不分享。图库显示前 200 张。"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:textSize="12sp"
                 android:padding="8dp" />
 
@@ -59,7 +59,7 @@
                     android:layout_height="40dp"
                     android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_arrow_back_24"
-                    app:tint="#0F172A"
+                    app:tint="@color/ui_ink"
                     android:padding="8dp"
                     android:contentDescription="返回" />
 
@@ -74,9 +74,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="其他设置"
-                        android:textSize="20sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:letterSpacing="-0.01" />
 
                     <TextView
@@ -84,7 +84,7 @@
                         android:layout_height="wrap_content"
                         android:text="发送策略与存储维护"
                         android:textSize="12sp"
-                        android:textColor="#64748B"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginTop="2dp" />
                 </LinearLayout>
             </LinearLayout>
@@ -96,7 +96,7 @@
                 android:text="发送偏好"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:letterSpacing="0.04"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="4dp" />
@@ -104,12 +104,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -129,7 +129,7 @@
                             android:layout_height="20dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_suzu_share"
-                            app:tint="#2563EB"
+                            app:tint="@color/ui_accent"
                             android:contentDescription="发送策略" />
                     </FrameLayout>
 
@@ -147,14 +147,14 @@
                             android:text="静态 PNG 自动转单帧 GIF"
                             android:textSize="15sp"
                             android:textStyle="bold"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="避免微信发送超大原图，增强各聊天软件表情直发兼容性"
                             android:textSize="11sp"
-                            android:textColor="#64748B"
+                            android:textColor="@color/ui_muted"
                             android:layout_marginTop="2dp"
                             android:lineSpacingExtra="1dp" />
                     </LinearLayout>
@@ -173,7 +173,7 @@
                 android:text="记录管理"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:letterSpacing="0.04"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="4dp" />
@@ -181,12 +181,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -211,7 +211,7 @@
                                 android:layout_height="20dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_tab_recent"
-                                app:tint="#8B5CF6"
+                                app:tint="@color/ui_accent"
                                 android:contentDescription="常用记录" />
                         </FrameLayout>
 
@@ -228,14 +228,14 @@
                                 android:text="常用表情数量上限"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="范围 1 - 100，调小后会立刻淘汰超出数量的旧记录"
                                 android:textSize="11sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
                     </LinearLayout>
@@ -243,7 +243,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <LinearLayout
@@ -259,9 +259,9 @@
                             android:layout_weight="1"
                             android:inputType="number"
                             android:hint="默认 40"
-                            android:textColorHint="#94A3B8"
+                            android:textColorHint="@color/ui_subtle"
                             android:textSize="15sp"
-                            android:textColor="#0F172A"
+                            android:textColor="@color/ui_ink"
                             android:background="@drawable/bg_rounded_input_field"
                             android:paddingHorizontal="14dp"
                             android:layout_marginEnd="10dp" />
@@ -270,7 +270,7 @@
                             android:id="@+id/btnSaveSettings"
                             android:layout_width="wrap_content"
                             android:layout_height="44dp"
-                            android:backgroundTint="#2563EB"
+                            android:backgroundTint="@color/ui_accent"
                             app:cornerRadius="10dp"
                             android:text="保存"
                             android:textSize="14sp"
@@ -286,7 +286,7 @@
                 android:text="存储与清理"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:letterSpacing="0.04"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="4dp" />
@@ -294,12 +294,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF">
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -323,7 +323,7 @@
                                 android:layout_height="20dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_similar_images"
-                                app:tint="#EA580C"
+                                app:tint="@color/ui_warning"
                                 android:contentDescription="缓存清理" />
                         </FrameLayout>
 
@@ -340,14 +340,14 @@
                                 android:text="暂存与缓存清理"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="清理临时发送文件与表情解码磁盘缓存"
                                 android:textSize="11sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
                     </LinearLayout>
@@ -355,7 +355,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <TextView
@@ -364,7 +364,7 @@
                         android:layout_height="wrap_content"
                         android:text="当前缓存占用: 正在计算..."
                         android:textSize="13sp"
-                        android:textColor="#334155"
+                        android:textColor="@color/ui_ink"
                         android:textStyle="bold" />
 
                     <TextView
@@ -372,7 +372,7 @@
                         android:layout_height="wrap_content"
                         android:text="* 清理后首次浏览表情包时会自动重新生成缩略图缓存，不影响原图文件。"
                         android:textSize="11sp"
-                        android:textColor="#94A3B8"
+                        android:textColor="@color/ui_subtle"
                         android:layout_marginTop="4dp"
                         android:lineSpacingExtra="1dp" />
 
@@ -381,8 +381,8 @@
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
-                        android:textColor="#EA580C"
-                        app:strokeColor="#EA580C"
+                        android:textColor="@color/ui_warning"
+                        app:strokeColor="@color/ui_warning"
                         app:cornerRadius="10dp"
                         android:text="一键清理缓存"
                         android:textSize="14sp"

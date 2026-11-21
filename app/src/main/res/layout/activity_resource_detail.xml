@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#121212">
+    android:background="@color/ui_media_canvas">
 
     <!-- 顶部导航条 -->
     <LinearLayout
@@ -13,7 +13,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingHorizontal="8dp"
-        android:background="#1E1E1E">
+        android:background="@color/ui_media_surface">
 
         <ImageButton
             android:id="@+id/btnDetailBack"
@@ -59,7 +59,7 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#1E1E1E"
+        android:background="@color/ui_media_surface"
         android:padding="12dp">
 
         <LinearLayout
@@ -72,7 +72,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="关键词 (点击编辑)"
-                android:textColor="#AAAAAA"
+                android:textColor="@color/ui_media_muted"
                 android:textSize="12sp" />
 
             <TextView
@@ -80,7 +80,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:background="#2C2C2C"
+                android:background="@color/ui_media_elevated"
                 android:padding="8dp"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
@@ -92,7 +92,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:text="所属分类 (点击编辑)"
-                android:textColor="#AAAAAA"
+                android:textColor="@color/ui_media_muted"
                 android:textSize="12sp" />
 
             <TextView
@@ -100,7 +100,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:background="#2C2C2C"
+                android:background="@color/ui_media_elevated"
                 android:padding="8dp"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"
@@ -112,7 +112,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:text="元数据"
-                android:textColor="#AAAAAA"
+                android:textColor="@color/ui_media_muted"
                 android:textSize="12sp" />
 
             <LinearLayout
@@ -120,14 +120,14 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginTop="4dp"
-                android:background="#2C2C2C"
+                android:background="@color/ui_media_elevated"
                 android:padding="8dp">
 
                 <TextView
                     android:id="@+id/tvMetaResolution"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="#DDDDDD"
+                    android:textColor="@color/ui_media_muted"
                     android:textSize="13sp"
                     android:text="尺寸: 0 × 0" />
 
@@ -136,7 +136,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:textColor="#DDDDDD"
+                    android:textColor="@color/ui_media_muted"
                     android:textSize="13sp"
                     android:text="大小: 0 KB" />
 
@@ -145,7 +145,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:textColor="#DDDDDD"
+                    android:textColor="@color/ui_media_muted"
                     android:textSize="13sp"
                     android:text="格式: PNG" />
 
@@ -154,7 +154,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:textColor="#DDDDDD"
+                    android:textColor="@color/ui_media_muted"
                     android:textSize="13sp"
                     android:text="导入时间: -" />
             </LinearLayout>

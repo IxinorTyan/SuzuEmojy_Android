@@ -19,7 +19,7 @@
             android:id="@+id/tvImportStats"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#0F172A"
+            android:textColor="@color/ui_ink"
             android:textSize="14sp"
             android:textStyle="bold"
             android:lineSpacingExtra="3dp"
@@ -32,9 +32,9 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
         android:checked="false"
-        android:textColor="#334155"
+        android:textColor="@color/ui_ink"
         android:textSize="13sp"
-        app:buttonTint="#2563EB"
+        app:buttonTint="@color/ui_accent"
         android:text="清理本地原图" />
 
 </LinearLayout>

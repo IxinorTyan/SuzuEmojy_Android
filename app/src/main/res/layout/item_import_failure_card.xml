@@ -22,7 +22,7 @@
             android:layout_weight="1"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#D32F2F"
+            android:textColor="@color/ui_danger"
             android:text="不支持的格式（动态 WebP 暂不支持）" />
 
         <TextView
@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:textSize="13sp"
             android:textStyle="bold"
-            android:textColor="#D32F2F"
+            android:textColor="@color/ui_danger"
             android:text="共 2 张" />
     </LinearLayout>
 

@@ -141,7 +141,7 @@ class ExportActivity : AppCompatActivity() {
         val hint = TextView(this).apply {
             text = "可同时勾选多个收藏夹，最终合并打包为一个资源包"
             textSize = 12f
-            setTextColor(0xFF64748B.toInt())
+            setTextColor(context.getColor(R.color.ui_muted))
             setPadding(0, 0, 0, dp(10))
         }
         container.addView(hint)
@@ -156,9 +156,9 @@ class ExportActivity : AppCompatActivity() {
                 text = category.name
                 isChecked = false
                 textSize = 14f
-                setTextColor(0xFF0F172A.toInt())
+                setTextColor(context.getColor(R.color.ui_ink))
                 setPadding(dp(8), dp(10), dp(8), dp(10))
-                buttonTintList = android.content.res.ColorStateList.valueOf(0xFF2563EB.toInt())
+                buttonTintList = android.content.res.ColorStateList.valueOf(context.getColor(R.color.ui_accent))
                 setOnCheckedChangeListener { _, isChecked ->
                     checked[index] = isChecked
                 }

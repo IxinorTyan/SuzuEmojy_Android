@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F8FAFC"
+    android:background="@color/ui_canvas"
     android:paddingHorizontal="16dp"
     android:paddingTop="12dp"
     android:paddingBottom="12dp">
@@ -39,7 +39,7 @@
                     android:layout_height="40dp"
                     android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_arrow_back_24"
-                    app:tint="#0F172A"
+                    app:tint="@color/ui_ink"
                     android:padding="8dp"
                     android:contentDescription="返回" />
 
@@ -54,9 +54,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="键盘唤出测试"
-                        android:textSize="20sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:letterSpacing="-0.01" />
 
                     <TextView
@@ -64,7 +64,7 @@
                         android:layout_height="wrap_content"
                         android:text="直观验证输入法呼出与表情直发效果"
                         android:textSize="12sp"
-                        android:textColor="#64748B"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginTop="2dp" />
                 </LinearLayout>
             </LinearLayout>
@@ -75,7 +75,7 @@
                 android:text="测试区域"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:letterSpacing="0.04"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="4dp" />
@@ -83,12 +83,12 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF">
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -112,7 +112,7 @@
                                 android:layout_height="20dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_about_chat"
-                                app:tint="#2563EB"
+                                app:tint="@color/ui_accent"
                                 android:contentDescription="输入测试" />
                         </FrameLayout>
 
@@ -129,14 +129,14 @@
                                 android:text="标准富文本输入测试框"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="支持 CommitContent 图片直发监听"
                                 android:textSize="11sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
                     </LinearLayout>
@@ -144,7 +144,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="#F1F5F9"
+                        android:background="@color/ui_surface_variant"
                         android:layout_marginVertical="12dp" />
 
                     <com.suzu.test.control.RichContentEditText
@@ -152,9 +152,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
                         android:hint="点击此处呼出键盘..."
-                        android:textColorHint="#94A3B8"
+                        android:textColorHint="@color/ui_subtle"
                         android:textSize="15sp"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:background="@drawable/bg_rounded_input_field"
                         android:paddingHorizontal="14dp" />
 
@@ -163,7 +163,7 @@
                         android:layout_height="wrap_content"
                         android:text="* 呼出输入法后，点击表情卡片将在此处直接接收并预览发送结果。"
                         android:textSize="11sp"
-                        android:textColor="#94A3B8"
+                        android:textColor="@color/ui_subtle"
                         android:layout_marginTop="8dp"
                         android:lineSpacingExtra="1dp" />
 
@@ -191,7 +191,7 @@
                             android:layout_marginTop="10dp"
                             android:textSize="12sp"
                             android:textStyle="bold"
-                            android:textColor="#16A34A"
+                            android:textColor="@color/ui_good"
                             android:background="@drawable/bg_home_tag_green"
                             android:paddingHorizontal="10dp"
                             android:paddingVertical="4dp"

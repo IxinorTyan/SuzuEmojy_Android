@@ -106,7 +106,7 @@ class CategoryDialogHelper(
             setSingleLine()
         }
         val tvError = TextView(context).apply {
-            setTextColor(0xFFD32F2F.toInt())
+            setTextColor(context.getColor(R.color.ui_danger))
             textSize = 12f
             visibility = View.GONE
             setPadding(8, 4, 8, 0)
@@ -184,7 +184,7 @@ class CategoryDialogHelper(
             setSingleLine()
         }
         val tvError = TextView(context).apply {
-            setTextColor(0xFFD32F2F.toInt())
+            setTextColor(context.getColor(R.color.ui_danger))
             textSize = 12f
             visibility = View.GONE
             setPadding(8, 4, 8, 0)
@@ -257,7 +257,7 @@ class CategoryDialogHelper(
         val tvMessage = TextView(context).apply {
             text = "确定删除分类「${category.name}」吗？"
             textSize = 15f
-            setTextColor(0xFF333333.toInt())
+            setTextColor(context.getColor(R.color.ui_ink))
         }
         val cbDeleteImages = CheckBox(context).apply {
             text = "同时彻底删除该分类下的所有图片（资源库内文件，不可恢复）"

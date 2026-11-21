@@ -2,7 +2,7 @@ package com.suzu.test.ui.similar
 
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.graphics.Color
+import com.suzu.test.R
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -123,11 +123,11 @@ class SimilarityActivity : AppCompatActivity() {
         binding.btnDelete.text = "删除所选（${state.selected.size}）"
         binding.btnDelete.isEnabled = hasSelected && !state.busy && !deleting
         if (hasSelected) {
-            binding.btnDelete.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#DC2626"))
-            binding.btnDelete.setTextColor(Color.WHITE)
+            binding.btnDelete.backgroundTintList = ColorStateList.valueOf(getColor(R.color.ui_danger_container))
+            binding.btnDelete.setTextColor(getColor(R.color.ui_danger))
         } else {
-            binding.btnDelete.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#E2E8F0"))
-            binding.btnDelete.setTextColor(Color.parseColor("#94A3B8"))
+            binding.btnDelete.backgroundTintList = ColorStateList.valueOf(getColor(R.color.ui_surface_variant))
+            binding.btnDelete.setTextColor(getColor(R.color.ui_subtle))
         }
         adapter.submit(state.groups, state.selected, !state.busy && !deleting, state.durations)
     }

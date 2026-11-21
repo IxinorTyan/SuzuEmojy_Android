@@ -1,6 +1,5 @@
 package com.suzu.test.ui.similar
 
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -91,10 +90,10 @@ class SimilarityAdapter(
 
                 // 选中高亮卡片边框
                 if (isChecked) {
-                    holder.card.strokeColor = Color.parseColor("#2563EB")
+                    holder.card.strokeColor = holder.card.context.getColor(R.color.ui_accent)
                     holder.card.strokeWidth = (holder.card.context.resources.displayMetrics.density * 1.5f).toInt().coerceAtLeast(2)
                 } else {
-                    holder.card.strokeColor = Color.parseColor("#E2E8F0")
+                    holder.card.strokeColor = holder.card.context.getColor(R.color.ui_outline)
                     holder.card.strokeWidth = (holder.card.context.resources.displayMetrics.density * 1f).toInt().coerceAtLeast(1)
                 }
 

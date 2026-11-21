@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F8FAFC">
+    android:background="@color/ui_canvas">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -42,7 +42,7 @@
                     android:layout_height="40dp"
                     android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_arrow_back_24"
-                    app:tint="#0F172A"
+                    app:tint="@color/ui_ink"
                     android:padding="8dp"
                     android:contentDescription="返回" />
 
@@ -57,9 +57,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="导出表情"
-                        android:textSize="20sp"
+                        android:textSize="24sp"
                         android:textStyle="bold"
-                        android:textColor="#0F172A"
+                        android:textColor="@color/ui_ink"
                         android:letterSpacing="-0.01" />
 
                     <TextView
@@ -67,7 +67,7 @@
                         android:layout_height="wrap_content"
                         android:text="打包备份本地表情或分享至其他设备"
                         android:textSize="12sp"
-                        android:textColor="#64748B"
+                        android:textColor="@color/ui_muted"
                         android:layout_marginTop="2dp" />
                 </LinearLayout>
             </LinearLayout>
@@ -78,7 +78,7 @@
                 android:text="选择导出范围"
                 android:textSize="13sp"
                 android:textStyle="bold"
-                android:textColor="#64748B"
+                android:textColor="@color/ui_muted"
                 android:letterSpacing="0.04"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="10dp"
@@ -92,13 +92,13 @@
                 android:layout_marginHorizontal="2dp"
                 android:layout_marginTop="2dp"
                 android:layout_marginBottom="12dp"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="2dp"
-                app:cardMaxElevation="4dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
-                app:rippleColor="#1A16A34A"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
+                app:rippleColor="@color/ui_good_container"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -119,7 +119,7 @@
                             android:layout_height="22dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_export_simple"
-                            app:tint="#16A34A"
+                            app:tint="@color/ui_good"
                             android:contentDescription="导出全部表情" />
                     </FrameLayout>
 
@@ -142,7 +142,7 @@
                                 android:text="导出全部表情"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -150,7 +150,7 @@
                                 android:text="完整备份"
                                 android:textSize="10sp"
                                 android:textStyle="bold"
-                                android:textColor="#16A34A"
+                                android:textColor="@color/ui_good"
                                 android:background="@drawable/bg_home_tag_green"
                                 android:paddingHorizontal="6dp"
                                 android:paddingVertical="1.5dp"
@@ -162,7 +162,7 @@
                             android:layout_height="wrap_content"
                             android:text="打包所有分类及全部表情图片为一个压缩包"
                             android:textSize="11sp"
-                            android:textColor="#64748B"
+                            android:textColor="@color/ui_muted"
                             android:layout_marginTop="2dp" />
                     </LinearLayout>
 
@@ -170,7 +170,7 @@
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:src="@drawable/ic_about_chevron_right"
-                        app:tint="#94A3B8"
+                        app:tint="@color/ui_subtle"
                         android:contentDescription="进入" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -183,13 +183,13 @@
                 android:layout_marginHorizontal="2dp"
                 android:layout_marginTop="2dp"
                 android:layout_marginBottom="12dp"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="2dp"
-                app:cardMaxElevation="4dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
-                app:rippleColor="#1A2563EB"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
+                app:rippleColor="@color/ui_accent_container"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -210,7 +210,7 @@
                             android:layout_height="22dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_category_default"
-                            app:tint="#2563EB"
+                            app:tint="@color/ui_accent"
                             android:contentDescription="导出指定收藏夹" />
                     </FrameLayout>
 
@@ -233,7 +233,7 @@
                                 android:text="导出指定收藏夹"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -241,7 +241,7 @@
                                 android:text="自定义"
                                 android:textSize="10sp"
                                 android:textStyle="bold"
-                                android:textColor="#2563EB"
+                                android:textColor="@color/ui_accent"
                                 android:background="@drawable/bg_home_tag_blue"
                                 android:paddingHorizontal="6dp"
                                 android:paddingVertical="1.5dp"
@@ -253,7 +253,7 @@
                             android:layout_height="wrap_content"
                             android:text="多选特定分类并仅导出对应的表情包"
                             android:textSize="11sp"
-                            android:textColor="#64748B"
+                            android:textColor="@color/ui_muted"
                             android:layout_marginTop="2dp" />
                     </LinearLayout>
 
@@ -261,7 +261,7 @@
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:src="@drawable/ic_about_chevron_right"
-                        app:tint="#94A3B8"
+                        app:tint="@color/ui_subtle"
                         android:contentDescription="进入" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -274,12 +274,12 @@
                 android:layout_marginHorizontal="2dp"
                 android:layout_marginTop="2dp"
                 android:layout_marginBottom="12dp"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="2dp"
-                app:cardMaxElevation="4dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
                 android:visibility="gone">
 
                 <LinearLayout
@@ -301,7 +301,7 @@
                             android:text="已选择分类"
                             android:textSize="13sp"
                             android:textStyle="bold"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -309,7 +309,7 @@
                             android:text="准备导出"
                             android:textSize="11sp"
                             android:textStyle="bold"
-                            android:textColor="#2563EB"
+                            android:textColor="@color/ui_accent"
                             android:background="@drawable/bg_home_tag_blue"
                             android:paddingHorizontal="6dp"
                             android:paddingVertical="1.5dp" />
@@ -324,7 +324,7 @@
                         android:padding="10dp"
                         android:text=""
                         android:textSize="13sp"
-                        android:textColor="#334155"
+                        android:textColor="@color/ui_ink"
                         android:lineSpacingExtra="3dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -345,7 +345,7 @@
                     android:text="导出状态与反馈"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:textColor="#64748B"
+                    android:textColor="@color/ui_muted"
                     android:letterSpacing="0.04"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="8dp"
@@ -358,12 +358,12 @@
                     android:layout_marginHorizontal="2dp"
                     android:layout_marginTop="2dp"
                     android:layout_marginBottom="16dp"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp"
-                    app:cardMaxElevation="4dp"
+                    app:cardCornerRadius="@dimen/ui_radius"
+                    app:cardElevation="0dp"
+                    app:cardMaxElevation="0dp"
                     app:strokeWidth="1dp"
-                    app:strokeColor="#E2E8F0"
-                    app:cardBackgroundColor="#FFFFFF">
+                    app:strokeColor="@color/ui_outline"
+                    app:cardBackgroundColor="@color/ui_surface">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -377,7 +377,7 @@
                             android:layout_height="wrap_content"
                             android:text=""
                             android:textSize="14sp"
-                            android:textColor="#0F172A" />
+                            android:textColor="@color/ui_ink" />
 
                         <TextView
                             android:id="@+id/tvSummary"
@@ -385,7 +385,7 @@
                             android:layout_height="wrap_content"
                             android:text=""
                             android:textSize="13sp"
-                            android:textColor="#16A34A"
+                            android:textColor="@color/ui_good"
                             android:textStyle="bold"
                             android:lineSpacingExtra="2dp"
                             android:layout_marginTop="8dp"

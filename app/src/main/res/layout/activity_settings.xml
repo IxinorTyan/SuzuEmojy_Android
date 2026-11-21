@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F8FAFC"
-    android:paddingHorizontal="16dp"
-    android:paddingTop="12dp"
+    android:background="@color/ui_canvas"
+    android:paddingHorizontal="@dimen/ui_gutter"
+    android:paddingTop="4dp"
     android:paddingBottom="8dp">
 
     <ScrollView
@@ -24,63 +24,234 @@
             android:orientation="vertical"
             android:paddingBottom="24dp">
 
-            <!-- 顶部导航栏 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:minHeight="60dp"
                 android:gravity="center_vertical"
-                android:paddingVertical="4dp"
-                android:layout_marginBottom="8dp">
+                android:orientation="horizontal">
 
-                <ImageButton
+                <androidx.appcompat.widget.AppCompatImageButton
                     android:id="@+id/btnBack"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_arrow_back_24"
-                    app:tint="#0F172A"
-                    android:padding="8dp"
+                    style="@style/Widget.Suzu.IconAction"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    app:srcCompat="@drawable/ic_arrow_back_24"
                     android:contentDescription="返回" />
 
-                <LinearLayout
-                    android:layout_width="0dp"
+                <TextView
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="4dp"
+                    android:text="设置"
+                    android:textAppearance="@style/TextAppearance.Suzu.PageTitle" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="8dp"
+                android:text="功能与偏好"
+                android:textAppearance="@style/TextAppearance.Suzu.Section" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Suzu.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:id="@+id/btnNavKeyboardAppearance"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="设置"
-                        android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:textColor="#0F172A"
-                        android:letterSpacing="-0.01" />
+                        android:minHeight="68dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="10dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_ui_icon"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_about_sparkle"
+                            app:tint="@color/ui_accent"
+                            android:importantForAccessibility="no" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="键盘设置"
+                                android:textAppearance="@style/TextAppearance.Suzu.RowTitle" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="配置键盘样式、按键与分享白名单"
+                                android:textAppearance="@style/TextAppearance.Suzu.Secondary" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_about_chevron_right"
+                            app:tint="@color/ui_subtle"
+                            android:importantForAccessibility="no" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:layout_marginEnd="16dp"
+                        android:importantForAccessibility="no"
+                        android:background="@color/ui_outline" />
+
+                    <LinearLayout
+                        android:id="@+id/btnNavFloatingSettings"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="系统权限与应用偏好管理"
-                        android:textSize="12sp"
-                        android:textColor="#64748B"
-                        android:layout_marginTop="2dp" />
+                        android:minHeight="68dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="10dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_ui_icon"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_about_chat"
+                            app:tint="@color/ui_accent"
+                            android:importantForAccessibility="no" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="悬浮窗设置"
+                                android:textAppearance="@style/TextAppearance.Suzu.RowTitle" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="配置快捷悬浮球与边缘手势"
+                                android:textAppearance="@style/TextAppearance.Suzu.Secondary" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_about_chevron_right"
+                            app:tint="@color/ui_subtle"
+                            android:importantForAccessibility="no" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:layout_marginEnd="16dp"
+                        android:importantForAccessibility="no"
+                        android:background="@color/ui_outline" />
+
+                    <LinearLayout
+                        android:id="@+id/btnNavOtherSettings"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="68dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="10dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_ui_icon"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_settings_gear"
+                            app:tint="@color/ui_accent"
+                            android:importantForAccessibility="no" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="其他设置"
+                                android:textAppearance="@style/TextAppearance.Suzu.RowTitle" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="发送偏好和缓存清理"
+                                android:textAppearance="@style/TextAppearance.Suzu.Secondary" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_about_chevron_right"
+                            app:tint="@color/ui_subtle"
+                            android:importantForAccessibility="no" />
+                    </LinearLayout>
                 </LinearLayout>
-            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 1. 权限状态卡片 (支持折叠/展开与状态摘要) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardPermissions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
+                app:cardCornerRadius="@dimen/ui_radius"
+                app:cardElevation="0dp"
+                app:cardMaxElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
-                android:layout_marginBottom="14dp">
+                app:strokeColor="@color/ui_outline"
+                app:cardBackgroundColor="@color/ui_surface"
+                android:layout_marginTop="16dp">
 
                 <LinearLayout
                     android:id="@+id/layoutPermissionCardRoot"
@@ -110,7 +281,7 @@
                                 android:layout_height="20dp"
                                 android:layout_gravity="center"
                                 android:src="@drawable/ic_about_shield"
-                                app:tint="#2563EB"
+                                app:tint="@color/ui_accent"
                                 android:contentDescription="权限状态" />
                         </FrameLayout>
 
@@ -127,14 +298,14 @@
                                 android:text="权限状态"
                                 android:textSize="16sp"
                                 android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="输入法及扩展功能运行状态"
                                 android:textSize="11sp"
-                                android:textColor="#64748B"
+                                android:textColor="@color/ui_muted"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
 
@@ -146,7 +317,7 @@
                             android:text="检查中..."
                             android:textSize="11sp"
                             android:textStyle="bold"
-                            android:textColor="#16A34A"
+                            android:textColor="@color/ui_good"
                             android:background="@drawable/bg_home_tag_green"
                             android:paddingHorizontal="8dp"
                             android:paddingVertical="3dp"
@@ -158,7 +329,7 @@
                             android:layout_width="20dp"
                             android:layout_height="20dp"
                             android:src="@drawable/ic_expand_more_24"
-                            app:tint="#64748B"
+                            app:tint="@color/ui_muted"
                             android:contentDescription="折叠或展开权限详情" />
                     </LinearLayout>
 
@@ -175,7 +346,7 @@
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
-                            android:background="#F1F5F9"
+                            android:background="@color/ui_surface_variant"
                             android:layout_marginBottom="12dp" />
 
                         <!-- 基础核心权限标题 -->
@@ -185,7 +356,7 @@
                             android:text="基础核心权限"
                             android:textSize="12sp"
                             android:textStyle="bold"
-                            android:textColor="#94A3B8"
+                            android:textColor="@color/ui_subtle"
                             android:letterSpacing="0.04"
                             android:layout_marginBottom="4dp" />
 
@@ -204,7 +375,7 @@
                                 android:layout_weight="1"
                                 android:text="输入法: 未启用"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <Button
                                 android:id="@+id/btnPermImeAction"
@@ -214,8 +385,8 @@
                                 android:minHeight="48dp"
                                 android:textSize="12sp"
                                 android:text="去设置"
-                                android:textColor="#2563EB"
-                                app:strokeColor="#2563EB"
+                                android:textColor="@color/ui_accent"
+                                app:strokeColor="@color/ui_accent"
                                 app:cornerRadius="8dp" />
                         </LinearLayout>
 
@@ -234,7 +405,7 @@
                                 android:layout_weight="1"
                                 android:text="相册读取: 未授权"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <Button
                                 android:id="@+id/btnPermStorageAction"
@@ -244,15 +415,15 @@
                                 android:minHeight="48dp"
                                 android:textSize="12sp"
                                 android:text="去授权"
-                                android:textColor="#2563EB"
-                                app:strokeColor="#2563EB"
+                                android:textColor="@color/ui_accent"
+                                app:strokeColor="@color/ui_accent"
                                 app:cornerRadius="8dp" />
                         </LinearLayout>
 
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
-                            android:background="#F1F5F9"
+                            android:background="@color/ui_surface_variant"
                             android:layout_marginVertical="10dp" />
 
                         <!-- 扩展权限标题 -->
@@ -262,7 +433,7 @@
                             android:text="悬浮窗 / 快捷球扩展权限 (按需开启)"
                             android:textSize="12sp"
                             android:textStyle="bold"
-                            android:textColor="#94A3B8"
+                            android:textColor="@color/ui_subtle"
                             android:letterSpacing="0.04"
                             android:layout_marginBottom="4dp" />
 
@@ -281,7 +452,7 @@
                                 android:layout_weight="1"
                                 android:text="悬浮窗: 未授权"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <Button
                                 android:id="@+id/btnPermOverlayAction"
@@ -291,8 +462,8 @@
                                 android:minHeight="48dp"
                                 android:textSize="12sp"
                                 android:text="去授权"
-                                android:textColor="#2563EB"
-                                app:strokeColor="#2563EB"
+                                android:textColor="@color/ui_accent"
+                                app:strokeColor="@color/ui_accent"
                                 app:cornerRadius="8dp" />
                         </LinearLayout>
 
@@ -311,7 +482,7 @@
                                 android:layout_weight="1"
                                 android:text="无障碍服务: 已关闭"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <Button
                                 android:id="@+id/btnPermA11yAction"
@@ -321,8 +492,8 @@
                                 android:minHeight="48dp"
                                 android:textSize="12sp"
                                 android:text="去开启"
-                                android:textColor="#2563EB"
-                                app:strokeColor="#2563EB"
+                                android:textColor="@color/ui_accent"
+                                app:strokeColor="@color/ui_accent"
                                 app:cornerRadius="8dp" />
                         </LinearLayout>
 
@@ -341,7 +512,7 @@
                                 android:layout_weight="1"
                                 android:text="忽略电池优化: 未开启"
                                 android:textSize="14sp"
-                                android:textColor="#0F172A" />
+                                android:textColor="@color/ui_ink" />
 
                             <Button
                                 android:id="@+id/btnPermBatteryAction"
@@ -351,8 +522,8 @@
                                 android:minHeight="48dp"
                                 android:textSize="12sp"
                                 android:text="去设置"
-                                android:textColor="#2563EB"
-                                app:strokeColor="#2563EB"
+                                android:textColor="@color/ui_accent"
+                                app:strokeColor="@color/ui_accent"
                                 app:cornerRadius="8dp" />
                         </LinearLayout>
 
@@ -381,7 +552,7 @@
                                         android:layout_height="wrap_content"
                                         android:text="关联启动 / 自启动"
                                         android:textSize="14sp"
-                                        android:textColor="#0F172A" />
+                                        android:textColor="@color/ui_ink" />
 
                                     <TextView
                                         android:id="@+id/tvPermAutoStartSub"
@@ -389,7 +560,7 @@
                                         android:layout_height="wrap_content"
                                         android:text="允许被其他应用唤醒，防止悬浮球服务中断"
                                         android:textSize="12sp"
-                                        android:textColor="#64748B"
+                                        android:textColor="@color/ui_muted"
                                         android:layout_marginTop="2dp" />
                                 </LinearLayout>
 
@@ -401,8 +572,8 @@
                                 android:minHeight="48dp"
                                     android:textSize="12sp"
                                     android:text="去设置"
-                                    android:textColor="#2563EB"
-                                    app:strokeColor="#2563EB"
+                                    android:textColor="@color/ui_accent"
+                                    app:strokeColor="@color/ui_accent"
                                     app:cornerRadius="8dp" />
                             </LinearLayout>
                         </LinearLayout>
@@ -412,7 +583,7 @@
                             android:layout_height="wrap_content"
                             android:text="* 无障碍服务等仅用于悬浮球功能。除非需要使用悬浮球，否则不建议开启。"
                             android:textSize="11sp"
-                            android:textColor="#94A3B8"
+                            android:textColor="@color/ui_subtle"
                             android:layout_marginTop="4dp"
                             android:layout_marginBottom="4dp"
                             android:lineSpacingExtra="2dp" />
@@ -422,7 +593,7 @@
                             android:layout_height="wrap_content"
                             android:text="如果本软件完全无法正常使用，请检查设备是否安装了可能影响应用运行的第三方软件（如安全软件、权限管理工具、系统增强工具等）。如确认是第三方软件拦截导致，请自行关闭相关拦截或限制后再尝试使用。"
                             android:textSize="11sp"
-                            android:textColor="#94A3B8"
+                            android:textColor="@color/ui_subtle"
                             android:layout_marginTop="2dp"
                             android:layout_marginBottom="4dp"
                             android:lineSpacingExtra="2dp" />
@@ -430,7 +601,7 @@
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
-                            android:background="#F1F5F9"
+                            android:background="@color/ui_surface_variant"
                             android:layout_marginVertical="10dp" />
 
                         <!-- 提示无障碍服务被关闭开关 -->
@@ -451,14 +622,14 @@
                                     android:layout_height="wrap_content"
                                     android:text="提示无障碍服务被关闭"
                                     android:textSize="14sp"
-                                    android:textColor="#0F172A" />
+                                    android:textColor="@color/ui_ink" />
 
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="关闭后，首页不再提示无障碍异常"
                                     android:textSize="12sp"
-                                    android:textColor="#64748B"
+                                    android:textColor="@color/ui_muted"
                                     android:layout_marginTop="2dp" />
                             </LinearLayout>
 
@@ -472,364 +643,139 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 2. 快捷功能入口卡片 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="功能与偏好"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="#64748B"
-                android:letterSpacing="0.04"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="12dp"
                 android:layout_marginBottom="8dp"
-                android:layout_marginStart="4dp" />
+                android:text="调试与支持"
+                android:textAppearance="@style/TextAppearance.Suzu.Section" />
 
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Suzu.Card"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
-                android:layout_marginBottom="16dp">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <!-- 键盘外观与主题 -->
-                    <LinearLayout
-                        android:id="@+id/btnNavKeyboardAppearance"
-                        android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:paddingHorizontal="16dp"
-                        android:background="?android:attr/selectableItemBackground">
-
-                        <FrameLayout
-                            android:layout_width="36dp"
-                            android:layout_height="wrap_content"
-                                android:minHeight="48dp"
-                            android:background="@drawable/bg_home_icon_purple">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_about_sparkle"
-                                app:tint="#8B5CF6"
-                                android:contentDescription="键盘外观" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="12dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="键盘设置"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="#0F172A" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="配置键盘样式、按键与分享白名单"
-                                android:textSize="11sp"
-                                android:textColor="#64748B"
-                                android:layout_marginTop="1dp" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_about_chevron_right"
-                            app:tint="#94A3B8"
-                            android:contentDescription="进入" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="#F1F5F9"
-                        android:layout_marginStart="64dp" />
-
-                    <!-- 悬浮窗设置 -->
-                    <LinearLayout
-                        android:id="@+id/btnNavFloatingSettings"
-                        android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:paddingHorizontal="16dp"
-                        android:background="?android:attr/selectableItemBackground">
-
-                        <FrameLayout
-                            android:layout_width="36dp"
-                            android:layout_height="wrap_content"
-                                android:minHeight="48dp"
-                            android:background="@drawable/bg_home_icon_blue">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_about_chat"
-                                app:tint="#2563EB"
-                                android:contentDescription="悬浮窗设置" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="12dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="悬浮窗设置"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="#0F172A" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="配置快捷悬浮球与边缘手势"
-                                android:textSize="11sp"
-                                android:textColor="#64748B"
-                                android:layout_marginTop="1dp" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_about_chevron_right"
-                            app:tint="#94A3B8"
-                            android:contentDescription="进入" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="#F1F5F9"
-                        android:layout_marginStart="64dp" />
-
-                    <!-- 其他设置 -->
-                    <LinearLayout
-                        android:id="@+id/btnNavOtherSettings"
-                        android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:paddingHorizontal="16dp"
-                        android:background="?android:attr/selectableItemBackground">
-
-                        <FrameLayout
-                            android:layout_width="36dp"
-                            android:layout_height="wrap_content"
-                                android:minHeight="48dp"
-                            android:background="@drawable/bg_home_icon_slate">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_settings_gear"
-                                app:tint="#475569"
-                                android:contentDescription="其他设置" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="12dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="其他设置"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="#0F172A" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="发送偏好和缓存清理"
-                                android:textSize="11sp"
-                                android:textColor="#64748B"
-                                android:layout_marginTop="1dp" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_about_chevron_right"
-                            app:tint="#94A3B8"
-                            android:contentDescription="进入" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="#F1F5F9"
-                        android:layout_marginStart="64dp" />
-
-                    <!-- 关于软件 -->
                     <LinearLayout
                         android:id="@+id/btnNavAbout"
                         android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:orientation="horizontal"
+                        android:layout_height="wrap_content"
+                        android:minHeight="68dp"
                         android:gravity="center_vertical"
-                        android:paddingHorizontal="16dp"
-                        android:background="?android:attr/selectableItemBackground">
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="10dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                        <FrameLayout
-                            android:layout_width="36dp"
-                            android:layout_height="wrap_content"
-                                android:minHeight="48dp"
-                            android:background="@drawable/bg_home_icon_orange">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_gravity="center"
-                                android:src="@drawable/ic_about_author"
-                                app:tint="#EA580C"
-                                android:contentDescription="关于软件" />
-                        </FrameLayout>
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_ui_icon"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_about_author"
+                            app:tint="@color/ui_accent"
+                            android:importantForAccessibility="no" />
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
                             android:layout_marginStart="12dp"
+                            android:layout_weight="1"
                             android:orientation="vertical">
 
                             <TextView
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="关于软件"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="#0F172A" />
+                                android:textAppearance="@style/TextAppearance.Suzu.RowTitle" />
 
                             <TextView
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
                                 android:text="版本信息与开源声明"
-                                android:textSize="11sp"
-                                android:textColor="#64748B"
-                                android:layout_marginTop="1dp" />
+                                android:textAppearance="@style/TextAppearance.Suzu.Secondary" />
                         </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_about_chevron_right"
-                            app:tint="#94A3B8"
-                            android:contentDescription="进入" />
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- 3. 调试与支持卡片 -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="调试与支持"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="#64748B"
-                android:letterSpacing="0.04"
-                android:layout_marginBottom="8dp"
-                android:layout_marginStart="4dp" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1.5dp"
-                app:cardMaxElevation="3dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="#E2E8F0"
-                app:cardBackgroundColor="#FFFFFF"
-                android:layout_marginBottom="24dp">
-
-                <LinearLayout
-                    android:id="@+id/btnNavViewLogs"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:background="?android:attr/selectableItemBackground">
-
-                    <FrameLayout
-                        android:layout_width="36dp"
-                        android:layout_height="wrap_content"
-                                android:minHeight="48dp"
-                        android:background="@drawable/bg_home_icon_slate">
 
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_search_24"
-                            app:tint="#475569"
-                            android:contentDescription="运行日志" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="12dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="查看运行日志"
-                            android:textSize="15sp"
-                            android:textStyle="bold"
-                            android:textColor="#0F172A" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="实时运行日志排查与复制"
-                            android:textSize="11sp"
-                            android:textColor="#64748B"
-                            android:layout_marginTop="1dp" />
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_about_chevron_right"
+                            app:tint="@color/ui_subtle"
+                            android:importantForAccessibility="no" />
                     </LinearLayout>
 
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:src="@drawable/ic_about_chevron_right"
-                        app:tint="#94A3B8"
-                        android:contentDescription="进入" />
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="66dp"
+                        android:layout_marginEnd="16dp"
+                        android:importantForAccessibility="no"
+                        android:background="@color/ui_outline" />
+
+                    <LinearLayout
+                        android:id="@+id/btnNavViewLogs"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="68dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="10dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="@drawable/bg_ui_icon"
+                            android:padding="10dp"
+                            android:src="@drawable/ic_search_24"
+                            app:tint="@color/ui_accent"
+                            android:importantForAccessibility="no" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="查看运行日志"
+                                android:textAppearance="@style/TextAppearance.Suzu.RowTitle" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="实时运行日志排查与复制"
+                                android:textAppearance="@style/TextAppearance.Suzu.Secondary" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_about_chevron_right"
+                            app:tint="@color/ui_subtle"
+                            android:importantForAccessibility="no" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </ScrollView>
-
 </LinearLayout>

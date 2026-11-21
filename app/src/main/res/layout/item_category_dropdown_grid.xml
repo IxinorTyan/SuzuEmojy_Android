@@ -12,7 +12,8 @@
     <FrameLayout
         android:layout_width="44dp"
         android:layout_height="44dp"
-        android:background="#F0F0F0">
+        android:background="@drawable/bg_ui_thumbnail"
+        android:clipToOutline="true">
 
         <ImageView
             android:id="@+id/ivThumb"
@@ -28,7 +29,7 @@
             android:layout_height="match_parent"
             android:gravity="center"
             android:textSize="20sp"
-            android:textColor="#333333"
+            android:textColor="@color/ui_ink"
             android:visibility="gone" />
     </FrameLayout>
 
@@ -40,7 +41,7 @@
         android:singleLine="true"
         android:ellipsize="end"
         android:textSize="12sp"
-        android:textColor="#333333"
+        android:textColor="@color/ui_ink"
         android:text="分类" />
 
 </LinearLayout>

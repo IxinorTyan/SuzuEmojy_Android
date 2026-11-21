@@ -20,7 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import android.graphics.Typeface
+import com.suzu.test.R
 import com.suzu.test.databinding.ActivitySettingsBinding
 import com.suzu.test.databinding.DialogLogViewerBinding
 import com.suzu.test.floating.FloatingBallConfig
@@ -179,8 +179,8 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updatePermissionStates() {
-        val colorActive = 0xFF16A34A.toInt() // Green
-        val colorInactive = 0xFF0F172A.toInt() // Slate dark
+        val colorActive = getColor(R.color.ui_good)
+        val colorInactive = getColor(R.color.ui_ink)
 
         // 1. IME
         val isImeEnabled = PermissionChecker.isImeEnabled(this)
@@ -231,18 +231,18 @@ class SettingsActivity : AppCompatActivity() {
         when {
             coreOk && extraOk -> {
                 binding.tvPermissionSummaryBadge.text = "全部就绪 ✓"
-                binding.tvPermissionSummaryBadge.setTextColor(0xFF16A34A.toInt())
+                binding.tvPermissionSummaryBadge.setTextColor(getColor(R.color.ui_good))
                 binding.tvPermissionSummaryBadge.setBackgroundResource(com.suzu.test.R.drawable.bg_home_tag_green)
             }
             coreOk -> {
                 binding.tvPermissionSummaryBadge.text = "基础已就绪"
-                binding.tvPermissionSummaryBadge.setTextColor(0xFF2563EB.toInt())
+                binding.tvPermissionSummaryBadge.setTextColor(getColor(R.color.ui_accent))
                 binding.tvPermissionSummaryBadge.setBackgroundResource(com.suzu.test.R.drawable.bg_home_tag_blue)
             }
             else -> {
                 val missingBasic = (if (!isImeEnabled) 1 else 0) + (if (!hasStorage && !hasSelectedPhotos) 1 else 0)
                 binding.tvPermissionSummaryBadge.text = "需配置 ${missingBasic} 项"
-                binding.tvPermissionSummaryBadge.setTextColor(0xFFEA580C.toInt())
+                binding.tvPermissionSummaryBadge.setTextColor(getColor(R.color.ui_warning))
                 binding.tvPermissionSummaryBadge.setBackgroundResource(com.suzu.test.R.drawable.bg_home_tag_orange)
             }
         }

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#1E1E1E">
+    android:background="@color/ui_media_canvas">
 
     <!-- 顶部导航栏 -->
     <LinearLayout
@@ -16,7 +16,7 @@
         android:gravity="center_vertical"
         android:paddingStart="8dp"
         android:paddingEnd="12dp"
-        android:background="#282828">
+        android:background="@color/ui_media_surface">
 
         <ImageButton
             android:id="@+id/btnBack"
@@ -35,7 +35,7 @@
             android:layout_marginStart="8dp"
             android:gravity="center_vertical"
             android:backgroundTint="#FFFFFF"
-            android:popupBackground="#333333"
+            android:popupBackground="@color/ui_media_elevated"
             android:spinnerMode="dropdown" />
 
         <TextView
@@ -45,7 +45,7 @@
             android:gravity="center"
             android:paddingHorizontal="8dp"
             android:text="取消"
-            android:textColor="#CCCCCC"
+            android:textColor="@color/ui_media_muted"
             android:textSize="15sp" />
     </LinearLayout>
 
@@ -75,7 +75,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="相册内没有图片"
-            android:textColor="#888888"
+            android:textColor="@color/ui_media_muted"
             android:textSize="14sp"
             android:visibility="gone" />
     </FrameLayout>
@@ -88,7 +88,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingHorizontal="16dp"
-        android:background="#282828">
+        android:background="@color/ui_media_surface">
 
         <TextView
             android:id="@+id/btnSelectAll"
@@ -98,7 +98,7 @@
             android:paddingVertical="8dp"
             android:paddingEnd="12dp"
             android:text="全选当前相册"
-            android:textColor="#2196F3"
+            android:textColor="@color/ui_media_accent"
             android:textSize="14sp" />
 
         <TextView
@@ -108,16 +108,16 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="已选 0 张"
-            android:textColor="#AAAAAA"
+            android:textColor="@color/ui_media_muted"
             android:textSize="14sp" />
 
         <Button
             android:id="@+id/btnConfirmImport"
             android:layout_width="wrap_content"
             android:layout_height="38dp"
-            android:backgroundTint="#2196F3"
+            android:backgroundTint="@color/ui_media_accent"
             android:text="导入 (0)"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/ui_media_on_accent"
             android:textSize="14sp"
             android:enabled="false" />
     </LinearLayout>

@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="正在导出 0/0"
-        android:textColor="#0F172A"
+        android:textColor="@color/ui_ink"
         android:textSize="14sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp" />

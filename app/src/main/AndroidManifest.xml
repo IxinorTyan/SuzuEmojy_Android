@@ -52,6 +52,7 @@
         <!-- 主引导界面 (无任何 EditText，避免干扰输入法焦点) -->
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="true"
             android:label="@string/app_name"
             android:windowSoftInputMode="adjustResize">
@@ -64,6 +65,7 @@
         <!-- 对照组测试界面 (唯一具有标准 RichContentEditText 的页面) -->
         <activity
             android:name=".control.ControlTestActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="标准对照组测试"
             android:windowSoftInputMode="adjustResize" />
@@ -71,88 +73,104 @@
         <!-- 导入表情包界面 -->
         <activity
             android:name=".ui.import.ImportActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="导入表情包" />
 
         <!-- 导入结果详情界面 -->
         <activity
             android:name=".ui.import.ImportResultDetailActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="导入结果详情" />
 
         <!-- 导出资源包界面 -->
         <activity
             android:name=".ui.export.ExportActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="导出资源包" />
 
         <!-- 自建媒体选择器界面 -->
         <activity
             android:name=".ui.picker.MediaPickerActivity"
+            android:theme="@style/Theme.SuzuApp.Media"
             android:exported="false"
             android:label="选择图片" />
 
         <!-- 资源库浏览界面 -->
         <activity
             android:name=".ui.similar.SimilarityActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="相似图片清理" />
 
         <activity
             android:name=".ui.library.LibraryActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="资源库" />
 
         <!-- 资源详情查看界面 -->
         <activity
             android:name=".ui.library.ResourceDetailActivity"
+            android:theme="@style/Theme.SuzuApp.Media"
             android:exported="false"
             android:label="表情详情" />
 
         <!-- 设置界面 -->
         <activity
             android:name=".ui.settings.SettingsActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="设置" />
 
         <activity
             android:name=".ui.settings.SettingsAppearanceActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="键盘设置" />
 
         <activity
             android:name=".ui.settings.SettingsKeyboardTestActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="键盘唤出测试"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.settings.SettingsFloatingActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="悬浮窗设置" />
 
         <activity
             android:name=".ui.settings.FloatingBallPickerActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="选择悬浮球贴图" />
 
         <activity
             android:name=".ui.settings.SettingsOtherActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="其他设置" />
 
         <activity
             android:name=".ui.settings.BallWhitelistActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="悬浮球白名单" />
 
         <activity
             android:name=".ui.settings.ShareWhitelistActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="分享白名单" />
 
         <activity
             android:name=".ui.settings.AboutActivity"
+            android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="关于软件" />
 

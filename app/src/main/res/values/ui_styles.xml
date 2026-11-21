@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Apply to app screens only. IME and overlays keep their existing Theme.Test. -->
+    <style name="Theme.SuzuApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/ui_accent</item>
+        <item name="colorPrimaryVariant">@color/ui_accent</item>
+        <item name="colorOnPrimary">@color/ui_on_accent</item>
+        <item name="colorSecondary">@color/ui_accent</item>
+        <item name="colorSecondaryVariant">@color/ui_accent</item>
+        <item name="colorOnSecondary">@color/ui_on_accent</item>
+        <item name="colorSurface">@color/ui_surface</item>
+        <item name="colorOnSurface">@color/ui_ink</item>
+        <item name="colorError">@color/ui_danger</item>
+        <item name="colorControlNormal">@color/ui_muted</item>
+        <item name="android:colorBackground">@color/ui_canvas</item>
+        <item name="android:windowBackground">@color/ui_canvas</item>
+        <item name="android:statusBarColor">@color/ui_canvas</item>
+        <item name="android:navigationBarColor">@color/ui_canvas</item>
+        <item name="android:windowLightStatusBar">@bool/ui_light_system_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/ui_light_system_bars</item>
+        <item name="materialButtonStyle">@style/Widget.Suzu.Button</item>
+        <item name="materialCardViewStyle">@style/Widget.Suzu.Card</item>
+    </style>
+
+    <style name="Theme.SuzuApp.Media" parent="Theme.SuzuApp">
+        <item name="android:statusBarColor">@color/ui_media_surface</item>
+        <item name="android:navigationBarColor">@color/ui_media_surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <bool name="ui_light_system_bars">true</bool>
+    <dimen name="ui_gutter">20dp</dimen>
+    <dimen name="ui_radius">18dp</dimen>
+
+    <style name="Widget.Suzu.Card" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">@color/ui_surface</item>
+        <item name="cardCornerRadius">@dimen/ui_radius</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeColor">@color/ui_outline</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <style name="Widget.Suzu.Button" parent="Widget.MaterialComponents.Button">
+        <item name="cornerRadius">14dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="Widget.Suzu.IconAction" parent="">
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:padding">12dp</item>
+        <item name="tint">@color/ui_ink</item>
+    </style>
+
+    <style name="TextAppearance.Suzu.PageTitle" parent="TextAppearance.MaterialComponents.Headline5">
+        <item name="android:textColor">@color/ui_ink</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.Suzu.Section" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="android:textColor">@color/ui_ink</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.Suzu.RowTitle" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">@color/ui_ink</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.Suzu.Secondary" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="android:textColor">@color/ui_muted</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+</resources>
