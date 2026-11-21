@@ -21,6 +21,7 @@ import com.suzu.test.ime.TestImageIME
 import com.suzu.test.ime.ImeEditorRecovery
 import com.suzu.test.ime.ImeHandoffCoordinator
 import com.suzu.test.ime.ImeHost
+import com.suzu.test.ime.ImeWindowTracker
 import com.suzu.test.floating.ImeSearchStateHolder
 import com.suzu.test.log.TestLog
 import kotlinx.coroutines.CoroutineScope
@@ -53,7 +54,6 @@ class TestAccessibilityService : AccessibilityService() {
          */
         fun notifyImeLifecycle(visible: Boolean) {
             instance?.onImeLifecycleChanged(visible)
-            com.suzu.test.floating.ImeVisibilityBus.notifyImeVisibilityChanged(visible)
         }
     }
 
@@ -61,15 +61,7 @@ class TestAccessibilityService : AccessibilityService() {
     var foregroundAppPackage: String? = null
         private set
 
-    @Volatile
-    var imeDetectionAvailable: Boolean = true
-        private set
-
-    private var lastImeVisible: Boolean? = null
-
-    // 自家 IME 已明确隐藏后的短暂保护期，避免无障碍窗口列表残留立即覆盖为 true
-    @Volatile
-    private var imeLifecycleHiddenUntil: Long = 0L
+    private val imeWindows = ImeWindowTracker()
 
     @Volatile
     private var cachedDefaultImePackage: String? = null
@@ -77,17 +69,8 @@ class TestAccessibilityService : AccessibilityService() {
     private fun onImeLifecycleChanged(visible: Boolean) {
         if (!visible) onImeInputConnectionChanged()
         windowEpoch++
+        imeWindows.onOwnImeLifecycle(visible, SystemClock.uptimeMillis())
         requestWindowStateSync()
-        imeLifecycleHiddenUntil = if (visible) {
-            0L
-        } else {
-            SystemClock.uptimeMillis() + 200L
-        }
-        lastImeVisible = visible
-        mainHandler.post {
-            if (visible && TestImageIME.isShowing()) ballController?.onSelfImeShown()
-            ballController?.onImeVisibilityChanged(visible)
-        }
     }
 
     private val IME_DIAG = false
@@ -260,18 +243,15 @@ class TestAccessibilityService : AccessibilityService() {
             previousVerifiedHost = null
             publishBallForeground(null)
         }
-        imeDetectionAvailable = snapshot.isNotEmpty()
-        if (snapshot.isEmpty()) return
+        if (snapshot.isEmpty()) {
+            imeWindows.onAccessibilitySnapshot(available = false, imeTopPx = null, now = SystemClock.uptimeMillis())
+            return
+        }
         val screenHeight = getScreenHeight()
         val imeTop = snapshot.filter {
             it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD && isImeWindowValid(it.bounds, screenHeight)
         }.minOfOrNull { it.bounds.top }
-        val visible = imeTop != null && SystemClock.uptimeMillis() >= imeLifecycleHiddenUntil
-        if (lastImeVisible != visible) {
-            lastImeVisible = visible
-            ballController?.onImeVisibilityChanged(visible)
-        }
-        ballController?.onImeBoundsChanged(if (visible) imeTop else null)
+        imeWindows.onAccessibilitySnapshot(available = true, imeTopPx = imeTop, now = SystemClock.uptimeMillis())
         if (foregroundAppPackage == null) {
             val pkg = snapshot.firstOrNull { it.focused || it.active }?.pkg
             if (!pkg.isNullOrEmpty() && pkg != "com.android.systemui") {
@@ -313,6 +293,7 @@ class TestAccessibilityService : AccessibilityService() {
             flags = flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
         }
         instance = this
+        imeWindows.reset(TestImageIME.isShowing())
         verifiedBallForeground = null
         val screenFilter = android.content.IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -361,7 +342,7 @@ class TestAccessibilityService : AccessibilityService() {
         TestLog.i(MODULE, "syncBallState: anyFloatingEnabled=$enabled, canDrawOverlays=$canDraw")
         if (enabled && canDraw) {
             if (ballController == null) {
-                ballController = FloatingBallController(this)
+                ballController = FloatingBallController(this, imeWindows.windowState)
             }
             ballController?.attach()
         } else {

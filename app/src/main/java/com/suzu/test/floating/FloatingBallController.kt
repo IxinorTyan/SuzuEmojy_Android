@@ -16,6 +16,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -34,17 +35,22 @@ import com.suzu.test.accessibility.TestAccessibilityService
 import com.suzu.test.ime.TestImageIME
 import com.suzu.test.databinding.LayoutFloatingBallBinding
 import com.suzu.test.db.DatabaseProvider
+import com.suzu.test.ime.ImeWindowState
 import com.suzu.test.log.TestLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.abs
 
-class FloatingBallController(private val context: Context) {
+class FloatingBallController internal constructor(
+    private val context: Context,
+    private val imeWindows: StateFlow<ImeWindowState>
+) {
 
     companion object {
         private const val MODULE = "FloatingBallController"
@@ -75,17 +81,17 @@ class FloatingBallController(private val context: Context) {
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var imeVisible: Boolean = true
+    private var imeWindow = imeWindows.value
     private var imeSwitchGuardUntil: Long = 0L
     private var isAttached: Boolean = false
 
     /**
      * 切换输入法期间可能会暂时忽略隐藏请求，但不能永久丢失该请求。
-     * 保护锁到期后重新读取当前 imeVisible 并补做一次可见性评估。
+     * 保护锁到期后按当前键盘状态补做一次可见性评估。
      */
     private val imeGuardRecheck = object : Runnable {
         override fun run() {
-            val remaining = imeSwitchGuardUntil - System.currentTimeMillis()
+            val remaining = imeSwitchGuardUntil - SystemClock.uptimeMillis()
             if (remaining > 0L) {
                 mainHandler.postDelayed(this, remaining)
             } else {
@@ -111,12 +117,11 @@ class FloatingBallController(private val context: Context) {
         TestLog.i(MODULE, "attach: 开始挂载悬浮球")
         controllerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
         isAttached = true
+        imeWindow = imeWindows.value
         initFloatingBall()
         observeConfigChanges()
 
         lastForegroundPackage = TestAccessibilityService.instance?.foregroundAppPackage
-        // 旧版行为：挂载时默认 IME 可见，交由后续真实信号修正，避免初始化期误隐藏
-        imeVisible = true
         edgeGestureController = EdgeGestureController(context) { side, direction ->
             val action = FloatingBallConfig.getEdgeGestureAction(context, side, direction)
             when (action) {
@@ -125,7 +130,7 @@ class FloatingBallController(private val context: Context) {
                 }
                 FloatingBallConfig.EdgeGestureAction.OPEN_SEARCH -> {
                     TestLog.i(MODULE, "边缘手势触发唤起搜索框: side=$side, direction=$direction")
-                    imeSwitchGuardUntil = System.currentTimeMillis() + 1200L
+                    imeSwitchGuardUntil = SystemClock.uptimeMillis() + 1200L
                     searchBarController?.show()
                 }
                 FloatingBallConfig.EdgeGestureAction.TOGGLE_FAVORITES -> {
@@ -138,21 +143,37 @@ class FloatingBallController(private val context: Context) {
         }.also {
             it.attach()
             it.onForegroundAppChanged(lastForegroundPackage)
-            it.onImeVisibilityChanged(imeVisible)
+            it.onImeWindowChanged(imeWindow.visible, imeWindow.topPx)
         }
         searchBarController = FloatingSearchBarController(context).also {
             it.attach()
         }
         cleanLegacyFilterConfigOnce()
         applyBallImage()
-        observeImeVisibilityBus()
+        observeImeWindows()
         evaluateVisibility()
     }
 
-    private fun observeImeVisibilityBus() {
+    private fun observeImeWindows() {
         controllerScope?.launch {
-            ImeVisibilityBus.isImeVisible.collect { isVisible ->
-                onImeVisibilityChanged(isVisible)
+            var previous: ImeWindowState? = null
+            imeWindows.collect { state ->
+                imeWindow = state
+                if (state.ownShowSignalSince(previous) && TestImageIME.isShowing()) {
+                    searchBarController?.onSelfImeShown()
+                }
+                edgeGestureController?.onImeWindowChanged(state.visible, state.topPx)
+                val visibilityChanged = state.visibilitySignalSince(previous)
+                if (visibilityChanged) {
+                    searchBarController?.onImeVisibilityChanged(state.visible)
+                }
+                if (previous == null || previous?.topPx != state.topPx) {
+                    searchBarController?.onImeBoundsChanged(state.topPx)
+                }
+                if (visibilityChanged || previous?.allowsImeOnlyBall != state.allowsImeOnlyBall) {
+                    evaluateVisibility()
+                }
+                previous = state
             }
         }
     }
@@ -281,26 +302,6 @@ class FloatingBallController(private val context: Context) {
         TestAccessibilityService.instance?.verifiedBallForeground
     )
 
-    fun onImeVisibilityChanged(visible: Boolean) {
-        mainHandler.post {
-            imeVisible = visible
-            edgeGestureController?.onImeVisibilityChanged(visible)
-            searchBarController?.onImeVisibilityChanged(visible)
-            evaluateVisibility()
-        }
-    }
-
-    fun onSelfImeShown() {
-        searchBarController?.onSelfImeShown()
-    }
-
-    fun onImeBoundsChanged(topPx: Int?) {
-        mainHandler.post {
-            edgeGestureController?.onImeBoundsChanged(topPx)
-            searchBarController?.onImeBoundsChanged(topPx)
-        }
-    }
-
     fun onScreenConfigurationChanged() {
         val fView = floatingView ?: return
         val params = layoutParams ?: return
@@ -373,7 +374,7 @@ class FloatingBallController(private val context: Context) {
             }
             return
         }
-        if (!shouldShow && System.currentTimeMillis() < imeSwitchGuardUntil) {
+        if (!shouldShow && SystemClock.uptimeMillis() < imeSwitchGuardUntil) {
             // 不立即隐藏以避免输入法切换过程中的闪烁，但保护期结束后必须补做评估。
             mainHandler.removeCallbacks(imeGuardRecheck)
             mainHandler.postAtTime(imeGuardRecheck, imeSwitchGuardUntil)
@@ -449,7 +450,7 @@ class FloatingBallController(private val context: Context) {
                 }
             }
 
-            TestLog.i(MODULE, "悬浮球可见性跃迁: ${if (shouldShow) "显示" else "隐藏"} (pkg=$lastForegroundPackage, imeVisible=$imeVisible, alpha=$targetAlpha, duration=${animDuration}ms)")
+            TestLog.i(MODULE, "悬浮球可见性跃迁: ${if (shouldShow) "显示" else "隐藏"} (pkg=$lastForegroundPackage, imeVisible=${imeWindow.visible}, alpha=$targetAlpha, duration=${animDuration}ms)")
         } catch (e: Exception) {
             TestLog.e(MODULE, "applyVisibility 异常: ${e.message}", e)
         }
@@ -473,8 +474,7 @@ class FloatingBallController(private val context: Context) {
         if (foregroundPackage == context.packageName) return true
         if (!FloatingBallConfig.isShowOnlyWithImeEnabled(context)) return true
         // 检测不可用时 fail-open：宁可显示也不误隐藏（旧版精髓）
-        val accOk = TestAccessibilityService.instance?.imeDetectionAvailable ?: false
-        return if (!accOk) true else imeVisible
+        return imeWindow.allowsImeOnlyBall
     }
 
     private fun applyConfigToView() {
@@ -1062,7 +1062,7 @@ class FloatingBallController(private val context: Context) {
                             }
                         } else {
                             TestLog.i(MODULE, "横向滑动悬浮球触发，启用顶部搜索框")
-                            imeSwitchGuardUntil = System.currentTimeMillis() + 1200L
+                            imeSwitchGuardUntil = SystemClock.uptimeMillis() + 1200L
                             searchBarController?.show()
                         }
                     } else if (isClick) {
@@ -1121,7 +1121,7 @@ class FloatingBallController(private val context: Context) {
         }
 
         // 切换保护锁：覆盖旧窗口销毁 → 新窗口就绪的间隙，期间忽略一切隐藏信号（旧版精髓）
-        imeSwitchGuardUntil = System.currentTimeMillis() + 100L
+        imeSwitchGuardUntil = SystemClock.uptimeMillis() + 100L
 
         val currentIme = Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)
         val isCurrentOwnIme = accessibility.isSelfIme(currentIme)

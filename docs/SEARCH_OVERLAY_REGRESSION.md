@@ -5,6 +5,7 @@
 - `ImeHandoffCoordinator` owns the active request, polling, timeout, and recovery decisions. The accessibility service adapts Android window/editor queries and keyboard operations; the coordinator can be exercised against a fake platform without a device. Direct entry, search return, and explicit switch-back still use the same handoff.
 
 - Window events share one background snapshot for whitelist and IME evaluation.
+- The floating controls consume one IME window state. A failed/empty scan retains visibility and bounds, with only the ball falling back to displaying when IME detection is unavailable (the whitelist still takes priority). Own-IME hide clears the previous bounds and suppresses residual windows for 200 ms.
 - Only one snapshot is in flight; a newer event invalidates its result and schedules one follow-up.
 - Ordinary window events retain the last verified whitelist result until the next snapshot. Revoking it on every event creates a show/hide feedback loop because the ball itself emits window events. Screen-off and whitelist configuration changes still revoke immediately; new snapshots revoke unknown or disallowed hosts.
 - Search preparation and editor queries run off the main thread. Requests expire after 2500 ms and stale callbacks cannot reopen the overlay.
@@ -33,6 +34,7 @@
 10. Repeat direct and search switches in the same Douyin editor at least ten times each. Record actual visible success and time to show, not only the coordinator's completion log. Check that hide/restart callbacks reset completion and that slow accessibility nodes do not delay the first bound-IME recovery request. A successful build/unit test run does not satisfy this device acceptance step.
 11. Switch back to the text IME using both the ball and IME exit button. If Douyin hides it during startup, a bounded host-editor click should reopen the selected text IME. Separately dismiss our IME normally: selection should return to the text IME without reopening it. For a failed forward handoff that times out while hidden, verify that the selected IME is restored even with no further finish callback.
 12. In the switch-back failure state, verify the original editor can have `focused=false`. After the fix, logs must capture its ID before switching and show an accepted recovery click without a manual tap; confirm the text keyboard is actually visible afterward. Verify a different focused editor or a changed page is never clicked by an old handoff.
+13. With each APK in turn on the same phone, enable “仅键盘弹出时显示” and edge gestures. Open and close both keyboards, switch back and forth rapidly, and rotate while a keyboard is open. Verify the ball respects the whitelist and hides again after the switch guard expires, edge touch regions follow the keyboard, and the search overlay still fits above it and dismisses normally.
 
 ## Validation
 

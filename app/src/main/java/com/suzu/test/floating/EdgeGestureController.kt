@@ -137,16 +137,10 @@ class EdgeGestureController(
      */
     fun onForegroundAppChanged(packageName: String?) = Unit
 
-    fun onImeVisibilityChanged(visible: Boolean) {
-        if (imeVisible == visible) return
+    fun onImeWindowChanged(visible: Boolean, topPx: Int?) {
+        val nextTop = topPx?.takeIf { visible && it > 0 }
+        if (imeVisible == visible && imeTopPx == nextTop) return
         imeVisible = visible
-        if (!visible) imeTopPx = null
-        refreshViews()
-    }
-
-    fun onImeBoundsChanged(topPx: Int?) {
-        val nextTop = topPx?.takeIf { it > 0 }
-        if (imeTopPx == nextTop) return
         imeTopPx = nextTop
         refreshViews()
     }
