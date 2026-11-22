@@ -21,6 +21,9 @@ import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.SuzuDatabase
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.db.entity.ResourceCategoryEntity
+import com.suzu.test.ui.components.CategoryRows
+import com.suzu.test.ui.components.CategoryRow
+import androidx.core.view.isVisible
 import com.suzu.test.db.entity.ResourceEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.KeywordUtils
@@ -175,11 +178,15 @@ class ResourceDetailActivity : AppCompatActivity() {
                 database.resourceCategoryDao().getCategoriesForResource(res.id)
             }
             if (currentPosition == position) {
-                binding.tvDetailCategories.text = if (cats.isNotEmpty()) {
-                    cats.joinToString("、") { it.name }
-                } else {
-                    "未分类 (点击归类)"
+                binding.tvDetailCategories.isVisible = cats.isEmpty()
+                binding.categoryScroller.isVisible = cats.isNotEmpty()
+                binding.detailCategories.removeAllViews()
+                cats.forEach {
+                    CategoryRows.append(binding.detailCategories, lifecycleScope, CategoryRow(it), mediaChip = true) {
+                        getCurrentResource()?.let(::showEditCategoriesDialog)
+                    }
                 }
+                binding.categoryScroller.scrollTo(0, 0)
             }
         }
 
@@ -279,21 +286,13 @@ class ResourceDetailActivity : AppCompatActivity() {
                 database.resourceCategoryDao().getCategoryIdsByResourceId(resource.id).toSet()
             }
 
-            val catNames = allCats.map { it.name }.toTypedArray()
-            val checkedItems = BooleanArray(allCats.size) { i -> currentAssignedCatIds.contains(allCats[i].id) }
-
-            AlertDialog.Builder(this@ResourceDetailActivity)
-                .setTitle("归类表情")
-                .setMultiChoiceItems(catNames, checkedItems) { _, which, isChecked -> checkedItems[which] = isChecked }
-                .setPositiveButton("保存") { _, _ ->
-                    saveCategoryChanges(resource.id, allCats, checkedItems)
-                }
-                .setNegativeButton("取消", null)
-                .show()
+            CategoryRows.pickMany(this@ResourceDetailActivity, lifecycleScope, "归类表情", allCats, currentAssignedCatIds) {
+                saveCategoryChanges(resource.id, allCats, it)
+            }
         }
     }
 
-    private fun saveCategoryChanges(resourceId: Long, allCats: List<CategoryEntity>, checked: BooleanArray) {
+    private fun saveCategoryChanges(resourceId: Long, allCats: List<CategoryEntity>, chosen: Set<Long>) {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 val rcDao = database.resourceCategoryDao()
@@ -301,9 +300,9 @@ class ResourceDetailActivity : AppCompatActivity() {
                 val now = System.currentTimeMillis()
 
                 database.withTransaction {
-                    for (i in allCats.indices) {
-                        val catId = allCats[i].id
-                        val isChecked = checked[i]
+                    for (category in allCats) {
+                        val catId = category.id
+                        val isChecked = catId in chosen
                         if (isChecked && !currentIds.contains(catId)) {
                             val minSort = rcDao.getMinSortOrderForCategory(catId) ?: 0
                             rcDao.addResourceToCategory(ResourceCategoryEntity(

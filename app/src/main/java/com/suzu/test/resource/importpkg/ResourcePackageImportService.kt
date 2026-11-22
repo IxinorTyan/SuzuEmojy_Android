@@ -20,6 +20,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -58,10 +60,23 @@ class ResourcePackageImportService(
 
     companion object {
         private const val MODULE = "ResourcePackageImport"
+        private val packageImports = Mutex()
     }
 
     suspend fun importFromZip(
         packageUri: Uri,
+        onProgress: (stage: PackageImportStage, progress: Long, total: Long) -> Unit
+    ): PackageImportExecutionResult = packageImports.withLock { importZip(packageUri, null, onProgress) }
+
+    /** The caller owns this private, already downloaded file; do not make a second copy or generate previews. */
+    internal suspend fun importReceivedZip(
+        file: File,
+        onProgress: (stage: PackageImportStage, progress: Long, total: Long) -> Unit
+    ): PackageImportExecutionResult = packageImports.withLock { importZip(Uri.fromFile(file), file, onProgress) }
+
+    private suspend fun importZip(
+        packageUri: Uri,
+        receivedFile: File?,
         onProgress: (stage: PackageImportStage, progress: Long, total: Long) -> Unit
     ): PackageImportExecutionResult = withContext(Dispatchers.IO) {
         val cacheDir = context.cacheDir
@@ -71,8 +86,8 @@ class ResourcePackageImportService(
         var importCompleted = false
 
         // 每次导入开始前，清理上一次残留的临时文件和预览文件
-        CacheCleanManager.cleanImportPreviewFiles(context)
-        val oldTempFiles = cacheDir.listFiles { _, name -> name.startsWith("import_tmp_") }
+        if (receivedFile == null) CacheCleanManager.cleanImportPreviewFiles(context)
+        val oldTempFiles = if (receivedFile == null) cacheDir.listFiles { _, name -> name.startsWith("import_tmp_") } else null
         oldTempFiles?.forEach {
             try {
                 it.delete()
@@ -83,7 +98,7 @@ class ResourcePackageImportService(
 
         // 检查包大小与可用空间
         var packageSize: Long = -1L
-        context.contentResolver.query(packageUri, null, null, null, null)?.use { cursor ->
+        if (receivedFile == null) context.contentResolver.query(packageUri, null, null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
                 if (sizeIndex != -1) {
@@ -99,10 +114,10 @@ class ResourcePackageImportService(
             }
         }
 
-        val tempZipFile = File(cacheDir, "import_tmp_${System.currentTimeMillis()}.zip")
+        val tempZipFile = receivedFile ?: File(cacheDir, "import_tmp_${System.currentTimeMillis()}.zip")
         try {
             // 阶段一：拷贝临时文件
-            context.contentResolver.openInputStream(packageUri)?.use { input ->
+            if (receivedFile == null) context.contentResolver.openInputStream(packageUri)?.use { input ->
                 tempZipFile.outputStream().use { output ->
                     val buffer = ByteArray(8192)
                     var bytesCopied = 0L
@@ -121,13 +136,16 @@ class ResourcePackageImportService(
             onProgress(PackageImportStage.PARSING, 0L, 0L)
 
             ZipFile(tempZipFile).use { zipFile ->
+                if (receivedFile != null) ReceivedPackageValidation.checkEntries(zipFile)
                 val manifestEntry = zipFile.getEntry("manifest.json")
                     ?: throw IllegalArgumentException("资源包缺少 manifest.json")
                 val catalogEntry = zipFile.getEntry("catalog.json")
                     ?: throw IllegalArgumentException("资源包缺少 catalog.json")
 
-                val manifestJson = zipFile.getInputStream(manifestEntry).use { it.readBytes() }
-                val catalogJson = zipFile.getInputStream(catalogEntry).use { it.readBytes() }
+                val manifestJson = if (receivedFile == null) zipFile.getInputStream(manifestEntry).use { it.readBytes() }
+                    else ReceivedPackageValidation.readMetadata(zipFile, manifestEntry)
+                val catalogJson = if (receivedFile == null) zipFile.getInputStream(catalogEntry).use { it.readBytes() }
+                    else ReceivedPackageValidation.readMetadata(zipFile, catalogEntry)
 
                 val manifest = JSONObject(manifestJson.decodeToString())
                 val formatVersion = manifest.optInt("format_version", -1)
@@ -136,6 +154,7 @@ class ResourcePackageImportService(
                 }
 
                 val catalog = JSONObject(catalogJson.decodeToString())
+                if (receivedFile != null) ReceivedPackageValidation.checkAssets(zipFile, catalog, warnings)
                 val categories = parseCategories(catalog.optJSONArray("categories"))
                 val categoryRefToName = categories.associate { it.ref to it.name }
                 val includeKeywords = manifest.optString("export_scope") != "categories" && manifest.optBoolean("includes_keywords", true)
@@ -179,7 +198,8 @@ class ResourcePackageImportService(
                         continue
                     }
 
-                    val assetBytes = zipFile.getInputStream(assetEntry).use { it.readBytes() }
+                    val assetBytes = if (receivedFile == null) zipFile.getInputStream(assetEntry).use { it.readBytes() }
+                        else ReceivedPackageValidation.readAsset(zipFile, assetEntry)
                     if (assetBytes.isEmpty()) {
                         failCount++
                         records.add(
@@ -198,13 +218,14 @@ class ResourcePackageImportService(
                         continue
                     }
 
-                    val previewFilePath = createPreviewTempFile(resource, assetBytes)
+                    val previewFilePath = if (receivedFile == null) createPreviewTempFile(resource, assetBytes) else null
                     if (previewFilePath != null) {
                         previewTempPaths.add(previewFilePath)
                     }
 
                     try {
-                        val result = resourceImportService.import(assetBytes)
+                        val result = if (receivedFile == null) resourceImportService.import(assetBytes)
+                            else resourceImportService.importSynced(assetBytes, resource.syncKey)
                         val resourceId = result.resourceId
                         if (resource.keywords.isNotBlank()) {
                             database.withTransaction {
@@ -317,7 +338,7 @@ class ResourcePackageImportService(
             // 导入任务被页面返回取消后，仍必须完成暂存清理。
             withContext(NonCancellable) {
                 try {
-                    if (tempZipFile.exists()) {
+                    if (receivedFile == null && tempZipFile.exists()) {
                         tempZipFile.delete()
                     }
                 } catch (e: Exception) {
@@ -329,7 +350,7 @@ class ResourcePackageImportService(
                     createdIcons.filter { "file:category_icons/${it.name}" !in referencedIcons }.forEach { it.delete() }
                     // 中断可能发生在文件写入完成但路径尚未登记的瞬间，
                     // 因此不能只按 previewTempPaths 清理，必须清理整个导入预览目录。
-                    CacheCleanManager.cleanImportPreviewFiles(context)
+                    if (receivedFile == null) CacheCleanManager.cleanImportPreviewFiles(context)
                 }
             }
         }
@@ -426,12 +447,13 @@ class ResourcePackageImportService(
     private fun parseCategories(array: JSONArray?): List<CatalogCategory> {
         if (array == null) return emptyList()
         val result = mutableListOf<CatalogCategory>()
+        val seenRefs = HashSet<Int>()
         for (i in 0 until array.length()) {
             val obj = array.optJSONObject(i) ?: continue
             val ref = obj.optInt("ref", -1)
             val name = obj.optString("name").trim()
             if (ref > 0 && name.isNotEmpty()) {
-                require(result.none { it.ref == ref }) { "收藏夹引用重复" }
+                require(seenRefs.add(ref)) { "收藏夹引用重复" }
                 result.add(CatalogCategory(ref = ref, name = name, icon = obj.optJSONObject("icon")))
             }
         }

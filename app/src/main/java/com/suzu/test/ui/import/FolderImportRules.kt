@@ -9,7 +9,8 @@ data class FolderImportItem(
 data class FolderImportCategory(
     val name: String?,
     val count: Int,
-    val alreadyExists: Boolean = false
+    val alreadyExists: Boolean = false,
+    val iconPath: String? = null
 )
 
 internal fun normalizeFolderCategoryName(name: String?): String? {

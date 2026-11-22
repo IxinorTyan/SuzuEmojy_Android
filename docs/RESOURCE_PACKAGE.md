@@ -31,3 +31,13 @@ Android 附件存放于 filesDir/category_icons，iconPath 使用 `file:category
 Windows：在 Windows 项目目录运行 `python -m unittest discover -s tests -p test_exchange_package.py -v`。
 
 Android：在 Android 项目目录运行 `gradlew.bat :app:compileDebugKotlin :app:testDebugUnitTest --offline`。设备验收还需检查两个方向的互导、收藏夹栏及键盘栏显示、重启持久化。
+
+## 局域网同步
+
+两端从「导入导出 → 局域网同步」进入。Windows 打开临时会话后，Android 扫码或输入 6 位配对码。输入配对码时先自动查找电脑；找不到可填 Windows 显示的 `IPv4:端口` 直连。两端分别核对并确认校验码后，任意一端都可发起发送或接收，另一端同意后才传输。双方同时发起时，一次只处理一个请求。Windows 防火墙需允许应用在受信任的专用网络上通信；访客 Wi-Fi 的客户端隔离也可能阻断直连。
+
+每次传输复用「导出全部」的 v1 ZIP，接收方合并入库。重复图片不增加副本，收藏夹按名称合并，标签追加；不传播删除、重命名或排序。传输用 TLS，二维码包含临时证书指纹，手输配对码时需要比对两端校验码。资源包传输及展开大小均限制为 2 GiB，接收方在导入前校验完整 ZIP，Android 另校验每个图片附件的大小和哈希。自动发现只交换连接地址，配对后停止发现；关闭会话即停止对外监听。
+
+局域网协议现为第 2 版，需要同时更新两端应用；资源包仍是原有 v1 ZIP。
+
+设备回归：用 `gradlew.bat -PlanSyncTestOnly=true :app:assembleDebug :app:assembleDebugAndroidTest` 构建独立测试应用 `com.tencent.qqpinyin.suzu.lansynctest`，不会覆盖正常安装。Windows 测试程序运行 `--lan-android-fixture <临时输出目录>`，将输出的 `suzu-lan:2|…` 作为 instrumentation 参数 `lanFixture` 交给 `com.suzu.test.LanSyncWindowsTest`，可用 `lanMode=manual` 另跑手输直连模式。每次需要新建 Windows 测试会话。Windows 的 `--lan-sync-tests <临时输出目录>` 验证双端请求、拒绝、重复导入和损坏包；Android 的 `com.suzu.test.ExchangeUiTest` 验证入口、图标和多选。

@@ -42,6 +42,12 @@ class LibraryCategoryCoverView @JvmOverloads constructor(
         setTextColor(AppCompatResources.getColorStateList(context, R.color.library_category_label))
     }
     private var lookup: Job? = null
+    private var compactTint: ColorStateList? = null
+
+    fun setCompactTint(color: Int) {
+        compactTint = ColorStateList.valueOf(color)
+        text.setTextColor(color)
+    }
 
     init {
         setBackgroundResource(R.drawable.bg_library_category_cover)
@@ -110,7 +116,7 @@ class LibraryCategoryCoverView @JvmOverloads constructor(
         text.isVisible = false
         image.isVisible = true
         image.imageTintList = if (compact) {
-            AppCompatResources.getColorStateList(context, R.color.library_category_icon)
+            compactTint ?: AppCompatResources.getColorStateList(context, R.color.library_category_icon)
         } else {
             ColorStateList.valueOf(context.getColor(R.color.ui_accent))
         }
@@ -123,7 +129,7 @@ class LibraryCategoryCoverView @JvmOverloads constructor(
         image.isVisible = true
         image.imageTintList = null
         val fallback = symbol(R.drawable.ic_category_default, compact)?.apply {
-            setTint(context.getColor(R.color.ui_accent))
+            setTint(if (compact) compactTint?.defaultColor ?: context.getColor(R.color.ui_accent) else context.getColor(R.color.ui_accent))
         }
         Glide.with(image).asBitmap().load(file).fitCenter().error(fallback).into(image)
     }

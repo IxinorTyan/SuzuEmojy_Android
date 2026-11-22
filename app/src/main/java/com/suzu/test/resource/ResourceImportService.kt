@@ -52,6 +52,12 @@ class ResourceImportService(
 
     suspend fun import(bytes: ByteArray): ImportResult = importPrepared(prepare(bytes))
 
+    internal suspend fun importSynced(bytes: ByteArray, expectedKey: String): ImportResult {
+        val prepared = prepare(bytes)
+        require(prepared.syncKey == expectedKey) { "资源的 sync_key 校验失败" }
+        return importPrepared(prepared, recordDuplicateUse = false)
+    }
+
     internal suspend fun prepare(bytes: ByteArray): PreparedResource = prepare(bytes, checkDuplicate = true)
 
     private suspend fun prepare(bytes: ByteArray, checkDuplicate: Boolean): PreparedResource {
@@ -94,6 +100,7 @@ class ResourceImportService(
     /** The callback may write related DB rows; all rows commit or roll back together. */
     internal suspend fun importPrepared(
         initial: PreparedResource,
+        recordDuplicateUse: Boolean = true,
         onImported: suspend (ImportResult) -> Unit = {}
     ): ImportResult {
         var prepared = initial
@@ -123,7 +130,7 @@ class ResourceImportService(
                         val sortOrder = (dao.getMinSortOrder() ?: 0) - 1
                         val now = System.currentTimeMillis()
                         val imported = if (existing != null) {
-                            dao.update(existing.copy(sortOrder = sortOrder, lastUsedAt = now, useCount = existing.useCount + 1))
+                            if (recordDuplicateUse) dao.update(existing.copy(sortOrder = sortOrder, lastUsedAt = now, useCount = existing.useCount + 1))
                             ImportResult(existing.id, existing.filename, true, prepared.syncKey, existing.id, existing.filename)
                         } else {
                             checkNotNull(content)

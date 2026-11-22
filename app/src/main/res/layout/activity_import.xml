@@ -97,330 +97,44 @@
                 android:layout_marginStart="4dp" />
 
             <!-- 1. 从系统相册选择 -->
-            <com.google.android.material.card.MaterialCardView
+            <com.suzu.test.ui.components.SuzuActionCard
                 android:id="@+id/btnPickImages"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="2dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="@dimen/ui_radius"
-                app:cardElevation="0dp"
-                app:cardMaxElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/ui_outline"
-                app:cardBackgroundColor="@color/ui_surface"
-                app:rippleColor="@color/ui_accent_container"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="14dp">
-
-                    <FrameLayout
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:background="@drawable/bg_home_icon_blue">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_home_import_add"
-                            app:tint="@color/ui_accent"
-                            android:contentDescription="从相册选择" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="12dp"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="从系统相册选择"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/ui_ink" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="推荐"
-                                android:textSize="10sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/ui_accent"
-                                android:background="@drawable/bg_home_tag_blue"
-                                android:paddingHorizontal="6dp"
-                                android:paddingVertical="1.5dp"
-                                android:layout_marginStart="6dp" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="支持滑动多选，导入后可快速清理原图"
-                            android:textSize="11sp"
-                            android:textColor="@color/ui_muted"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:src="@drawable/ic_about_chevron_right"
-                        app:tint="@color/ui_subtle"
-                        android:contentDescription="进入" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_marginBottom="10dp"
+                app:actionTitle="从系统相册选择"
+                app:actionDetail="支持滑动多选，导入后可快速清理原图"
+                app:actionIcon="@drawable/ic_home_import_add" />
 
             <!-- 2. 从系统文件选择 -->
-            <com.google.android.material.card.MaterialCardView
+            <com.suzu.test.ui.components.SuzuActionCard
                 android:id="@+id/btnPickFromFiles"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="2dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="@dimen/ui_radius"
-                app:cardElevation="0dp"
-                app:cardMaxElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/ui_outline"
-                app:cardBackgroundColor="@color/ui_surface"
-                app:rippleColor="@color/ui_accent_container"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="14dp">
-
-                    <FrameLayout
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:background="@drawable/bg_home_icon_accent">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_document_file_24"
-                            app:tint="@color/ui_accent"
-                            android:contentDescription="从系统文件选择" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="12dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="从系统文件选择"
-                            android:textSize="15sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/ui_ink" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="通过系统文件管理器单选或多选图片文件"
-                            android:textSize="11sp"
-                            android:textColor="@color/ui_muted"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:src="@drawable/ic_about_chevron_right"
-                        app:tint="@color/ui_subtle"
-                        android:contentDescription="进入" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_marginBottom="10dp"
+                app:actionTitle="从系统文件选择"
+                app:actionDetail="通过系统文件管理器单选或多选图片文件"
+                app:actionIcon="@drawable/ic_document_file_24" />
 
             <!-- 3. 从文件夹批量导入 -->
-            <com.google.android.material.card.MaterialCardView
+            <com.suzu.test.ui.components.SuzuActionCard
                 android:id="@+id/btnPickFromFolder"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="2dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="@dimen/ui_radius"
-                app:cardElevation="0dp"
-                app:cardMaxElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/ui_outline"
-                app:cardBackgroundColor="@color/ui_surface"
-                app:rippleColor="@color/ui_warning_container"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="14dp">
-
-                    <FrameLayout
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:background="@drawable/bg_home_icon_orange">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_category_default"
-                            app:tint="@color/ui_warning"
-                            android:contentDescription="从文件夹选择" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="12dp"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="从文件夹批量导入"
-                            android:textSize="15sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/ui_ink" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="包含所有子文件夹图片，按一级子文件夹分类"
-                            android:textSize="11sp"
-                            android:textColor="@color/ui_muted"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:src="@drawable/ic_about_chevron_right"
-                        app:tint="@color/ui_subtle"
-                        android:contentDescription="进入" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_marginBottom="10dp"
+                app:actionTitle="从文件夹批量导入"
+                app:actionDetail="包含所有子文件夹图片，按一级子文件夹分类"
+                app:actionIcon="@drawable/ic_category_default" />
 
             <!-- 4. 从资源包导入 -->
-            <com.google.android.material.card.MaterialCardView
+            <com.suzu.test.ui.components.SuzuActionCard
                 android:id="@+id/btnImportFromPackage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="2dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="@dimen/ui_radius"
-                app:cardElevation="0dp"
-                app:cardMaxElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/ui_outline"
-                app:cardBackgroundColor="@color/ui_surface"
-                app:rippleColor="@color/ui_good_container"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="14dp">
-
-                    <FrameLayout
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:background="@drawable/bg_home_icon_green">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_export_simple"
-                            app:tint="@color/ui_good"
-                            android:contentDescription="从资源包导入" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="12dp"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="从资源包 (.zip) 导入"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/ui_ink" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="备份包"
-                                android:textSize="10sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/ui_good"
-                                android:background="@drawable/bg_home_tag_green"
-                                android:paddingHorizontal="6dp"
-                                android:paddingVertical="1.5dp"
-                                android:layout_marginStart="6dp" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="快速导入已备份的表情包与对应分类结构"
-                            android:textSize="11sp"
-                            android:textColor="@color/ui_muted"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:src="@drawable/ic_about_chevron_right"
-                        app:tint="@color/ui_subtle"
-                        android:contentDescription="进入" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_marginBottom="10dp"
+                app:actionTitle="从资源包 (.zip) 导入"
+                app:actionDetail="快速导入已备份的表情包与对应分类结构"
+                app:actionIcon="@drawable/ic_export_simple" />
 
             <!-- 进度与导入结果反馈容器 (未开始时完全隐藏，无空高；留有阴影安全区) -->
             <LinearLayout

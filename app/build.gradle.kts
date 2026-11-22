@@ -4,6 +4,8 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+val lanSyncTestOnly = providers.gradleProperty("lanSyncTestOnly").orNull == "true"
+
 android {
     namespace = "com.suzu.test"
     compileSdk = 34
@@ -36,6 +38,14 @@ android {
         release {
             signingConfig = signingConfigs.getByName("debug")
         }
+        debug {
+            if (lanSyncTestOnly) {
+                applicationIdSuffix = ".lansynctest"
+                buildConfigField("String", "FILE_PROVIDER_AUTHORITY", "\"com.tencent.qqpinyin.suzu.lansynctest.provider\"")
+                isMinifyEnabled = false
+                isShrinkResources = false
+            }
+        }
     }
 
     compileOptions {
@@ -59,7 +69,9 @@ android {
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
 
     // Run this device-only sender check without compiling unrelated experimental tests.
-    if (providers.gradleProperty("ownImeOverlayTestOnly").orNull == "true") {
+    if (lanSyncTestOnly) {
+        sourceSets.getByName("androidTest").java.setSrcDirs(listOf("src/lanSyncAndroidTest/java"))
+    } else if (providers.gradleProperty("ownImeOverlayTestOnly").orNull == "true") {
         sourceSets.getByName("androidTest").java.setSrcDirs(listOf("src/overlayAndroidTest/java"))
     }
 }
@@ -74,6 +86,7 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.viewpager2:viewpager2:1.0.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     // Room
     val roomVersion = "2.6.1"

@@ -21,6 +21,8 @@ import com.suzu.test.databinding.ActivitySimilarityBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.resource.delete.ResourceDeleteHelper
+import com.suzu.test.ui.components.CategoryRow
+import com.suzu.test.ui.components.CategoryRowAdapter
 import com.suzu.test.ui.library.ResourceDetailActivity
 import kotlinx.coroutines.launch
 import java.io.File
@@ -101,8 +103,8 @@ class SimilarityActivity : AppCompatActivity() {
         binding.spinnerMedia.isEnabled = !state.busy && !deleting
         if (displayedCategories != state.categories) {
             displayedCategories = state.categories
-            binding.spinnerScope.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
-                listOf("全部资源") + state.categories.map { "分类：${it.name}" })
+            binding.spinnerScope.adapter = CategoryRowAdapter(lifecycleScope,
+                listOf(CategoryRow("全部资源", symbol = R.drawable.ic_similar_images)) + state.categories.map(::CategoryRow))
             binding.spinnerScope.setSelection(state.categories.indexOfFirst { it.id == state.categoryId } + 1)
         }
         binding.spinnerScope.isEnabled = !state.busy && !deleting

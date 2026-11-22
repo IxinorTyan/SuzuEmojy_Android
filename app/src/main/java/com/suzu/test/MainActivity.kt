@@ -20,8 +20,7 @@ import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.floating.FloatingBallConfig
 import com.suzu.test.log.TestLog
 import com.suzu.test.ui.home.RecentThumbAdapter
-import com.suzu.test.ui.export.ExportActivity
-import com.suzu.test.ui.import.ImportActivity
+import com.suzu.test.ui.exchange.ExchangeActivity
 import com.suzu.test.ui.library.LibraryActivity
 import com.suzu.test.ui.library.ResourceDetailActivity
 import com.suzu.test.ui.settings.SettingsActivity
@@ -119,11 +118,8 @@ class MainActivity : AppCompatActivity() {
         binding.cardSimilarity.setOnClickListener {
             startActivity(Intent(this, com.suzu.test.ui.similar.SimilarityActivity::class.java))
         }
-        binding.cardImport.setOnClickListener {
-            startActivity(Intent(this, ImportActivity::class.java))
-        }
-        binding.cardExportPackage.setOnClickListener {
-            startActivity(Intent(this, ExportActivity::class.java))
+        binding.cardExchange.setOnClickListener {
+            startActivity(Intent(this, ExchangeActivity::class.java))
         }
 
         val openRecentLibrary = View.OnClickListener {

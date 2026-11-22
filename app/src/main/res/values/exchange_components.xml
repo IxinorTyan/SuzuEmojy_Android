@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SuzuActionCard">
+        <attr name="actionTitle" format="string" />
+        <attr name="actionDetail" format="string" />
+        <attr name="actionIcon" format="reference" />
+    </declare-styleable>
+    <declare-styleable name="SuzuPageHeader">
+        <attr name="pageTitle" format="string" />
+    </declare-styleable>
+    <style name="Widget.Suzu.OutlinedButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="cornerRadius">14dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="strokeColor">@color/ui_outline</item>
+    </style>
+</resources>

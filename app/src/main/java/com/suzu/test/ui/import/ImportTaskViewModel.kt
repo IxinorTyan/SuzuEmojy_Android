@@ -108,9 +108,10 @@ class ImportTaskViewModel(application: Application, private val savedState: Save
         items.forEach { item ->
             grouped[item.categoryName] = (grouped[item.categoryName] ?: 0) + 1
         }
-        val existingNames = database.categoryDao().getAllCategories().map { it.name }.toSet()
+        val existing = database.categoryDao().getAllCategories().associateBy { it.name }
         val categories = grouped.map { (name, count) ->
-            FolderImportCategory(name, count, alreadyExists = name in existingNames)
+            val saved = existing[name]
+            FolderImportCategory(name, count, alreadyExists = saved != null, iconPath = saved?.iconPath)
         }
         val warning = if (scan.unreadableDirectories.isNotEmpty()) {
             "（有 ${scan.unreadableDirectories.size} 个子文件夹无法读取）"

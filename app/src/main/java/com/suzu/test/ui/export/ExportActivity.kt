@@ -2,14 +2,12 @@ package com.suzu.test.ui.export
 
 import android.net.Uri
 import android.os.Bundle
-import android.widget.CheckBox
-import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.Toast
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -20,6 +18,8 @@ import com.suzu.test.databinding.ActivityExportBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.resource.exportpkg.PackageExportScope
+import com.suzu.test.ui.components.CategoryRow
+import com.suzu.test.ui.components.CategoryRows
 import android.widget.ProgressBar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -60,11 +60,11 @@ class ExportActivity : AppCompatActivity() {
             } else {
                 PackageExportScope.ALL
             }
-            binding.tvSelectedCategoriesSummary.text = state.getString("selectedCategoriesSummary").orEmpty()
-            binding.layoutSelectedCategoriesCard.visibility = if (pendingExportScope == PackageExportScope.CATEGORIES) {
-                android.view.View.VISIBLE
-            } else {
-                android.view.View.GONE
+            if (pendingExportScope == PackageExportScope.CATEGORIES) {
+                lifecycleScope.launch {
+                    val categories = loadCategories()
+                    if (pendingExportScope == PackageExportScope.CATEGORIES) renderSelected(categories)
+                }
             }
         }
 
@@ -77,7 +77,7 @@ class ExportActivity : AppCompatActivity() {
             pendingExportScope = PackageExportScope.ALL
             pendingSelectedCategoryIds = emptyList()
             binding.layoutSelectedCategoriesCard.visibility = android.view.View.GONE
-            binding.tvSelectedCategoriesSummary.text = ""
+            binding.selectedCategories.removeAllViews()
             binding.tvProgress.text = "已选择：导出全部表情"
             openFileCreator()
         }
@@ -115,79 +115,34 @@ class ExportActivity : AppCompatActivity() {
 
     private fun showCategorySelectDialog() {
         lifecycleScope.launch {
-            val categories = withContext(Dispatchers.IO) {
-                DatabaseProvider.getDatabase(this@ExportActivity).categoryDao().getAllCategories()
-            }
+            val categories = loadCategories()
 
             if (categories.isEmpty()) {
                 Toast.makeText(this@ExportActivity, "当前没有可导出的收藏夹", Toast.LENGTH_SHORT).show()
                 return@launch
             }
 
-            showCategoryMultiSelectDialog(categories)
+            CategoryRows.pickMany(this@ExportActivity, lifecycleScope, "导出指定收藏夹", categories,
+                initiallyChecked = pendingSelectedCategoryIds.toSet(), positive = "继续", requireSelection = true) { chosen ->
+                pendingSelectedCategoryIds = chosen.toList()
+                pendingExportScope = PackageExportScope.CATEGORIES
+                renderSelected(categories)
+                binding.tvProgress.text = "已选择 ${chosen.size} 个收藏夹"
+                openFileCreator()
+            }
         }
     }
 
-    private fun showCategoryMultiSelectDialog(categories: List<CategoryEntity>) {
-        val checked = BooleanArray(categories.size)
-        val density = resources.displayMetrics.density
-        fun dp(v: Int) = (v * density).toInt()
+    private suspend fun loadCategories() = withContext(Dispatchers.IO) {
+        DatabaseProvider.getDatabase(this@ExportActivity).categoryDao().getAllCategories()
+    }
 
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(12), dp(20), 0)
-        }
-
-        val hint = TextView(this).apply {
-            text = "可同时勾选多个收藏夹，最终合并打包为一个资源包"
-            textSize = 12f
-            setTextColor(context.getColor(R.color.ui_muted))
-            setPadding(0, 0, 0, dp(10))
-        }
-        container.addView(hint)
-
-        val scrollView = ScrollView(this)
-        val listContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-
-        categories.forEachIndexed { index, category ->
-            val checkBox = CheckBox(this).apply {
-                text = category.name
-                isChecked = false
-                textSize = 14f
-                setTextColor(context.getColor(R.color.ui_ink))
-                setPadding(dp(8), dp(10), dp(8), dp(10))
-                buttonTintList = android.content.res.ColorStateList.valueOf(context.getColor(R.color.ui_accent))
-                setOnCheckedChangeListener { _, isChecked ->
-                    checked[index] = isChecked
-                }
-            }
-            listContainer.addView(checkBox)
-        }
-
-        scrollView.addView(listContainer)
-        container.addView(scrollView)
-
-        AlertDialog.Builder(this)
-            .setTitle("导出指定收藏夹")
-            .setView(container)
-            .setPositiveButton("继续") { _, _ ->
-                val selected = categories.filterIndexed { index, _ -> checked[index] }.map { it.id }
-                if (selected.isEmpty()) {
-                    Toast.makeText(this, "请至少选择一个收藏夹", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                pendingSelectedCategoryIds = selected
-                pendingExportScope = PackageExportScope.CATEGORIES
-                val selectedNames = categories.filter { it.id in pendingSelectedCategoryIds }.joinToString("、") { it.name }
-                binding.layoutSelectedCategoriesCard.visibility = android.view.View.VISIBLE
-                binding.tvSelectedCategoriesSummary.text = selectedNames
-                binding.tvProgress.text = "已选择 ${pendingSelectedCategoryIds.size} 个收藏夹"
-                openFileCreator()
-            }
-            .setNegativeButton("取消", null)
-            .show()
+    private fun renderSelected(categories: List<CategoryEntity>) {
+        val ids = pendingSelectedCategoryIds.toSet()
+        val selected = categories.filter { it.id in ids }
+        binding.selectedCategories.removeAllViews()
+        selected.forEach { CategoryRows.append(binding.selectedCategories, lifecycleScope, CategoryRow(it)) }
+        binding.layoutSelectedCategoriesCard.isVisible = selected.isNotEmpty()
     }
 
     private fun openFileCreator() {
@@ -272,7 +227,6 @@ class ExportActivity : AppCompatActivity() {
         outState.putString("pendingPackageName", pendingPackageName)
         outState.putLongArray("pendingSelectedCategoryIds", pendingSelectedCategoryIds.toLongArray())
         outState.putBoolean("exportCategories", pendingExportScope == PackageExportScope.CATEGORIES)
-        outState.putString("selectedCategoriesSummary", binding.tvSelectedCategoriesSummary.text.toString())
         super.onSaveInstanceState(outState)
     }
 }

@@ -4,6 +4,8 @@
 
     <!-- 权限声明 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
@@ -90,6 +92,12 @@
             android:theme="@style/Theme.SuzuApp"
             android:exported="false"
             android:label="导出资源包" />
+
+        <activity android:name=".ui.lansync.LanSyncActivity"
+            android:theme="@style/Theme.SuzuApp" android:exported="false" android:label="局域网同步" />
+
+        <activity android:name=".ui.exchange.ExchangeActivity"
+            android:theme="@style/Theme.SuzuApp" android:exported="false" android:label="导入导出" />
 
         <!-- 自建媒体选择器界面 -->
         <activity
@@ -202,10 +210,10 @@
                 android:resource="@xml/method" />
         </service>
 
-        <!-- DiagnosticFileProvider: 固化静态 authority 字符串 com.tencent.qqpinyin.suzu.provider -->
+        <!-- Production authority remains com.tencent.qqpinyin.suzu.provider. -->
         <provider
             android:name=".provider.DiagnosticFileProvider"
-            android:authorities="com.tencent.qqpinyin.suzu.provider"
+            android:authorities="${applicationId}.provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

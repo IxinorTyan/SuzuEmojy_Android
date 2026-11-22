@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/ui_canvas" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingHorizontal="@dimen/ui_gutter"
+        android:paddingBottom="20dp" android:focusableInTouchMode="true">
+
+        <com.suzu.test.ui.components.SuzuPageHeader android:id="@+id/header"
+            android:layout_width="match_parent" android:layout_height="wrap_content" app:pageTitle="局域网同步" />
+
+        <LinearLayout android:id="@+id/pairingControls" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:layout_marginTop="8dp">
+            <com.suzu.test.ui.components.SuzuActionCard android:id="@+id/scan"
+                android:layout_width="match_parent" android:layout_height="wrap_content" app:actionTitle="扫电脑二维码"
+                app:actionIcon="@drawable/ic_pair_qr" />
+            <com.google.android.material.card.MaterialCardView style="@style/Widget.Suzu.Card"
+                android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="16dp">
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="手动配对" android:textAppearance="@style/TextAppearance.Suzu.Section" />
+                    <com.google.android.material.textfield.TextInputLayout style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp" android:hint="6 位配对码">
+                        <com.google.android.material.textfield.TextInputEditText android:id="@+id/pairCode"
+                            android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:inputType="number" android:maxLength="6" android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputLayout style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" android:hint="电脑地址（可选）" app:helperText="自动找不到电脑时，填写电脑显示的地址。">
+                        <com.google.android.material.textfield.TextInputEditText android:id="@+id/address"
+                            android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:inputType="textUri" android:maxLength="21" android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.button.MaterialButton android:id="@+id/connect"
+                        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                        android:text="用配对码连接" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView android:id="@+id/statusPanel" style="@style/Widget.Suzu.Card"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:visibility="gone">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+                <TextView android:id="@+id/verification" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp" android:textAppearance="@style/TextAppearance.Suzu.PageTitle" android:visibility="gone" />
+                <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:accessibilityLiveRegion="polite" android:textAppearance="@style/TextAppearance.Suzu.RowTitle" />
+                <com.google.android.material.progressindicator.LinearProgressIndicator android:id="@+id/activityProgress"
+                    android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                    android:indeterminate="true" android:visibility="gone" />
+                <com.google.android.material.progressindicator.LinearProgressIndicator android:id="@+id/transferProgress"
+                    android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                    android:max="100" android:visibility="gone" />
+                <LinearLayout android:id="@+id/decisionControls" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" android:orientation="horizontal" android:gravity="end" android:visibility="gone">
+                    <com.google.android.material.button.MaterialButton android:id="@+id/decline"
+                        style="@style/Widget.Suzu.OutlinedButton" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp" android:text="拒绝" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/confirm"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="校验码一致" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout android:id="@+id/transferControls" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:layout_marginTop="10dp" android:visibility="gone">
+            <com.suzu.test.ui.components.SuzuActionCard android:id="@+id/download"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                app:actionTitle="从电脑接收" app:actionIcon="@drawable/ic_import_24" />
+            <com.suzu.test.ui.components.SuzuActionCard android:id="@+id/upload"
+                android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                app:actionTitle="发送到电脑" app:actionIcon="@drawable/ic_export_simple" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/disconnect"
+            style="@style/Widget.Suzu.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:text="断开连接" android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>

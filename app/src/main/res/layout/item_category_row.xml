@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
+    android:orientation="horizontal" android:gravity="center_vertical" android:paddingHorizontal="12dp"
+    android:paddingVertical="5dp">
+    <com.suzu.test.ui.library.LibraryCategoryCoverView android:id="@+id/categoryIcon"
+        android:layout_width="28dp" android:layout_height="28dp" android:importantForAccessibility="no" />
+    <LinearLayout android:id="@+id/categoryLabels" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+        android:layout_marginStart="10dp" android:orientation="vertical">
+        <TextView android:id="@+id/categoryTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Suzu.RowTitle" />
+        <TextView android:id="@+id/categoryDetail" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Suzu.Secondary" android:visibility="gone" />
+    </LinearLayout>
+    <com.google.android.material.checkbox.MaterialCheckBox android:id="@+id/categoryCheck"
+        android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"
+        android:focusable="false" android:clickable="false" android:importantForAccessibility="no" />
+</LinearLayout>

@@ -27,6 +27,7 @@ import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.SuzuDatabase
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.db.entity.ResourceCategoryEntity
+import com.suzu.test.ui.components.CategoryRows
 import com.suzu.test.db.entity.ResourceEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.KeywordUtils
@@ -665,24 +666,14 @@ class LibraryActivity : AppCompatActivity() {
     }
 
     private fun showSelectTargetCategoryDialog(targetIds: List<Long>, allCats: List<CategoryEntity>) {
-        val catNames = allCats.map { it.name }.toTypedArray()
-        AlertDialog.Builder(this)
-            .setTitle("选择要添加到的目标分类")
-            .setItems(catNames) { _, which ->
-                val targetCat = allCats[which]
-                lifecycleScope.launch {
-                    val addedCount = withContext(Dispatchers.IO) {
-                        database.resourceCategoryDao().addResourcesToCategoryBatch(targetIds, targetCat.id)
-                    }
-                    Toast.makeText(
-                        this@LibraryActivity,
-                        "成功将 $addedCount 张表情加入「${targetCat.name}」",
-                        Toast.LENGTH_SHORT
-                    ).show()
+        CategoryRows.pickOne(this, lifecycleScope, "选择要添加到的目标分类", allCats) { targetCat ->
+            lifecycleScope.launch {
+                val addedCount = withContext(Dispatchers.IO) {
+                    database.resourceCategoryDao().addResourcesToCategoryBatch(targetIds, targetCat.id)
                 }
+                Toast.makeText(this@LibraryActivity, "成功将 $addedCount 张表情加入「${targetCat.name}」", Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        }
     }
 
     private fun executeBatchRemoveFromCurrentCategory(targetIds: List<Long>, currentCatId: Long) {
@@ -926,26 +917,20 @@ class LibraryActivity : AppCompatActivity() {
         val currentAssignedCatIds = withContext(Dispatchers.IO) {
             database.resourceCategoryDao().getCategoryIdsByResourceId(resourceId).toSet()
         }
-        val catNames = allCats.map { it.name }.toTypedArray()
-        val checkedItems = BooleanArray(allCats.size) { i -> currentAssignedCatIds.contains(allCats[i].id) }
-
-        AlertDialog.Builder(this@LibraryActivity)
-            .setTitle("归类表情")
-            .setMultiChoiceItems(catNames, checkedItems) { _, which, isChecked -> checkedItems[which] = isChecked }
-            .setPositiveButton("保存") { _, _ -> saveCategoryAssignments(resourceId, allCats, checkedItems) }
-            .setNegativeButton("取消", null)
-            .show()
+        CategoryRows.pickMany(this, lifecycleScope, "归类表情", allCats, currentAssignedCatIds) {
+            saveCategoryAssignments(resourceId, allCats, it)
+        }
     }
 
-    private fun saveCategoryAssignments(resourceId: Long, allCats: List<CategoryEntity>, checked: BooleanArray) {
+    private fun saveCategoryAssignments(resourceId: Long, allCats: List<CategoryEntity>, chosen: Set<Long>) {
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 val rcDao = database.resourceCategoryDao()
                 val currentIds = rcDao.getCategoryIdsByResourceId(resourceId).toSet()
                 database.withTransaction {
-                    for (i in allCats.indices) {
-                        val catId = allCats[i].id
-                        val isChecked = checked[i]
+                    for (category in allCats) {
+                        val catId = category.id
+                        val isChecked = catId in chosen
                         if (isChecked && !currentIds.contains(catId)) {
                             val maxSort = rcDao.getMaxSortOrderForCategory(catId) ?: 0
                             rcDao.addResourceToCategory(ResourceCategoryEntity(resourceId, catId, maxSort + 1))

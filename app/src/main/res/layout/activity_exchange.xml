@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/ui_canvas">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/ui_gutter" android:paddingBottom="20dp" android:orientation="vertical">
+        <com.suzu.test.ui.components.SuzuPageHeader android:id="@+id/header"
+            android:layout_width="match_parent" android:layout_height="wrap_content" app:pageTitle="导入导出" />
+        <com.suzu.test.ui.components.SuzuActionCard android:id="@+id/importStickers"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"
+            app:actionTitle="导入表情" app:actionDetail="相册、文件、文件夹或资源包" app:actionIcon="@drawable/ic_home_import_add" />
+        <com.suzu.test.ui.components.SuzuActionCard android:id="@+id/exportStickers"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+            app:actionTitle="导出资源包" app:actionDetail="导出全部表情或指定收藏夹" app:actionIcon="@drawable/ic_export_simple" />
+        <com.suzu.test.ui.components.SuzuActionCard android:id="@+id/lanSync"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+            app:actionTitle="局域网同步" app:actionDetail="与同一局域网内的电脑互传资源包" app:actionIcon="@drawable/ic_lan_sync" />
+    </LinearLayout>
+</ScrollView>

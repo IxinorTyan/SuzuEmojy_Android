@@ -85,186 +85,24 @@
                 android:layout_marginStart="4dp" />
 
             <!-- 1. 导出全部表情卡片 -->
-            <com.google.android.material.card.MaterialCardView
+            <com.suzu.test.ui.components.SuzuActionCard
                 android:id="@+id/btnExportAll"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="2dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="@dimen/ui_radius"
-                app:cardElevation="0dp"
-                app:cardMaxElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/ui_outline"
-                app:cardBackgroundColor="@color/ui_surface"
-                app:rippleColor="@color/ui_good_container"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="14dp">
-
-                    <FrameLayout
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:background="@drawable/bg_home_icon_green">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_export_simple"
-                            app:tint="@color/ui_good"
-                            android:contentDescription="导出全部表情" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="12dp"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="导出全部表情"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/ui_ink" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="完整备份"
-                                android:textSize="10sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/ui_good"
-                                android:background="@drawable/bg_home_tag_green"
-                                android:paddingHorizontal="6dp"
-                                android:paddingVertical="1.5dp"
-                                android:layout_marginStart="6dp" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="打包所有分类及全部表情图片为一个压缩包"
-                            android:textSize="11sp"
-                            android:textColor="@color/ui_muted"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:src="@drawable/ic_about_chevron_right"
-                        app:tint="@color/ui_subtle"
-                        android:contentDescription="进入" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_marginBottom="10dp"
+                app:actionTitle="导出全部表情"
+                app:actionDetail="打包所有分类及全部表情图片为一个压缩包"
+                app:actionIcon="@drawable/ic_export_simple" />
 
             <!-- 2. 导出指定收藏夹卡片 -->
-            <com.google.android.material.card.MaterialCardView
+            <com.suzu.test.ui.components.SuzuActionCard
                 android:id="@+id/btnExportSelected"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="2dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="@dimen/ui_radius"
-                app:cardElevation="0dp"
-                app:cardMaxElevation="0dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/ui_outline"
-                app:cardBackgroundColor="@color/ui_surface"
-                app:rippleColor="@color/ui_accent_container"
-                android:clickable="true"
-                android:focusable="true">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="14dp">
-
-                    <FrameLayout
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:background="@drawable/bg_home_icon_blue">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_category_default"
-                            app:tint="@color/ui_accent"
-                            android:contentDescription="导出指定收藏夹" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="12dp"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="导出指定收藏夹"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/ui_ink" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="自定义"
-                                android:textSize="10sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/ui_accent"
-                                android:background="@drawable/bg_home_tag_blue"
-                                android:paddingHorizontal="6dp"
-                                android:paddingVertical="1.5dp"
-                                android:layout_marginStart="6dp" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="多选特定分类并仅导出对应的表情包"
-                            android:textSize="11sp"
-                            android:textColor="@color/ui_muted"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:src="@drawable/ic_about_chevron_right"
-                        app:tint="@color/ui_subtle"
-                        android:contentDescription="进入" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_marginBottom="10dp"
+                app:actionTitle="导出指定收藏夹"
+                app:actionDetail="多选特定分类并仅导出对应的表情包"
+                app:actionIcon="@drawable/ic_category_default" />
 
             <!-- 已选分类详情卡片 (条件展示) -->
             <com.google.android.material.card.MaterialCardView
@@ -315,17 +153,13 @@
                             android:paddingVertical="1.5dp" />
                     </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tvSelectedCategoriesSummary"
+                    <LinearLayout
+                        android:id="@+id/selectedCategories"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:background="@drawable/bg_rounded_input_field"
-                        android:padding="10dp"
-                        android:text=""
-                        android:textSize="13sp"
-                        android:textColor="@color/ui_ink"
-                        android:lineSpacingExtra="3dp" />
+                        android:orientation="vertical" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

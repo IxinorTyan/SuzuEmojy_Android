@@ -24,11 +24,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.activity.OnBackPressedCallback
 import com.suzu.test.databinding.ActivityImportBinding
+import com.suzu.test.databinding.DialogCategoryPreviewBinding
 import com.suzu.test.databinding.DialogImportFinishCleanupBinding
 import com.suzu.test.db.DatabaseProvider
 import com.suzu.test.db.SuzuDatabase
 import com.suzu.test.log.TestLog
 import com.suzu.test.storage.CacheCleanManager
+import com.suzu.test.ui.components.CategoryRow
+import com.suzu.test.ui.components.CategoryRows
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.suzu.test.ui.picker.MediaPickerActivity
 import com.suzu.test.ui.picker.PickerResultStore
 import kotlinx.coroutines.Dispatchers
@@ -360,25 +364,21 @@ class ImportActivity : AppCompatActivity() {
     private fun showFolderConfirmation(selection: FolderImportSelection) {
         if (folderDialog != null) return
         val visibleCategories = selection.categories.take(MAX_FOLDER_PREVIEW_CATEGORIES)
-        val categoryPreview = visibleCategories.joinToString("\n") { category ->
+        val preview = DialogCategoryPreviewBinding.inflate(layoutInflater)
+        preview.summary.text = "找到 ${selection.items.size} 张图片。"
+        visibleCategories.forEach { category ->
             val action = when {
                 category.name == null -> "仅导入资源库"
                 category.alreadyExists -> "合并到已有分类"
                 else -> "新建分类"
             }
-            "${category.name ?: "不创建分类"}：${category.count} 张（$action）"
-        }.let { preview ->
-            if (selection.categories.size > visibleCategories.size) {
-                "$preview\n...另有 ${selection.categories.size - visibleCategories.size} 个分类"
-            } else preview
+            CategoryRows.append(preview.rows, lifecycleScope,
+                CategoryRow(category.name ?: "不创建分类", category.iconPath, "${category.count} 张 · $action"))
         }
-        val message = buildString {
-            append("找到 ${selection.items.size} 张图片。")
-            if (categoryPreview.isNotEmpty()) {
-                append("\n\n分类预览：\n")
-                append(categoryPreview)
-            }
-            append("\n\n按一级子文件夹创建分类，包含其下所有层级的图片；当前文件夹中的图片归入同名分类。空文件夹不创建分类。")
+        preview.note.text = buildString {
+            val remaining = selection.categories.size - visibleCategories.size
+            if (remaining > 0) append("另有 $remaining 个分类。\n\n")
+            append("按一级子文件夹创建分类，包含其下所有层级的图片；当前文件夹中的图片归入同名分类。空文件夹不创建分类。")
             if (!presetCategoryName.isNullOrBlank()) {
                 append("\n同时添加到「$presetCategoryName」分类。")
             }
@@ -386,11 +386,10 @@ class ImportActivity : AppCompatActivity() {
                 append("\n\n")
                 append(formatUnreadableDirectories(selection.unreadableDirectories))
             }
-            append("\n\n确认导入吗？")
         }
-        folderDialog = AlertDialog.Builder(this)
+        folderDialog = MaterialAlertDialogBuilder(this)
             .setTitle("确认导入")
-            .setMessage(message)
+            .setView(preview.root)
             .setPositiveButton("确认") { _, _ ->
                 taskModel.clearFolderSelection()
                 taskModel.importImages(selection.items, presetCategoryId, selection.unreadableDirectories)
