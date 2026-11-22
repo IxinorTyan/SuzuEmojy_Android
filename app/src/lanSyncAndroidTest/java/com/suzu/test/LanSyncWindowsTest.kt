@@ -124,7 +124,8 @@ class LanSyncWindowsTest {
                 round(client, windows = true)
                 val first = db.resourceDao().getAllResourcesOrderedList()
                 assertEquals(4, first.size)
-                assertTrue(db.categoryDao().getCategoryByName("图标收藏夹")?.iconPath?.startsWith("file:category_icons/") == true)
+                val miku = checkNotNull(db.categoryDao().getCategoryByName("Miku"))
+                assertTrue(miku.iconPath?.startsWith("file:category_icons/") == true)
                 val folder = checkNotNull(db.categoryDao().getCategoryByName("电脑初始"))
                 val tagged = first.single { it.keywords == "keep remove" }
                 val gone = db.resourceCategoryDao().getResourcesForCategoryList(folder.id).single { it.id != tagged.id }
@@ -132,6 +133,7 @@ class LanSyncWindowsTest {
                 stableKey = stable.syncKey
                 val beforeOrder = first.filter { it.id == tagged.id || it.id == stable.id }.map { it.id }
                 db.resourceDao().updateKeywords(tagged.id, "keep phone")
+                db.categoryDao().updateCategory(miku.copy(iconPath = "text:📱"))
                 db.resourceCategoryDao().removeResourceFromCategory(tagged.id, folder.id)
                 db.resourceDao().deleteById(initial.resourceId)
                 // Keep the icon's separate v1 attachment even after removing its source resource.
@@ -146,6 +148,7 @@ class LanSyncWindowsTest {
                 assertEquals("desktop keep phone", db.resourceDao().getById(tagged.id)?.keywords)
                 assertEquals(emptyList<Long>(), db.resourceCategoryDao().getCategoryIdsByResourceId(tagged.id))
                 assertEquals(folder.id, db.categoryDao().getCategoryByName("电脑改名")?.id)
+                assertEquals("text:🎵", db.categoryDao().getCategoryById(miku.id)?.iconPath)
                 assertEquals(null, db.resourceDao().getById(gone.id))
                 assertEquals(null, db.resourceDao().getBySyncKey(initial.syncKey))
                 assertTrue(second.any { it.syncKey == added.syncKey })
