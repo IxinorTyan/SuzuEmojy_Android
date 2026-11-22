@@ -36,6 +36,7 @@ class ResourcePackageExportService(
     private val context: Context,
     private val database: SuzuDatabase
 ) {
+    internal data class SyncAssets(val keys: Set<String>, val icons: Set<String>)
 
     companion object {
         private const val MODULE = "ResourcePackageExport"
@@ -47,6 +48,14 @@ class ResourcePackageExportService(
         selectedCategoryIds: List<Long> = emptyList(),
         exportScope: PackageExportScope = if (selectedCategoryIds.isEmpty()) PackageExportScope.ALL else PackageExportScope.CATEGORIES,
         onProgress: ((stage: PackageExportStage, progress: Int, total: Int) -> Unit)? = null
+    ): PackageExportSummary = export(targetUri, packageName, selectedCategoryIds, exportScope, null, onProgress)
+
+    internal suspend fun exportForSync(targetUri: Uri, assets: SyncAssets): PackageExportSummary =
+        export(targetUri, "SuzuEmojy", emptyList(), PackageExportScope.ALL, assets, null)
+
+    private suspend fun export(
+        targetUri: Uri, packageName: String, selectedCategoryIds: List<Long>, exportScope: PackageExportScope,
+        syncAssets: SyncAssets?, onProgress: ((stage: PackageExportStage, progress: Int, total: Int) -> Unit)?
     ): PackageExportSummary {
         val packageBaseName = normalizePackageName(packageName)
         val exportAll = exportScope == PackageExportScope.ALL
@@ -84,8 +93,9 @@ class ResourcePackageExportService(
             dedup.values.sortedWith(compareBy<ResourceEntity> { it.sortOrder }.thenBy { it.id })
         }
 
-        val totalResourcesCount = resources.size
-        resources.forEachIndexed { index, resource ->
+        val selectedResources = if (syncAssets == null) resources else resources.filter { it.syncKey in syncAssets.keys }
+        val totalResourcesCount = selectedResources.size
+        selectedResources.forEachIndexed { index, resource ->
             currentCoroutineContext().ensureActive()
             val packed = packResource(
                 resource = resource,
@@ -113,7 +123,8 @@ class ResourcePackageExportService(
             exportCategories.forEachIndexed { index, category ->
                 currentCoroutineContext().ensureActive()
                 val icon = try {
-                    PackageIcons.pack(context, database, category.iconPath, iconAssets)
+                    if (syncAssets != null && syncAssets.icons.isEmpty()) null
+                    else PackageIcons.pack(context, database, category.iconPath, iconAssets, syncAssets?.icons)
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -185,6 +196,12 @@ class ResourcePackageExportService(
         val catalog = JSONObject()
             .put("categories", categoriesJson)
             .put("resources", resourcesJson)
+
+        if (syncAssets != null) {
+            check(exportedResources.map { it.syncKey }.toSet() == syncAssets.keys && iconAssets.keys == syncAssets.icons) {
+                "图库资源或图标已变化，请重新同步。"
+            }
+        }
 
         writeZip(targetUri, manifest, catalog, exportedResources, iconAssets) { progress, total ->
             onProgress?.invoke(PackageExportStage.WRITING, progress, total)

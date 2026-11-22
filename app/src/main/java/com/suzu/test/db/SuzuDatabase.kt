@@ -5,10 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.suzu.test.db.dao.CategoryDao
+import com.suzu.test.db.dao.LanSyncStateDao
 import com.suzu.test.db.dao.RecentDao
 import com.suzu.test.db.dao.ResourceCategoryDao
 import com.suzu.test.db.dao.ResourceDao
 import com.suzu.test.db.entity.CategoryEntity
+import com.suzu.test.db.entity.LanSyncStateEntity
 import com.suzu.test.db.entity.RecentHistoryEntity
 import com.suzu.test.db.entity.ResourceCategoryEntity
 import com.suzu.test.db.entity.ResourceEntity
@@ -21,9 +23,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ResourceEntity::class,
         CategoryEntity::class,
         ResourceCategoryEntity::class,
-        RecentHistoryEntity::class
+        RecentHistoryEntity::class,
+        LanSyncStateEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class SuzuDatabase : RoomDatabase() {
@@ -32,9 +35,16 @@ abstract class SuzuDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun resourceCategoryDao(): ResourceCategoryDao
     abstract fun recentDao(): RecentDao
+    abstract fun lanSyncStateDao(): LanSyncStateDao
 
     companion object {
         private const val DB_NAME = "suzu_emojy.db"
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS lan_sync_state (`key` TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)")
+            }
+        }
 
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -82,7 +92,7 @@ abstract class SuzuDatabase : RoomDatabase() {
                     SuzuDatabase::class.java,
                     DB_NAME
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
                 INSTANCE = instance
                 instance

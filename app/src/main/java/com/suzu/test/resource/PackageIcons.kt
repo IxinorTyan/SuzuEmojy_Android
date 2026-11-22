@@ -32,7 +32,8 @@ object PackageIcons {
             } ?: false
         }
 
-    suspend fun pack(context: Context, database: SuzuDatabase, value: String?, assets: MutableMap<String, ByteArray>): JSONObject? {
+    suspend fun pack(context: Context, database: SuzuDatabase, value: String?, assets: MutableMap<String, ByteArray>,
+                     wantedAssets: Set<String>? = null): JSONObject? {
         when (val icon = CategoryIconResolver.resolve(value)) {
             is CategoryIconResult.Default -> return null
             is CategoryIconResult.Text -> return JSONObject().put("type", "text").put("text", icon.content)
@@ -45,6 +46,7 @@ object PackageIcons {
         require(suffix in setOf("png", "gif", "jpg", "jpeg", "webp", "bmp")) { "不支持的图标格式" }
         val hash = sha256(bytes)
         val path = "icons/$hash.$suffix"
+        if (wantedAssets != null && path !in wantedAssets) return null
         assets[path] = bytes
         return JSONObject().put("type", "image").put("asset_path", path)
             .put("asset_size", bytes.size).put("asset_sha256", hash)

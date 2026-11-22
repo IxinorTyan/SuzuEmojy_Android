@@ -41,6 +41,7 @@ class LanSyncActivity : AppCompatActivity() {
         }
         binding.download.setOnClickListener { model.request(LanTransfer.DOWNLOAD) }
         binding.upload.setOnClickListener { model.request(LanTransfer.UPLOAD) }
+        binding.sync.setOnClickListener { model.request(LanTransfer.SYNC) }
         binding.disconnect.setOnClickListener { model.disconnect() }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -56,10 +57,12 @@ class LanSyncActivity : AppCompatActivity() {
         statusPanel.isVisible = state.status.isNotBlank()
         pairingControls.isVisible = state.phase == LanSyncPhase.ENTRY
         transferControls.isVisible = state.phase == LanSyncPhase.CONNECTED
+        sync.isVisible = state.canSync
         decisionControls.isVisible = state.phase == LanSyncPhase.VERIFY || state.phase == LanSyncPhase.OFFER
         confirm.text = when (state.incoming) {
             LanTransfer.DOWNLOAD -> "允许接收"
             LanTransfer.UPLOAD -> "允许发送"
+            LanTransfer.SYNC -> "允许同步"
             null -> "校验码一致"
         }
         verification.isVisible = state.verification != null

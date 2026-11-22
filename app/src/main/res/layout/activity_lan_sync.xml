@@ -69,6 +69,9 @@
 
         <LinearLayout android:id="@+id/transferControls" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="vertical" android:layout_marginTop="10dp" android:visibility="gone">
+            <com.suzu.test.ui.components.SuzuActionCard android:id="@+id/sync"
+                android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp"
+                app:actionTitle="同步两端" app:actionIcon="@drawable/ic_lan_sync" />
             <com.suzu.test.ui.components.SuzuActionCard android:id="@+id/download"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 app:actionTitle="从电脑接收" app:actionIcon="@drawable/ic_import_24" />

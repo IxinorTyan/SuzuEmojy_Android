@@ -14,6 +14,6 @@
             app:actionTitle="导出资源包" app:actionDetail="导出全部表情或指定收藏夹" app:actionIcon="@drawable/ic_export_simple" />
         <com.suzu.test.ui.components.SuzuActionCard android:id="@+id/lanSync"
             android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
-            app:actionTitle="局域网同步" app:actionDetail="与同一局域网内的电脑互传资源包" app:actionIcon="@drawable/ic_lan_sync" />
+            app:actionTitle="局域网同步" app:actionDetail="同步手机与电脑的图库" app:actionIcon="@drawable/ic_lan_sync" />
     </LinearLayout>
 </ScrollView>

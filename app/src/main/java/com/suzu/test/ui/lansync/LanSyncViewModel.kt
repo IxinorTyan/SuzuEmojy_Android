@@ -10,6 +10,8 @@ import com.suzu.test.resource.exportpkg.ResourcePackageExportService
 import com.suzu.test.resource.importpkg.PackageImportStage
 import com.suzu.test.resource.importpkg.ResourcePackageImportService
 import com.suzu.test.resource.lansync.LanPairing
+import com.suzu.test.resource.lansync.LanReconciliation
+import com.suzu.test.resource.lansync.LanSyncAndroidLibrary
 import com.suzu.test.resource.lansync.LanSyncClient
 import com.suzu.test.resource.lansync.LanTransfer
 import kotlinx.coroutines.CancellationException
@@ -28,7 +30,7 @@ import java.io.IOException
 internal enum class LanSyncPhase { ENTRY, BUSY, VERIFY, CONNECTED, OFFER }
 internal data class LanSyncState(
     val phase: LanSyncPhase, val status: String = "", val verification: String? = null,
-    val incoming: LanTransfer? = null, val progress: Int? = null
+    val incoming: LanTransfer? = null, val progress: Int? = null, val canSync: Boolean = false
 )
 
 class LanSyncViewModel(application: Application) : AndroidViewModel(application) {
@@ -71,15 +73,16 @@ class LanSyncViewModel(application: Application) : AndroidViewModel(application)
     }
 
     internal fun request(transfer: LanTransfer) {
-        if (mutable.value.phase != LanSyncPhase.CONNECTED || queued != null) return
+        if (mutable.value.phase != LanSyncPhase.CONNECTED || queued != null ||
+            (transfer == LanTransfer.SYNC && client?.canSync != true)) return
         queued = transfer
-        report("等待电脑确认传输…")
+        report(if (transfer == LanTransfer.SYNC) "等待电脑确认同步…" else "等待电脑确认传输…")
     }
 
     internal fun answer(allow: Boolean) { permission?.complete(allow) }
 
     private suspend fun connected(connection: LanSyncClient) {
-        mutable.value = LanSyncState(LanSyncPhase.CONNECTED, "已连接")
+        mutable.value = LanSyncState(LanSyncPhase.CONNECTED, "已连接", canSync = connection.canSync)
         var idleSince = System.nanoTime()
         while (true) {
             val requested = queued.also { queued = null }
@@ -97,18 +100,19 @@ class LanSyncViewModel(application: Application) : AndroidViewModel(application)
                 mutable.value = LanSyncState(LanSyncPhase.OFFER, when (offer.transfer) {
                     LanTransfer.DOWNLOAD -> "电脑请求发送资源包到手机。"
                     LanTransfer.UPLOAD -> "电脑请求接收手机的资源包。"
+                    LanTransfer.SYNC -> "电脑请求同步两端图库。"
                 }, incoming = offer.transfer)
                 val allowed = try { withTimeoutOrNull(55_000) { response.await() } == true }
                 finally { permission = null }
                 withContext(Dispatchers.IO) { connection.writeStatus(if (allowed) 1 else 0) }
                 allowed
             } else {
-                report("等待电脑确认传输…")
+                report(if (offer.transfer == LanTransfer.SYNC) "等待电脑确认同步…" else "等待电脑确认传输…")
                 withContext(Dispatchers.IO) { connection.readDecision() }
             }
             val message = if (verdict) transfer(connection, offer.transfer)
                 else if (offer.fromComputer) "已拒绝传输。" else "电脑未同意传输。"
-            mutable.value = LanSyncState(LanSyncPhase.CONNECTED, message)
+            mutable.value = LanSyncState(LanSyncPhase.CONNECTED, message, canSync = connection.canSync)
             idleSince = System.nanoTime()
         }
     }
@@ -149,6 +153,10 @@ class LanSyncViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private suspend fun transfer(connection: LanSyncClient, direction: LanTransfer): String = withContext(Dispatchers.IO) {
+        if (direction == LanTransfer.SYNC) {
+            val db = DatabaseProvider.getDatabase(app)
+            return@withContext LanReconciliation(LanSyncAndroidLibrary(app, db), app.cacheDir).run(connection, ::report)
+        }
         val file = File.createTempFile("suzu-lan-", ".zip", app.cacheDir)
         try { if (direction == LanTransfer.DOWNLOAD) download(connection, file) else upload(connection, file) }
         finally { file.delete() }

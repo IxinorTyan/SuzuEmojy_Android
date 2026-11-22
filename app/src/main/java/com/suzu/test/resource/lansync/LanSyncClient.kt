@@ -22,6 +22,7 @@ import java.util.Locale
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.X509TrustManager
+import org.json.JSONObject
 
 internal data class LanEndpoint(val host: String, val port: Int) {
     companion object {
@@ -63,12 +64,13 @@ internal data class LanPairing(val code: String, val addresses: List<LanEndpoint
     }
 }
 
-internal enum class LanTransfer(val wire: Int) { DOWNLOAD('D'.code), UPLOAD('U'.code) }
+internal enum class LanTransfer(val wire: Int) { DOWNLOAD('D'.code), UPLOAD('U'.code), SYNC('S'.code) }
 internal data class LanOffer(val transfer: LanTransfer, val fromComputer: Boolean)
 
 internal class LanSyncClient : Closeable {
     companion object {
         const val MAX_PACKAGE = 2L * 1024 * 1024 * 1024
+        private const val MAX_MESSAGE = 24 * 1024 * 1024
         private const val DISCOVERY_PORT = 41731
         private const val DISCOVERY = "SUZU-LAN-2"
         private val random = SecureRandom()
@@ -90,6 +92,8 @@ internal class LanSyncClient : Closeable {
     private lateinit var input: DataInputStream
     private lateinit var output: DataOutputStream
     private lateinit var connection: SSLSocket
+    var canSync = false
+        private set
 
     fun pair(pairing: LanPairing): String {
         val addresses = pairing.addresses.ifEmpty { discover() }
@@ -97,7 +101,10 @@ internal class LanSyncClient : Closeable {
         var failure: Exception? = null
         for (address in addresses) {
             ensureOpen()
-            try { return connect(address, pairing) }
+            try {
+                return try { connect(address, pairing, modern = true) }
+                catch (_: LegacyPeer) { connect(address, pairing, modern = false) }
+            }
             catch (e: IOException) { failure = e }
         }
         if (addresses.size == 1 && pairing.addresses.isNotEmpty() && (failure is PairingRejected || failure is VersionMismatch)) throw failure
@@ -136,7 +143,7 @@ internal class LanSyncClient : Closeable {
         return found.toList()
     }
 
-    private fun connect(address: LanEndpoint, pairing: LanPairing): String {
+    private fun connect(address: LanEndpoint, pairing: LanPairing, modern: Boolean): String {
         val host = InetAddress.getByName(address.host) // Input is already a numeric IPv4 address.
         if (!host.isSiteLocalAddress && !host.isLinkLocalAddress && !sameSubnet(host)) {
             throw IOException("该地址不在当前局域网内。")
@@ -155,9 +162,11 @@ internal class LanSyncClient : Closeable {
             ssl.startHandshake()
             val input = DataInputStream(ssl.inputStream.buffered())
             val output = DataOutputStream(ssl.outputStream.buffered())
-            output.write("SZLAN2".toByteArray(Charsets.US_ASCII))
+            output.write((if (modern) "SZLAN3" else "SZLAN2").toByteArray(Charsets.US_ASCII))
             output.flush()
-            if (input.readUnsignedByte() != 2) throw VersionMismatch()
+            val protocol = input.readUnsignedByte()
+            if (modern && protocol == 3) throw LegacyPeer()
+            if (protocol != if (modern) 4 else 2) throw VersionMismatch()
             val fingerprint = trust.fingerprint ?: error("TLS 未提供电脑证书")
             val nonce = ByteArray(16).apply(random::nextBytes)
             output.write(pairing.code.toByteArray(Charsets.US_ASCII))
@@ -175,6 +184,7 @@ internal class LanSyncClient : Closeable {
             this.input = input
             this.output = output
             connection = ssl
+            canSync = modern
             return verification(fingerprint, nonce, serverNonce)
         } catch (e: Exception) {
             raw.close()
@@ -205,11 +215,8 @@ internal class LanSyncClient : Closeable {
         writeStatus(request?.wire ?: 0)
         return when (val action = input.readUnsignedByte()) {
             0 -> null
-            LanTransfer.DOWNLOAD.wire, LanTransfer.UPLOAD.wire -> {
-                val direction = if (action == LanTransfer.DOWNLOAD.wire) LanTransfer.DOWNLOAD else LanTransfer.UPLOAD
-                LanOffer(direction, readDecision())
-            }
-            else -> throw IOException("收到不支持的传输操作。")
+            else -> LanTransfer.entries.firstOrNull { it.wire == action && (it != LanTransfer.SYNC || canSync) }
+                ?.let { LanOffer(it, readDecision()) } ?: throw IOException("收到不支持的传输操作。")
         }
     }
 
@@ -220,6 +227,11 @@ internal class LanSyncClient : Closeable {
     }
 
     fun upload(file: File, progress: (Int) -> Unit): Int {
+        sendPackage(file, progress)
+        return input.readUnsignedByte().also { if (it !in 0..2) throw IOException("未收到电脑的导入结果。") }
+    }
+
+    fun sendPackage(file: File, progress: (Int) -> Unit) {
         val size = checkedSize(file.length())
         val sha = MessageDigest.getInstance("SHA-256")
         file.inputStream().use { copyExact(it, null, size, sha) {} }
@@ -227,11 +239,14 @@ internal class LanSyncClient : Closeable {
         output.write(sha.digest())
         file.inputStream().use { copyExact(it, output, size, null, progress) }
         output.flush()
-        return input.readUnsignedByte().also { if (it !in 0..2) throw IOException("未收到电脑的导入结果。") }
     }
 
     fun download(file: File, progress: (Int) -> Unit) {
         if (input.readUnsignedByte() != 1) throw IOException("电脑未能导出资源包。")
+        receivePackage(file, progress)
+    }
+
+    fun receivePackage(file: File, progress: (Int) -> Unit) {
         val size = checkedSize(input.readLong())
         if ((file.parentFile?.usableSpace ?: 0L) < size) throw IOException("手机暂存空间不足。")
         val expected = ByteArray(32).also(input::readFully)
@@ -241,6 +256,22 @@ internal class LanSyncClient : Closeable {
     }
 
     fun writeStatus(status: Int) { output.writeByte(status); output.flush() }
+
+    fun readMessage(): JSONObject {
+        val size = input.readInt()
+        if (size !in 1..MAX_MESSAGE) throw IOException("同步清单大小无效。")
+        return JSONObject(ByteArray(size).also(input::readFully).toString(Charsets.UTF_8))
+    }
+
+    fun writeMessage(message: JSONObject) {
+        val bytes = message.toString().toByteArray(Charsets.UTF_8)
+        if (bytes.size !in 1..MAX_MESSAGE) throw IOException("同步清单超过 24 MiB。")
+        output.writeInt(bytes.size)
+        output.write(bytes)
+        output.flush()
+    }
+
+    private class LegacyPeer : IOException()
 
     private fun checkedSize(size: Long): Long {
         if (size !in 1..MAX_PACKAGE) throw IOException("资源包大小不受支持（上限 2 GiB）。")

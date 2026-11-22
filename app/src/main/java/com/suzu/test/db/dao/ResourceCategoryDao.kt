@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ResourceCategoryDao {
 
+    @Query("SELECT * FROM resource_categories ORDER BY category_id, sort_order, added_at DESC, resource_id")
+    suspend fun getAllRelationsForSync(): List<ResourceCategoryEntity>
+
     @Query("""
         SELECT r.* FROM resources r
         INNER JOIN resource_categories rc ON r.id = rc.resource_id

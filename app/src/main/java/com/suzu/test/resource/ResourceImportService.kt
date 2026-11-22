@@ -60,6 +60,11 @@ class ResourceImportService(
 
     internal suspend fun prepare(bytes: ByteArray): PreparedResource = prepare(bytes, checkDuplicate = true)
 
+    internal suspend fun prepareSyncAsset(bytes: ByteArray, expectedKey: String): Content =
+        prepare(bytes, checkDuplicate = false).also {
+            require(it.syncKey == expectedKey) { "资源的 sync_key 校验失败" }
+        }.content ?: error("资源没有可同步的内容")
+
     private suspend fun prepare(bytes: ByteArray, checkDuplicate: Boolean): PreparedResource {
         currentCoroutineContext().ensureActive()
         if (ResourceHasher.isGif(bytes)) {
