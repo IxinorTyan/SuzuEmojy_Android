@@ -94,6 +94,8 @@ internal class LanSyncClient : Closeable {
     private lateinit var connection: SSLSocket
     var canSync = false
         private set
+    var streamingSync = false
+        private set
 
     fun pair(pairing: LanPairing): String {
         val addresses = pairing.addresses.ifEmpty { discover() }
@@ -102,8 +104,11 @@ internal class LanSyncClient : Closeable {
         for (address in addresses) {
             ensureOpen()
             try {
-                return try { connect(address, pairing, modern = true) }
-                catch (_: LegacyPeer) { connect(address, pairing, modern = false) }
+                return try { connect(address, pairing, version = 4) }
+                catch (_: LegacyPeer) {
+                    try { connect(address, pairing, version = 3) }
+                    catch (_: LegacyPeer) { connect(address, pairing, version = 2) }
+                }
             }
             catch (e: IOException) { failure = e }
         }
@@ -143,7 +148,7 @@ internal class LanSyncClient : Closeable {
         return found.toList()
     }
 
-    private fun connect(address: LanEndpoint, pairing: LanPairing, modern: Boolean): String {
+    private fun connect(address: LanEndpoint, pairing: LanPairing, version: Int): String {
         val host = InetAddress.getByName(address.host) // Input is already a numeric IPv4 address.
         if (!host.isSiteLocalAddress && !host.isLinkLocalAddress && !sameSubnet(host)) {
             throw IOException("该地址不在当前局域网内。")
@@ -162,11 +167,11 @@ internal class LanSyncClient : Closeable {
             ssl.startHandshake()
             val input = DataInputStream(ssl.inputStream.buffered())
             val output = DataOutputStream(ssl.outputStream.buffered())
-            output.write((if (modern) "SZLAN3" else "SZLAN2").toByteArray(Charsets.US_ASCII))
+            output.write("SZLAN$version".toByteArray(Charsets.US_ASCII))
             output.flush()
             val protocol = input.readUnsignedByte()
-            if (modern && protocol == 3) throw LegacyPeer()
-            if (protocol != if (modern) 4 else 2) throw VersionMismatch()
+            if (version > 2 && protocol == 3) throw LegacyPeer()
+            if (protocol != if (version > 2) version + 1 else version) throw VersionMismatch()
             val fingerprint = trust.fingerprint ?: error("TLS 未提供电脑证书")
             val nonce = ByteArray(16).apply(random::nextBytes)
             output.write(pairing.code.toByteArray(Charsets.US_ASCII))
@@ -184,7 +189,8 @@ internal class LanSyncClient : Closeable {
             this.input = input
             this.output = output
             connection = ssl
-            canSync = modern
+            canSync = version >= 3
+            streamingSync = version >= 4
             return verification(fingerprint, nonce, serverNonce)
         } catch (e: Exception) {
             raw.close()
@@ -227,12 +233,12 @@ internal class LanSyncClient : Closeable {
     }
 
     fun upload(file: File, progress: (Int) -> Unit): Int {
-        sendPackage(file, progress)
+        sendPackage(file, progress = progress)
         return input.readUnsignedByte().also { if (it !in 0..2) throw IOException("未收到电脑的导入结果。") }
     }
 
-    fun sendPackage(file: File, progress: (Int) -> Unit) {
-        val size = checkedSize(file.length())
+    fun sendPackage(file: File, streaming: Boolean = false, progress: (Int) -> Unit) {
+        val size = checkedSize(file.length(), streaming)
         val sha = MessageDigest.getInstance("SHA-256")
         file.inputStream().use { copyExact(it, null, size, sha) {} }
         output.writeLong(size)
@@ -243,11 +249,11 @@ internal class LanSyncClient : Closeable {
 
     fun download(file: File, progress: (Int) -> Unit) {
         if (input.readUnsignedByte() != 1) throw IOException("电脑未能导出资源包。")
-        receivePackage(file, progress)
+        receivePackage(file, progress = progress)
     }
 
-    fun receivePackage(file: File, progress: (Int) -> Unit) {
-        val size = checkedSize(input.readLong())
+    fun receivePackage(file: File, streaming: Boolean = false, progress: (Int) -> Unit) {
+        val size = checkedSize(input.readLong(), streaming)
         if ((file.parentFile?.usableSpace ?: 0L) < size) throw IOException("手机暂存空间不足。")
         val expected = ByteArray(32).also(input::readFully)
         val sha = MessageDigest.getInstance("SHA-256")
@@ -273,8 +279,9 @@ internal class LanSyncClient : Closeable {
 
     private class LegacyPeer : IOException()
 
-    private fun checkedSize(size: Long): Long {
-        if (size !in 1..MAX_PACKAGE) throw IOException("资源包大小不受支持（上限 2 GiB）。")
+    private fun checkedSize(size: Long, streaming: Boolean): Long {
+        if (size <= 0 || (!streaming && size > MAX_PACKAGE))
+            throw IOException(if (streaming) "同步资源包大小不受支持。" else "资源包大小不受支持（旧版上限 2 GiB）。")
         return size
     }
 
@@ -289,7 +296,7 @@ internal class LanSyncClient : Closeable {
             sha?.update(buffer, 0, count)
             to?.write(buffer, 0, count)
             remaining -= count
-            val percent = ((length - remaining) * 100 / length).toInt()
+            val percent = ((length - remaining).toDouble() / length * 100).toInt()
             if (percent != last) { progress(percent); last = percent }
         }
     }

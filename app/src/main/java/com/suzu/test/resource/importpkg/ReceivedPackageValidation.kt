@@ -36,7 +36,7 @@ internal object ReceivedPackageValidation {
         }
     }
 
-    fun checkEntries(zip: ZipFile) {
+    fun checkEntries(zip: ZipFile, availableForStreaming: Long? = null) {
         if (zip.size() !in 2..MAX_ENTRIES) throw IOException("资源包的条目数量超出限制。")
         val names = HashSet<String>()
         var total = 0L
@@ -45,10 +45,12 @@ internal object ReceivedPackageValidation {
             if (path.length > 256 || path.contains('\\') || path.contains(':') ||
                 path.split('/').any { it.isEmpty() || it == "." || it == ".." } ||
                 !names.add(path.lowercase(Locale.ROOT))) throw IOException("资源包路径无效或重复。")
-            val limit = if (path == "manifest.json" || path == "catalog.json") MAX_METADATA else MAX_ASSET
+            val limit = if (path == "manifest.json" || path == "catalog.json") MAX_METADATA
+                else if (availableForStreaming != null && safeAsset.matches(path)) Long.MAX_VALUE else MAX_ASSET
             if (entry.size !in 0..limit) throw IOException("资源包条目大小超出限制：$path")
+            if (entry.size > (availableForStreaming ?: LanSyncClient.MAX_PACKAGE) - total)
+                throw IOException(if (availableForStreaming == null) "资源包展开后超过 2 GiB。" else "手机暂存空间不足。")
             total += entry.size
-            if (total > LanSyncClient.MAX_PACKAGE) throw IOException("资源包展开后超过 2 GiB。")
         }
     }
 
@@ -129,6 +131,47 @@ internal object ReceivedPackageValidation {
     }
 
     private fun decodeHex(value: String) = ByteArray(value.length / 2) { value.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
+
+    internal data class StreamedSpec(val path: String, val key: String, val size: Long, val sha: String, val fileMd5: String)
+
+    internal fun streamSpec(zip: ZipFile, row: JSONObject): StreamedSpec {
+        val path = row.getString("asset_path")
+        val size = row.getLong("asset_size")
+        val digest = row.getString("asset_sha256")
+        val fileMd5 = row.getString("file_md5")
+        val pixelMd5 = row.optString("pixel_md5")
+        val key = if (path.endsWith(".png")) "p:$pixelMd5" else "f:$fileMd5"
+        val entry = zip.getEntry(path)
+        if (!safeAsset.matches(path) || !sha256.matches(digest) || entry == null || entry.isDirectory ||
+            entry.size != size || size <= 0 || !md5.matches(fileMd5) ||
+            (path.endsWith(".png") && !md5.matches(pixelMd5)) || key != row.getString("sync_key"))
+            throw IOException("资源包清单或图片大小无效：$path")
+        return StreamedSpec(path, key, size, digest, fileMd5)
+    }
+
+    /** Stream a v1 original to disk; false denotes content failure, not a disk write failure. */
+    internal suspend fun stageAsset(zip: ZipFile, spec: StreamedSpec, output: java.io.OutputStream): Boolean {
+        val job = currentCoroutineContext()
+        val sha = MessageDigest.getInstance("SHA-256")
+        val legacy = MessageDigest.getInstance("MD5")
+        val buffer = ByteArray(65_536)
+        zip.getInputStream(checkNotNull(zip.getEntry(spec.path))).use { input ->
+            var remaining = spec.size
+            while (remaining > 0) {
+                job.ensureActive()
+                val count = try { input.read(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt()) }
+                    catch (_: java.util.zip.ZipException) { return false }
+                if (count <= 0) return false
+                output.write(buffer, 0, count)
+                sha.update(buffer, 0, count)
+                legacy.update(buffer, 0, count)
+                remaining -= count
+            }
+            if (input.read() != -1) return false
+        }
+        return MessageDigest.isEqual(decodeHex(spec.sha), sha.digest()) &&
+            MessageDigest.isEqual(decodeHex(spec.fileMd5), legacy.digest())
+    }
 
     private fun checkDimensions(zip: ZipFile, path: String) {
         val entry = zip.getEntry(path) ?: throw IOException("资源包图片不存在：$path")

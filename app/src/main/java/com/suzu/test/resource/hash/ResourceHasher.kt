@@ -11,13 +11,16 @@ object ResourceHasher {
 
     private const val MODULE = "ResourceHasher"
 
+    private fun rgbaOptions() = BitmapFactory.Options().apply {
+        inPremultiplied = false
+        inPreferredConfig = Bitmap.Config.ARGB_8888
+        inScaled = false
+    }
+
+    internal fun decodeRgba(file: java.io.File): Bitmap? = BitmapFactory.decodeFile(file.absolutePath, rgbaOptions())
+
     fun decodeRgba(bytes: ByteArray): Bitmap? {
-        val options = BitmapFactory.Options().apply {
-            inPremultiplied = false
-            inPreferredConfig = Bitmap.Config.ARGB_8888
-            inScaled = false
-        }
-        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, rgbaOptions())
         if (bitmap == null) {
             TestLog.w(MODULE, "decodeRgba: 解码失败, bytes.size=${bytes.size}")
         } else {
@@ -44,10 +47,13 @@ object ResourceHasher {
         return toHex(hashBytes)
     }
 
-    fun fileMd5(input: InputStream): String {
+    fun fileMd5(input: InputStream): String = fileMd5(input) {}
+
+    internal fun fileMd5(input: InputStream, checkActive: () -> Unit): String {
         val digest = MessageDigest.getInstance("MD5")
         val buffer = ByteArray(64 * 1024)
         while (true) {
+            checkActive()
             val count = input.read(buffer)
             if (count < 0) break
             digest.update(buffer, 0, count)

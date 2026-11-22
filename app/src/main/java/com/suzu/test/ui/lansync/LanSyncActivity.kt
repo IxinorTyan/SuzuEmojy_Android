@@ -27,7 +27,7 @@ class LanSyncActivity : AppCompatActivity() {
         binding.header.onBack { finish() }
         binding.scan.setOnClickListener {
             scanner.launch(ScanOptions().setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                .setPrompt("扫电脑上的配对二维码").setBeepEnabled(false))
+                .setOrientationLocked(false).setPrompt("扫电脑上的配对二维码").setBeepEnabled(false))
         }
         binding.connect.setOnClickListener {
             getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(binding.root.windowToken, 0)

@@ -1,6 +1,9 @@
 package com.suzu.test
 
 import android.app.Activity
+import android.content.ComponentName
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.view.View
 import android.widget.ImageView
@@ -18,6 +21,7 @@ import com.suzu.test.ui.exchange.ExchangeActivity
 import com.suzu.test.ui.export.ExportActivity
 import com.suzu.test.ui.import.ImportActivity
 import com.suzu.test.ui.lansync.LanSyncActivity
+import com.journeyapps.barcodescanner.CaptureActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -28,6 +32,22 @@ import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class ExchangeUiTest {
+    @Test fun lanScannerOpensInPortrait() {
+        val runner = InstrumentationRegistry.getInstrumentation()
+        runner.uiAutomation.grantRuntimePermission(runner.targetContext.packageName, android.Manifest.permission.CAMERA)
+        ActivityScenario.launch(LanSyncActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val info = activity.packageManager.getActivityInfo(ComponentName(activity, CaptureActivity::class.java), 0)
+                assertEquals(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT, info.screenOrientation)
+                activity.findViewById<View>(R.id.scan).performClick()
+            }
+            resumed<CaptureActivity> {
+                assertEquals(Configuration.ORIENTATION_PORTRAIT, it.resources.configuration.orientation)
+                it.finish()
+            }
+        }
+    }
+
     @Test fun syncIsUnderExchangeAndUsesSharedCards() {
         ActivityScenario.launch(MainActivity::class.java).use { home ->
             home.onActivity { it.findViewById<View>(R.id.cardExchange).performClick() }

@@ -8,6 +8,7 @@ import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.db.entity.ResourceEntity
 import com.suzu.test.log.TestLog
 import com.suzu.test.resource.PackageIcons
+import com.suzu.test.resource.lansync.mapSyncFiles
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import org.json.JSONArray
@@ -48,14 +49,14 @@ class ResourcePackageExportService(
         selectedCategoryIds: List<Long> = emptyList(),
         exportScope: PackageExportScope = if (selectedCategoryIds.isEmpty()) PackageExportScope.ALL else PackageExportScope.CATEGORIES,
         onProgress: ((stage: PackageExportStage, progress: Int, total: Int) -> Unit)? = null
-    ): PackageExportSummary = export(targetUri, packageName, selectedCategoryIds, exportScope, null, onProgress)
+    ): PackageExportSummary = export(targetUri, packageName, selectedCategoryIds, exportScope, null, false, onProgress)
 
-    internal suspend fun exportForSync(targetUri: Uri, assets: SyncAssets): PackageExportSummary =
-        export(targetUri, "SuzuEmojy", emptyList(), PackageExportScope.ALL, assets, null)
+    internal suspend fun exportForSync(targetUri: Uri, assets: SyncAssets, streaming: Boolean): PackageExportSummary =
+        export(targetUri, "SuzuEmojy", emptyList(), PackageExportScope.ALL, assets, streaming, null)
 
     private suspend fun export(
         targetUri: Uri, packageName: String, selectedCategoryIds: List<Long>, exportScope: PackageExportScope,
-        syncAssets: SyncAssets?, onProgress: ((stage: PackageExportStage, progress: Int, total: Int) -> Unit)?
+        syncAssets: SyncAssets?, streaming: Boolean, onProgress: ((stage: PackageExportStage, progress: Int, total: Int) -> Unit)?
     ): PackageExportSummary {
         val packageBaseName = normalizePackageName(packageName)
         val exportAll = exportScope == PackageExportScope.ALL
@@ -95,9 +96,12 @@ class ResourcePackageExportService(
 
         val selectedResources = if (syncAssets == null) resources else resources.filter { it.syncKey in syncAssets.keys }
         val totalResourcesCount = selectedResources.size
+        val parallel = if (streaming) selectedResources.mapSyncFiles { resource ->
+            packResource(resource, resourcesDir, categoryIdToRef, relationDao)
+        } else null
         selectedResources.forEachIndexed { index, resource ->
             currentCoroutineContext().ensureActive()
-            val packed = packResource(
+            val packed = if (parallel != null) parallel[index] else packResource(
                 resource = resource,
                 resourcesDir = resourcesDir,
                 categoryIdToRef = categoryIdToRef,
@@ -203,7 +207,7 @@ class ResourcePackageExportService(
             }
         }
 
-        writeZip(targetUri, manifest, catalog, exportedResources, iconAssets) { progress, total ->
+        writeZip(targetUri, manifest, catalog, exportedResources, iconAssets, streaming) { progress, total ->
             onProgress?.invoke(PackageExportStage.WRITING, progress, total)
         }
 
@@ -272,6 +276,7 @@ class ResourcePackageExportService(
         catalog: JSONObject,
         resources: List<ExportedResource>,
         iconAssets: Map<String, ByteArray>,
+        streaming: Boolean,
         onWriteProgress: ((progress: Int, total: Int) -> Unit)? = null
     ) {
         val resolver = context.contentResolver
@@ -284,6 +289,7 @@ class ResourcePackageExportService(
                     putEntry(zip, path, bytes)
                 }
                 
+                if (streaming) zip.setLevel(java.util.zip.Deflater.NO_COMPRESSION)
                 val resourcesDir = File(context.filesDir, "resources")
                 val total = resources.size
                 resources.forEachIndexed { index, item ->

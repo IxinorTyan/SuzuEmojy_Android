@@ -96,6 +96,9 @@
         <activity android:name=".ui.lansync.LanSyncActivity"
             android:theme="@style/Theme.SuzuApp" android:exported="false" android:label="局域网同步" />
 
+        <activity android:name="com.journeyapps.barcodescanner.CaptureActivity"
+            android:screenOrientation="sensorPortrait" tools:replace="android:screenOrientation" />
+
         <activity android:name=".ui.exchange.ExchangeActivity"
             android:theme="@style/Theme.SuzuApp" android:exported="false" android:label="导入导出" />
 

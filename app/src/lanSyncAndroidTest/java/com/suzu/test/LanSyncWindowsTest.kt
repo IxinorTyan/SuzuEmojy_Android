@@ -31,6 +31,65 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class LanSyncWindowsTest {
+    @Test fun largeGifsAndBrokenLocalFilesDoNotBlockSync() = runBlocking {
+        val qr = InstrumentationRegistry.getArguments().getString("streamFixture")
+        assumeTrue("Start the Windows streaming fixture first.", qr != null)
+        val app = ApplicationProvider.getApplicationContext<Context>()
+        val root = File(app.cacheDir, "lan_streaming_${UUID.randomUUID()}").apply { mkdirs() }
+        val context = object : ContextWrapper(app) {
+            override fun getFilesDir() = File(root, "files").apply { mkdirs() }
+            override fun getCacheDir() = File(root, "cache").apply { mkdirs() }
+        }
+        val db = Room.inMemoryDatabaseBuilder(context, SuzuDatabase::class.java).build()
+        try {
+            LanSyncClient().use { client ->
+                client.pair(LanPairing.qr(checkNotNull(qr)))
+                assertTrue(client.streamingSync)
+                client.confirm()
+                val sync = LanReconciliation(LanSyncAndroidLibrary(context, db), context.cacheDir)
+                suspend fun round(): String {
+                    accept(client, LanTransfer.SYNC, fromComputer = false)
+                    return sync.run(client) { _, _ -> }
+                }
+                val importer = ResourceImportService(context, db)
+                val gif = Base64.decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", Base64.DEFAULT)
+                val small = importer.import(gif)
+                val smallFile = File(context.filesDir, "resources/${small.filename}")
+                assertEquals("两端同步完成。", round())
+                val original = db.resourceDao().getAllResourcesOrderedList().single { !it.isAnimated }
+                smallFile.writeBytes(byteArrayOf(5, 6, 7))
+                val large = File(smallFile.parentFile, "lan-large.gif")
+                large.outputStream().buffered().use {
+                    with(it) {
+                    write(gif, 0, gif.size - 1)
+                    write(0x21); write(0xfe)
+                    val block = ByteArray(256) { 0x56 }.apply { this[0] = 0xff.toByte() }
+                    repeat(192 * 1024) { write(block) }
+                    write(0); write(0x3b)
+                    }
+                }
+                val md5 = large.inputStream().use(com.suzu.test.resource.hash.ResourceHasher::fileMd5)
+                val addedKey = "f:$md5"
+                db.resourceDao().insert(com.suzu.test.db.entity.ResourceEntity(filename = large.name, format = "GIF",
+                    isAnimated = true, syncKey = addedKey, pixelMd5 = null, fileMd5 = md5, width = 1, height = 1, byteSize = large.length()))
+                assertEquals("两端同步完成，跳过 14 个无法校验的表情。", round())
+                assertEquals(original.id, db.resourceDao().getBySyncKey(original.syncKey)?.id)
+                assertEquals(small.resourceId, db.resourceDao().getBySyncKey(small.syncKey)?.id)
+                assertTrue(smallFile.readBytes().contentEquals(byteArrayOf(5, 6, 7)))
+                val largeRows = db.resourceDao().getAllResourcesOrderedList().filter { it.byteSize > 48L * 1024 * 1024 }
+                assertEquals(2, largeRows.size)
+                assertTrue(largeRows.any { it.syncKey == addedKey })
+                smallFile.writeBytes(gif)
+                assertEquals("两端同步完成。", round())
+                assertEquals(4, db.resourceDao().getAllResourcesOrderedList().size)
+                client.writeStatus('Q'.code)
+            }
+        } finally {
+            db.close()
+            root.deleteRecursively()
+        }
+    }
+
     @Test fun reconcileChangesAndResumeWithWindows() = runBlocking {
         val args = InstrumentationRegistry.getArguments()
         val qr = args.getString("syncFixture")
