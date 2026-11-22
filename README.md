@@ -101,10 +101,11 @@
 
 ### Windows 一键打发布包
 
-双击项目根目录的 **`build-release.bat`** 即可生成 Release 安装包，完成后自动打开 `releases` 文件夹，窗口会保留打包结果；失败时会显示错误。
+双击项目根目录的 **`build-release.bat`** 即可生成 Release 安装包。脚本会检查 APK 不是调试包并校验签名，随后打开本次归档目录；也支持包含中文的 Windows 项目路径。
 
 - **最新安装包**：`releases/SuzuEmojy-latest.apk`，每次成功打包后更新，直接拿这个文件安装或分享。
-- **历史归档**：`releases/v版本号-versionCode-时间/`，保存带版本号的 APK 和对应的 `mapping.txt` 混淆映射，方便回溯和排查崩溃。
+- **GitHub Release**：将本次归档目录里的 `SuzuEmojy-v版本号.apk` 上传为附件。脚本不会创建标签或上传文件。
+- **历史归档**：`releases/v版本号-versionCode-时间/`，保存带版本号的 APK 和对应的 `mapping.txt` 混淆映射；映射表留在本地用于排查崩溃。
 - 版本信息读取自本次构建产物；发布前仍需在 `app/build.gradle.kts` 中手动更新 `versionName` 和 `versionCode`。
 - 使用现有 Release 签名配置（当前为 debug 签名）；`releases` 目录不提交到 Git。
 
