@@ -11,9 +11,11 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.suzu.test.db.SuzuDatabase
 import com.suzu.test.db.entity.CategoryEntity
 import com.suzu.test.db.entity.ResourceCategoryEntity
+import com.suzu.test.resource.LibraryRefurbish
 import com.suzu.test.resource.ResourceImportService
 import com.suzu.test.resource.exportpkg.ResourcePackageExportService
 import com.suzu.test.resource.importpkg.ResourcePackageImportService
+import com.suzu.test.resource.hash.ResourceHasher
 import com.suzu.test.resource.lansync.LanPairing
 import com.suzu.test.resource.lansync.LanReconciliation
 import com.suzu.test.resource.lansync.LanSyncAndroidLibrary
@@ -53,7 +55,7 @@ class LanSyncWindowsTest {
                 }
                 val importer = ResourceImportService(context, db)
                 val gif = Base64.decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", Base64.DEFAULT)
-                val small = importer.import(gif)
+                val small = importer.importSynced(gif, "f:${ResourceHasher.fileMd5(gif)}")
                 val smallFile = File(context.filesDir, "resources/${small.filename}")
                 assertEquals("两端同步完成。", round())
                 val original = db.resourceDao().getAllResourcesOrderedList().single { !it.isAnimated }
@@ -105,7 +107,8 @@ class LanSyncWindowsTest {
         try {
             val gif = Base64.decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", Base64.DEFAULT)
             val importer = ResourceImportService(context, db)
-            val initial = importer.import(gif)
+            // Seed a GIF stored by an old app, before local import normalized single frames.
+            val initial = importer.importSynced(gif, "f:${ResourceHasher.fileMd5(gif)}")
             val phoneGroup = db.categoryDao().insertCategory(CategoryEntity(name = "手机初始", iconPath = "res:${initial.resourceId}"))
             db.resourceCategoryDao().addResourceToCategory(ResourceCategoryEntity(initial.resourceId, phoneGroup))
             val sync = LanReconciliation(LanSyncAndroidLibrary(context, db), context.cacheDir)
@@ -128,6 +131,10 @@ class LanSyncWindowsTest {
                 assertTrue(miku.iconPath?.startsWith("file:category_icons/") == true)
                 val folder = checkNotNull(db.categoryDao().getCategoryByName("电脑初始"))
                 val tagged = first.single { it.keywords == "keep remove" }
+                assertEquals(1200, tagged.width)
+                LibraryRefurbish(context.filesDir).run(db)
+                assertEquals(tagged, db.resourceDao().getById(tagged.id))
+                assertEquals(initial.syncKey, db.resourceDao().getById(initial.resourceId)?.syncKey)
                 val gone = db.resourceCategoryDao().getResourcesForCategoryList(folder.id).single { it.id != tagged.id }
                 val stable = first.single { it.syncKey.startsWith("p:") && it.id != tagged.id && it.id != gone.id }
                 stableKey = stable.syncKey
@@ -139,7 +146,7 @@ class LanSyncWindowsTest {
                 // Keep the icon's separate v1 attachment even after removing its source resource.
                 assertTrue(db.categoryDao().getCategoryById(phoneGroup)?.iconPath?.startsWith("file:") == true)
                 val different = gif.dropLast(1).toByteArray() + byteArrayOf(0x21, 0xFE.toByte(), 1, 0x41, 0, 0x3B)
-                val added = importer.import(different)
+                val added = importer.importSynced(different, "f:${ResourceHasher.fileMd5(different)}")
                 assertTrue(added.syncKey != initial.syncKey)
                 round(client)
                 val second = db.resourceDao().getAllResourcesOrderedList()

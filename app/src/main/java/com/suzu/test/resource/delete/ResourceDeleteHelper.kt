@@ -90,8 +90,10 @@ object ResourceDeleteHelper {
                     val batchResult = withContext(Dispatchers.IO) {
                         try {
                             val ids = batch.map { it.id }
-                            val affected = database.withTransaction {
-                                database.resourceDao().deleteByIds(ids)
+                            val (affected, currentFiles) = database.withTransaction {
+                                val dao = database.resourceDao()
+                                val current = dao.getResourcesByIds(ids)
+                                dao.deleteByIds(ids) to current
                             }
 
                             if (affected != batch.size) {
@@ -106,7 +108,7 @@ object ResourceDeleteHelper {
                             } else {
                                 // 数据库事务成功后再删除物理文件，避免事务失败导致文件丢失。
                                 var fileDeleteFailures = 0
-                                batch.forEach { resource ->
+                                currentFiles.forEach { resource ->
                                     val file = File(resourcesDir, resource.filename)
                                     if (file.exists() && !file.delete()) {
                                         fileDeleteFailures++

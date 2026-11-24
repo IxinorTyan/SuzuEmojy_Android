@@ -14,8 +14,8 @@ android {
         applicationId = "com.tencent.qqpinyin.suzu"
         minSdk = 26
         targetSdk = 34
-        versionCode = 100025
-        versionName = "1.8.0"
+        versionCode = 100026
+        versionName = "1.8.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "FILE_PROVIDER_AUTHORITY", "\"com.tencent.qqpinyin.suzu.provider\"")
@@ -70,9 +70,11 @@ android {
 
     // Run this device-only sender check without compiling unrelated experimental tests.
     if (lanSyncTestOnly) {
-        sourceSets.getByName("androidTest").java.setSrcDirs(listOf("src/lanSyncAndroidTest/java"))
+        sourceSets.getByName("androidTest").java.setSrcDirs(listOf("src/lanSyncAndroidTest/java", "src/refurbishAndroidTest/java"))
     } else if (providers.gradleProperty("ownImeOverlayTestOnly").orNull == "true") {
         sourceSets.getByName("androidTest").java.setSrcDirs(listOf("src/overlayAndroidTest/java"))
+    } else {
+        sourceSets.getByName("androidTest").java.srcDir("src/refurbishAndroidTest/java")
     }
 }
 

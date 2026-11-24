@@ -603,10 +603,7 @@ class TestImageIME : InputMethodService() {
                 val recentLimit = sp.getInt("recent_history_limit", 40).coerceIn(1, 100)
 
                 kotlinx.coroutines.runBlocking {
-                    val entity = resourceDao.getById(item.id)
-                    if (entity != null) {
-                        resourceDao.update(entity.copy(lastUsedAt = now, useCount = entity.useCount + 1))
-                    }
+                    resourceDao.recordUse(item.id, now)
                     db.recentDao().recordUsageAndTrim(
                         RecentHistoryEntity(resourceId = item.id, usedAt = now),
                         recentLimit

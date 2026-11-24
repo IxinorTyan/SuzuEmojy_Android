@@ -220,7 +220,7 @@ class ResourceDetailActivity : AppCompatActivity() {
                     val updated = res.copy(width = width, height = height)
                     items[position] = updated
                     withContext(Dispatchers.IO) {
-                        database.resourceDao().update(updated)
+                        database.resourceDao().updateDimensions(res.id, res.filename, width, height)
                     }
                 } else if (currentPosition == position) {
                     binding.tvMetaResolution.text = "尺寸: 未知"

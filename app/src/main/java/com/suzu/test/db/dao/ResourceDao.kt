@@ -45,6 +45,15 @@ interface ResourceDao {
     @Query("SELECT * FROM resources WHERE file_md5 = :fileMd5")
     suspend fun getByFileMd5(fileMd5: String): ResourceEntity?
 
+    @Query("SELECT EXISTS(SELECT 1 FROM resources WHERE width = :width AND height = :height)")
+    suspend fun hasDimensions(width: Int, height: Int): Boolean
+
+    @Query("UPDATE resources SET last_used_at = :now, use_count = use_count + 1 WHERE id = :id")
+    suspend fun recordUse(id: Long, now: Long)
+
+    @Query("UPDATE resources SET width = :width, height = :height WHERE id = :id AND filename = :filename")
+    suspend fun updateDimensions(id: Long, filename: String, width: Int, height: Int)
+
     @Query("SELECT * FROM resources ORDER BY sort_order ASC, id ASC")
     fun getAllResourcesOrdered(): Flow<List<ResourceEntity>>
 

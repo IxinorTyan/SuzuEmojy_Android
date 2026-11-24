@@ -3,9 +3,12 @@ package com.suzu.test
 import android.app.Application
 import com.bumptech.glide.Glide
 import com.suzu.test.accessibility.AccessibilityStateMonitor
+import com.suzu.test.db.SuzuDatabase
 import com.suzu.test.log.TestLog
+import com.suzu.test.resource.LibraryRefurbish
 import com.suzu.test.storage.CacheCleanManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -23,6 +26,15 @@ class TestApplication : Application() {
         maintenanceScope.launch {
             CacheCleanManager.cleanImportPreviewFiles(this@TestApplication)
             CacheCleanManager.cleanImportTempZipFiles(this@TestApplication)
+        }
+        maintenanceScope.launch {
+            try {
+                LibraryRefurbish(filesDir).run(SuzuDatabase.getInstance(this@TestApplication))
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                TestLog.e("LibraryRefurbish", "图库清洗暂停，下次启动继续", error)
+            }
         }
     }
 
