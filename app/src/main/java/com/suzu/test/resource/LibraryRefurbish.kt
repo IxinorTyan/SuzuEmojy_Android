@@ -1,5 +1,6 @@
 package com.suzu.test.resource
 
+import android.graphics.BitmapFactory
 import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.suzu.test.db.SuzuDatabase
@@ -30,7 +31,7 @@ internal class LibraryRefurbish(
     }
 
     // One runner per app process. Decode outside Room; each row and its progress commit together.
-    suspend fun run(database: SuzuDatabase, afterCommit: (Long) -> Unit = {}) = withContext(Dispatchers.IO) {
+    suspend fun run(database: SuzuDatabase, afterCommit: suspend (Long) -> Unit = {}) = withContext(Dispatchers.IO) {
         suspend fun <T> transaction(block: (SupportSQLiteDatabase) -> T): T =
             database.withTransaction { block(database.openHelper.writableDatabase) }
 
@@ -73,7 +74,10 @@ internal class LibraryRefurbish(
             for (row in batch) {
                 val next = scan.copy(last = row.id)
                 val oldFile = File(resources, row.name)
-                val clean = if (!oldFile.isFile || oldFile.length() > Runtime.getRuntime().maxMemory() / 8) null else {
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(oldFile.absolutePath, bounds)
+                val clean = if (maxOf(bounds.outWidth, bounds.outHeight) <= ResourceCleaner.MAX_SIDE ||
+                    oldFile.length() > Runtime.getRuntime().maxMemory() / 8) null else {
                     val bytes = try { oldFile.readBytes() } catch (_: FileNotFoundException) { null }
                     bytes?.let { prepare(it) }
                 }
@@ -116,8 +120,7 @@ internal class LibraryRefurbish(
         if ((ResourceHasher.isGif(bytes) && !ResourceCleaner.isSingleFrameGif(bytes)) ||
             ResourceCleaner.isAnimatedWebP(bytes) || ResourceCleaner.isAnimatedPng(bytes)) return null
         return try {
-            val clean = ResourceCleaner.decodeStatic(bytes, normalize = true)?.use { it.encode() }
-            clean?.takeUnless { it.pngBytes.contentEquals(bytes) }
+            ResourceCleaner.decodeStatic(bytes, normalize = true)?.use { if (it.wasScaled) it.encode() else null }
         } catch (_: IllegalArgumentException) { null }
     }
 

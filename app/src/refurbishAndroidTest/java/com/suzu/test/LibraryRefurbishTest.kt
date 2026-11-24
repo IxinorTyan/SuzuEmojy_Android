@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.util.Base64
+import androidx.core.content.FileProvider
 import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
@@ -115,6 +116,44 @@ class LibraryRefurbishTest {
             context.deleteDatabase(name)
             root.deleteRecursively()
         }
+    }
+
+    @Test fun cleanOnlyOversizedStaticImagesWithoutInterruptingFileReaders() = runBlocking {
+        val context: Context = ApplicationProvider.getApplicationContext()
+        val providerRoot = File(context.filesDir, "resources").apply { mkdirs() }
+        val root = Files.createTempDirectory(providerRoot.toPath(), "refurbish-oversized-").toFile()
+        val dir = File(root, "resources")
+        try {
+            Room.inMemoryDatabaseBuilder(context, SuzuDatabase::class.java).build().withDatabase { db ->
+                val importer = ResourceImportService(context, db, dir)
+                val big = png(721, 350)
+                val large = importer.importSynced(big, rawKey(big))
+                val edge = png(720, 52)
+                val exact = importer.importSynced(edge, rawKey(edge))
+                val singleGif = Base64.decode("R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAkQBADs=", Base64.DEFAULT)
+                val gif = importer.importSynced(singleGif, "f:${ResourceHasher.fileMd5(singleGif)}")
+                val before = listOf(exact, gif).map { db.resourceDao().getById(it.resourceId)!! }
+                val exactBytes = File(dir, exact.filename).readBytes()
+                val oldSendPath = File(dir, large.filename)
+                // The keyboard can already hold this path when the database row switches.
+                val original = oldSendPath.readBytes()
+                val sendUri = FileProvider.getUriForFile(context, BuildConfig.FILE_PROVIDER_AUTHORITY, oldSendPath)
+                val commits = mutableListOf<Long>()
+                LibraryRefurbish(root).run(db) {
+                    commits += it
+                    assertArrayEquals(original, context.contentResolver.openInputStream(sendUri)!!.use { it.readBytes() })
+                    val current = db.resourceDao().getById(it)!!
+                    assertTrue(File(dir, current.filename).isFile)
+                }
+                assertEquals(listOf(large.resourceId), commits)
+                assertEquals(before, before.map { db.resourceDao().getById(it.id) })
+                assertArrayEquals(exactBytes, File(dir, exact.filename).readBytes())
+                assertArrayEquals(singleGif, File(dir, gif.filename).readBytes())
+                assertEquals(gif.resourceId, importer.import(singleGif).existingResourceId)
+                assertEquals(large.resourceId, importer.import(big).existingResourceId)
+                assertEquals(720, db.resourceDao().getById(large.resourceId)!!.width)
+            }
+        } finally { root.deleteRecursively() }
     }
 
     @Test fun firstReadAndCommittedRowsSurviveADeferredMigration() = runBlocking {
